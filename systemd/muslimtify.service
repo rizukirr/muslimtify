@@ -1,0 +1,9 @@
+[Unit]
+Description=Prayer Time Notification Check
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/muslimtify check
+StandardOutput=journal
+StandardError=journal

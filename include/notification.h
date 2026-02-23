@@ -1,0 +1,36 @@
+#ifndef NOTIFICATION_H
+#define NOTIFICATION_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * Initialize libnotify
+ * Returns: 1 on success, 0 on failure
+ */
+int notify_init_once(const char *app_name);
+
+/**
+ * Send a generic notification
+ */
+void notify_send(const char *title, const char *message);
+
+/**
+ * Send a prayer time notification with formatted time
+ * minutes_before: 0 for exact time, >0 for reminder
+ */
+void notify_prayer(const char *prayer_name,
+                   const char *time_str, 
+                   int minutes_before);
+
+/**
+ * Cleanup libnotify resources
+ */
+void notify_cleanup(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // NOTIFICATION_H

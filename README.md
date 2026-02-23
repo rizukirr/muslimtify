@@ -1,0 +1,481 @@
+# Muslimtify
+
+![Muslimtify Banner](assets/banner.png)
+
+A prayer time notification daemon for Linux with customizable reminders, automatic location detection, and systemd integration. This project is build on top of [libmuslim](https://github.com/rizukirr/libmuslim)
+
+> **Installation Note:** Currently source-only. Binary packages (AUR, Debian, RPM) coming soon!
+
+## Features
+
+- **Automatic Location Detection** - Uses ipinfo.io to detect your location  
+- **Multiple Prayer Reminders** - Set custom reminders (e.g., 30, 15, 5 minutes before)  
+- **Custom Icon** - Beautiful notifications with custom mosque icon (`assets/muslimtify.png`)  
+- **Kemenag Method** - Uses official Indonesian Kemenag calculation method  
+- **Beautiful CLI** - Unicode table output with colored status  
+- **JSON Configuration** - Easy to read and edit config file  
+- **Systemd Ready** - Designed to run as a systemd timer  
+- **Lightweight** - Written in C, minimal dependencies  
+
+## Installation
+
+> **Note:** Muslimtify is currently only available for installation from source. Package distribution (AUR, Debian, RPM) is planned for future releases.
+
+### Build from Source
+
+#### 1. Install Dependencies
+
+**Build dependencies** (only needed for compilation):
+```bash
+# Ubuntu/Debian
+sudo apt install git build-essential cmake pkg-config libnotify-dev libcurl4-openssl-dev
+
+# Fedora/RHEL
+sudo dnf install git gcc cmake pkgconfig libnotify-devel libcurl-devel
+
+# Arch Linux
+sudo pacman -S git base-devel cmake pkgconfig libnotify curl
+```
+
+**Runtime dependencies** (required to run the application):
+```bash
+# Ubuntu/Debian
+sudo apt install libnotify4 libcurl4
+
+# Fedora/RHEL
+sudo dnf install libnotify libcurl
+
+# Arch Linux
+sudo pacman -S libnotify curl
+```
+
+> **Note:** If you only want to run a pre-built binary (once available), you only need the runtime dependencies.
+
+#### 2. Clone and Install
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/muslimtify.git
+cd muslimtify
+
+# Build, install, and set up systemd timer — all in one command
+sudo ./install.sh
+```
+
+#### 3. Development Build (Optional)
+
+To build without installing (for testing or development):
+
+```bash
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make -j$(nproc)
+./bin/muslimtify
+```
+
+## Quick Start
+
+> **Note:** If you didn't install system-wide, use `./build/bin/muslimtify` instead of `muslimtify` in all commands below.
+
+```bash
+# Show today's prayer times (default command)
+muslimtify
+
+# Auto-detect your location (first time)
+muslimtify location auto
+
+# Show next prayer
+muslimtify next
+
+# Set reminders for all prayers
+muslimtify reminder all 30,15,5
+
+# Enable Dhuha prayer notifications
+muslimtify enable dhuha
+```
+
+## CLI Commands
+
+### Prayer Times
+
+```bash
+muslimtify                  # Show today's prayer times (default)
+muslimtify show             # Same as above
+muslimtify show --format json  # Output in JSON format
+muslimtify next             # Show next prayer and countdown
+```
+
+**Example Output:**
+```
+Prayer Times for Monday, February 23, 2026
+Location: Jakarta, ID (-6.2146, 106.8451)
+
+┌────────────┬──────────┬──────────┬───────────────────────┐
+│ Prayer     │ Time     │ Status   │ Reminders             │
+├────────────┼──────────┼──────────┼───────────────────────┤
+│ Fajr       │ 04:42    │ Enabled  │ 30, 15, 5 min before  │
+│ Sunrise    │ 05:57    │ Disabled │ -                     │
+│ Dhuha      │ 06:25    │ Disabled │ -                     │
+│ Dhuhr      │ 12:09    │ Enabled  │ 30, 15, 5 min before  │
+│▶Asr        │ 15:17    │ Enabled  │ 30, 15, 5 min before  │
+│ Maghrib    │ 18:16    │ Enabled  │ 30, 15, 5 min before  │
+│ Isha       │ 19:27    │ Enabled  │ 30, 15, 5 min before  │
+└────────────┴──────────┴──────────┴───────────────────────┘
+```
+*(Colors shown in terminal: bold yellow `▶` for next prayer, green for enabled, dim for disabled)*
+
+### Location Management
+
+```bash
+muslimtify location auto    # Auto-detect location via ipinfo.io
+muslimtify location show    # Display current location
+muslimtify location set <lat> <lon>  # Set manual coordinates
+muslimtify location clear   # Clear location (will auto-detect next time)
+```
+
+### Prayer Notifications
+
+```bash
+muslimtify enable <prayer>   # Enable prayer notification
+muslimtify disable <prayer>  # Disable prayer notification
+muslimtify enable all        # Enable all prayers
+muslimtify disable all       # Disable all prayers
+muslimtify list              # Show enabled/disabled prayers
+```
+
+**Prayer names:** `fajr`, `sunrise`, `dhuha`, `dhuhr`, `asr`, `maghrib`, `isha`
+
+**Default:** Fajr, Dhuhr, Asr, Maghrib, Isha are enabled. Sunrise and Dhuha are disabled.
+
+### Reminder Management
+
+```bash
+muslimtify reminder <prayer> <times>  # Set reminders (e.g., 30,15,5)
+muslimtify reminder <prayer> clear    # Clear reminders
+muslimtify reminder all 30,15,5       # Set reminders for all enabled prayers
+muslimtify reminder show              # Show all reminder configurations
+```
+
+**Examples:**
+```bash
+muslimtify reminder fajr 45,30,10     # Notify 45, 30, 10 min before Fajr
+muslimtify reminder maghrib 15,5      # Notify 15, 5 min before Maghrib
+muslimtify reminder isha clear        # Only notify at exact Isha time
+```
+
+### Configuration
+
+```bash
+muslimtify config show       # Display full configuration
+muslimtify config reset      # Reset to default configuration
+muslimtify config validate   # Validate configuration file
+```
+
+### Daemon Mode
+
+```bash
+muslimtify check   # Check prayer time and send notification if matched
+                   # (Used by systemd timer - runs every minute)
+```
+
+### Daemon Management
+
+```bash
+muslimtify daemon install    # Install and start the systemd timer
+muslimtify daemon uninstall  # Stop, disable, and remove systemd unit files
+muslimtify daemon status     # Show timer state and next trigger time
+```
+
+### Other Commands
+
+```bash
+muslimtify version   # Show version information
+muslimtify help      # Show help message
+```
+
+## Configuration File
+
+Config file location: `~/.config/muslimtify/config.json`
+
+**Example:**
+```json
+{
+  "location": {
+    "latitude": -6.2146,
+    "longitude": 106.8451,
+    "timezone": "Asia/Jakarta",
+    "timezone_offset": 7.0,
+    "auto_detect": true,
+    "city": "Jakarta",
+    "country": "ID"
+  },
+  "prayers": {
+    "fajr": {
+      "enabled": true,
+      "reminders": [30, 15, 5]
+    },
+    "dhuhr": {
+      "enabled": true,
+      "reminders": [30, 15, 5]
+    }
+    ...
+  },
+  "notification": {
+    "timeout": 5000,
+    "urgency": "normal",
+    "sound": true,
+    "icon": "mosque"
+  }
+}
+```
+
+## Systemd Integration
+
+### Automatic Setup (Recommended)
+
+Use the provided installation script (builds, installs binary, and sets up systemd timer):
+
+```bash
+sudo ./install.sh
+```
+
+To uninstall:
+```bash
+sudo ./uninstall.sh           # remove everything except config
+sudo ./uninstall.sh --purge   # also remove ~/.config/muslimtify
+```
+
+Alternatively, manage the daemon from within the app:
+
+```bash
+muslimtify daemon install    # install and start the systemd timer
+muslimtify daemon uninstall  # stop and remove the systemd timer
+muslimtify daemon status     # show timer state
+```
+
+### Manual Setup (Alternative)
+
+If you prefer manual setup, create the following files:
+
+**`~/.config/systemd/user/muslimtify.service`:**
+```ini
+[Unit]
+Description=Prayer Time Notification Check
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Use full path to binary
+ExecStart=/usr/local/bin/muslimtify check
+# OR if running from source:
+# ExecStart=/home/yourusername/muslimtify/build/bin/muslimtify check
+StandardOutput=journal
+StandardError=journal
+```
+
+**`~/.config/systemd/user/muslimtify.timer`:**
+```ini
+[Unit]
+Description=Check prayer times every minute
+After=network-online.target
+
+[Timer]
+OnCalendar=*:*:00
+Persistent=true
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable and start:
+```bash
+systemctl --user daemon-reload
+systemctl --user enable muslimtify.timer
+systemctl --user start muslimtify.timer
+```
+
+### Check Status
+
+```bash
+systemctl --user status muslimtify.timer
+systemctl --user list-timers muslimtify
+journalctl --user -u muslimtify -f
+```
+
+## How It Works
+
+1. **Timer runs every minute** - Systemd timer triggers `muslimtify check` every minute
+2. **Checks current time** - Compares current time with prayer times and configured reminders
+3. **Sends notification** - If match found (within 1-minute window), sends desktop notification
+4. **Exits** - Process exits immediately (no background daemon)
+
+## Notification Behavior
+
+- **Exact prayer time** - Shows "Prayer Time: Fajr" with CRITICAL urgency
+- **Reminder** - Shows "Prayer Reminder: Fajr in 30 minutes" with NORMAL urgency
+- **Multiple reminders** - Each reminder triggers separately (e.g., 30 min, 15 min, 5 min before)
+- **Custom icon** - Uses custom icon from `assets/muslimtify.png`
+  - Automatically found when running from source directory
+  - Installed to system icon directories when using `sudo make install`
+  - Falls back to "mosque" icon from system theme if custom icon not found
+
+## Prayer Calculation Method
+
+Muslimtify uses the **Kemenag** (Kementerian Agama RI — Indonesian Ministry of Religious Affairs) calculation standard, which is the official method used in Indonesia.
+
+### Parameters
+
+| Parameter | Value |
+|-----------|-------|
+| Fajr depression angle | 20° below horizon |
+| Isha depression angle | 18° below horizon |
+| Maghrib | Sun sets below horizon (0.833° refraction correction) |
+| Asr shadow factor | 1× object height (Shafi/standard madhab) |
+| Dhuha | 28 minutes after sunrise |
+| Minute rounding | Always rounded up (ceiling) |
+
+### Ihtiyat (Precautionary Adjustments)
+
+Kemenag adds a precautionary buffer to each prayer time to account for calculation variance and local conditions:
+
+| Prayer | Adjustment |
+|--------|-----------|
+| Fajr | +2 minutes |
+| Sunrise | −2 minutes |
+| Dhuhr | +2 minutes |
+| Asr | +2 minutes |
+| Maghrib | +2 minutes |
+| Isha | +2 minutes |
+
+> Dhuha is computed from the adjusted sunrise time (after the −2 min ihtiyat is applied).
+
+## Troubleshooting
+
+### Running without system-wide installation
+
+If you built from source but didn't install system-wide:
+
+```bash
+# Use the binary directly
+cd /path/to/muslimtify
+./build/bin/muslimtify
+
+# OR create an alias in your shell config (~/.bashrc, ~/.zshrc, etc.)
+alias muslimtify='/path/to/muslimtify/build/bin/muslimtify'
+
+# OR create a symlink
+sudo ln -s /path/to/muslimtify/build/bin/muslimtify /usr/local/bin/muslimtify
+```
+
+For systemd integration without installation:
+```bash
+# Edit the service file to use full path
+vim ~/.config/systemd/user/muslimtify.service
+# Change ExecStart to: /full/path/to/muslimtify/build/bin/muslimtify check
+```
+
+### Notifications not showing
+
+1. Check if timer is running:
+   ```bash
+   systemctl --user status muslimtify.timer
+   ```
+
+2. Check logs:
+   ```bash
+   journalctl --user -u muslimtify -n 50
+   ```
+
+3. Test notification manually:
+   ```bash
+   muslimtify check
+   ```
+
+4. Verify notification daemon is running:
+   ```bash
+   # Test system notifications
+   notify-send "Test" "If you see this, notifications work"
+   
+   # Test with custom icon
+   ./test_notification.sh
+   ```
+
+### Location not detected
+
+```bash
+# Test location detection
+curl ipinfo.io
+
+# Set manual location
+muslimtify location set <latitude> <longitude>
+```
+
+### Config file errors
+
+```bash
+# Validate config
+muslimtify config validate
+
+# Reset to defaults
+muslimtify config reset
+```
+
+## Development
+
+### Project Structure
+
+```
+muslimtify/
+├── include/          # Header files
+│   ├── config.h      # Configuration management
+│   ├── location.h    # Location detection
+│   ├── prayer_checker.h  # Prayer time matching
+│   ├── notification.h    # Desktop notifications
+│   ├── display.h     # Output formatting
+│   └── cli.h         # CLI argument parsing
+├── src/              # Source files
+│   ├── muslimtify.c  # Main entry point
+│   ├── config.c
+│   ├── location.c
+│   ├── prayer_checker.c
+│   ├── notification.c
+│   ├── display.c
+│   ├── cli.c
+│   ├── prayertimes.h # Prayer calculation (header-only)
+│   └── libjson.h     # JSON parser (header-only)
+├── assets/
+│   └── muslimtify.png    # Notification icon
+├── CMakeLists.txt
+├── install.sh            # Build, install binary, and set up systemd timer
+├── uninstall.sh          # Remove binary, icons, and systemd units
+└── README.md
+```
+
+### Building for Development
+
+```bash
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make -j$(nproc)
+```
+
+## License
+
+MIT License - See source files for details
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
+
+## Credits
+
+- Prayer calculation based on Kemenag Indonesia standards
+- Uses libnotify for desktop notifications
+- Location detection via ipinfo.io
+
+## Support
+
+If you find this library useful, consider supporting its development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rizukirr)
