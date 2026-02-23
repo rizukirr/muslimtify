@@ -1,6 +1,6 @@
 # Muslimtify
 
-![Muslimtify Banner](assets/banner.png)
+![Muslimtify Banner](images/banner.png)
 
 A prayer time notification daemon for Linux with customizable reminders, automatic location detection, and systemd integration. This project is build on top of [libmuslim](https://github.com/rizukirr/libmuslim)
 
@@ -16,6 +16,8 @@ A prayer time notification daemon for Linux with customizable reminders, automat
 - **JSON Configuration** - Easy to read and edit config file  
 - **Systemd Ready** - Designed to run as a systemd timer  
 - **Lightweight** - Written in C, minimal dependencies  
+
+![Muslimtify Screenshot](images/example.png)
 
 ## Installation
 
