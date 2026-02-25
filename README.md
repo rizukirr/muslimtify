@@ -4,8 +4,6 @@
 
 A prayer time notification daemon for Linux with customizable reminders, automatic location detection, and systemd integration. This project is build on top of [libmuslim](https://github.com/rizukirr/libmuslim)
 
-> **Installation Note:** Currently source-only. Binary packages (AUR, Debian, RPM) coming soon!
-
 ## Features
 
 - **Automatic Location Detection** - Uses ipinfo.io to detect your location  
@@ -21,13 +19,24 @@ A prayer time notification daemon for Linux with customizable reminders, automat
 
 ## Installation
 
-> **Note:** Muslimtify is currently only available for installation from source. Package distribution (AUR, Debian, RPM) is planned for future releases.
+### Arch Linux (AUR)
+
+```bash
+yay -S muslimtify
+```
+
+### Debian/Ubuntu (PPA)
+
+```bash
+sudo add-apt-repository ppa:rizukirr/muslimtify
+sudo apt update
+sudo apt install muslimtify
+```
 
 ### Build from Source
 
 #### 1. Install Dependencies
 
-**Build dependencies** (only needed for compilation):
 ```bash
 # Ubuntu/Debian
 sudo apt install git build-essential cmake pkg-config libnotify-dev libcurl4-openssl-dev
@@ -39,34 +48,15 @@ sudo dnf install git gcc cmake pkgconfig libnotify-devel libcurl-devel
 sudo pacman -S git base-devel cmake pkgconfig libnotify curl
 ```
 
-**Runtime dependencies** (required to run the application):
-```bash
-# Ubuntu/Debian
-sudo apt install libnotify4 libcurl4
-
-# Fedora/RHEL
-sudo dnf install libnotify libcurl
-
-# Arch Linux
-sudo pacman -S libnotify curl
-```
-
-> **Note:** If you only want to run a pre-built binary (once available), you only need the runtime dependencies.
-
 #### 2. Clone and Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/muslimtify.git
+git clone https://github.com/rizukirr/muslimtify.git
 cd muslimtify
-
-# Build, install, and set up systemd timer — all in one command
 sudo ./install.sh
 ```
 
 #### 3. Development Build (Optional)
-
-To build without installing (for testing or development):
 
 ```bash
 mkdir build && cd build

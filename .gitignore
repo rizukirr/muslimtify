@@ -22,5 +22,8 @@ muslimtify
 # OS
 .DS_Store
 Thumbs.db
+
+# Packaging
+.packages/
 /.cache/clangd/index
 /CLAUDE.md

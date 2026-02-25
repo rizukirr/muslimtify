@@ -10,9 +10,9 @@ This document outlines the plan for future package distribution.
 
 ## Planned Distribution Methods
 
-### 1. Arch Linux (AUR)
+### 1. Arch Linux (AUR) [DONE]
 
-**Package name:** `muslimtify-git` or `muslimtify-bin`
+**Package name:** `muslimtify`
 
 **Files needed:**
 - `PKGBUILD` - Build script for Arch Linux
@@ -21,7 +21,7 @@ This document outlines the plan for future package distribution.
 **Installation method:**
 ```bash
 # Via AUR helper (yay, paru, etc.)
-yay -S muslimtify-git
+yay -S muslimtify
 
 # Manual
 git clone https://aur.archlinux.org/muslimtify-git.git

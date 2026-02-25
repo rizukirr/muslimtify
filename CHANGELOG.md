@@ -4,6 +4,20 @@ All notable changes to Muslimtify will be documented in this file.
 
 ---
 
+## [0.1.1] - 2026-02-25
+
+### Added
+- **AUR package** — available via `yay -S muslimtify`
+- **Debian/Ubuntu PPA** — `sudo add-apt-repository ppa:rizukirr/muslimtify`
+- Packaging scripts for building `.deb` via debootstrap chroot
+- `muslimtify next name` subcommand
+- `muslimtify next <time> <remaining>` subcommand
+
+### Changed
+- CMake minimum version lowered to 3.22 for Debian/Ubuntu compatibility
+
+---
+
 ## [0.1.0] - 2026-02-23
 
 ### Added
@@ -83,8 +97,8 @@ All notable changes to Muslimtify will be documented in this file.
 - [ ] Config file icon path support
 
 ### v1.0.0 — First packaged release
-- [ ] AUR package (Arch Linux)
-- [ ] `.deb` package (Debian/Ubuntu)
+- [x] AUR package (Arch Linux)
+- [x] `.deb` package (Debian/Ubuntu)
 - [ ] `.rpm` package (Fedora/RHEL)
 
 ### v1.1.0
@@ -106,6 +120,6 @@ Muslimtify follows [Semantic Versioning](https://semver.org/):
 
 ---
 
-**Current Version:** 0.1.0
-**Release Date:** February 23, 2026
-**Status:** Source distribution only
+**Current Version:** 0.1.1
+**Release Date:** February 25, 2026
+**Status:** Available on AUR and Launchpad PPA
