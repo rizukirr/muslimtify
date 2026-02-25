@@ -76,7 +76,7 @@ PrayerMatch prayer_check_current(const Config *cfg,
         
         // Check exact prayer time (within 1-minute window)
         double diff_minutes = (prayer_time - current_time) * 60.0;
-        if (fabs(diff_minutes) < 0.5) {  // Within 30 seconds
+        if (fabs(diff_minutes) < 1.0) {  // Within 1 minute
             PrayerMatch match = {
                 .type = type,
                 .minutes_before = 0,
@@ -92,7 +92,7 @@ PrayerMatch prayer_check_current(const Config *cfg,
             double reminder_diff = (reminder_time - current_time) * 60.0;
             
             // Within 1-minute window for reminder
-            if (fabs(reminder_diff) < 0.5) {
+            if (fabs(reminder_diff) < 1.0) {
                 PrayerMatch match = {
                     .type = type,
                     .minutes_before = reminder_min,

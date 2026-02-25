@@ -229,8 +229,6 @@ static int cli_handle_check(const CliArgs *args) {
 }
 
 static int cli_handle_next(const CliArgs *args) {
-  (void)args; // Unused
-
   Config cfg;
   if (config_load(&cfg) != 0) {
     fprintf(stderr, "Error: Failed to load config\n");
@@ -251,6 +249,36 @@ static int cli_handle_next(const CliArgs *args) {
   struct PrayerTimes times = calculate_prayer_times(
       tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday, cfg.latitude,
       cfg.longitude, cfg.timezone_offset);
+
+  if (args->subcommand && strcmp(args->subcommand, "time") == 0) {
+    int minutes_until = 0;
+    PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
+    if (next == PRAYER_NONE) {
+      fprintf(stderr, "No upcoming prayers enabled.\n");
+      return 1;
+    }
+    char time_str[16];
+    format_time_hm(prayer_get_time(&times, next), time_str, sizeof(time_str));
+    printf("%s\n", time_str);
+    return 0;
+  }
+
+  if (args->subcommand && strcmp(args->subcommand, "remaining") == 0) {
+    int minutes_until = 0;
+    PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
+    if (next == PRAYER_NONE) {
+      fprintf(stderr, "No upcoming prayers enabled.\n");
+      return 1;
+    }
+    int hours = minutes_until / 60;
+    int mins  = minutes_until % 60;
+    if (hours > 0) {
+      printf("%d:%02d\n", hours, mins);
+    } else {
+      printf("%dm\n", mins);
+    }
+    return 0;
+  }
 
   display_next_prayer(&times, &cfg, tm_now);
 
@@ -587,24 +615,31 @@ static int cli_handle_reminder(const CliArgs *args) {
   return 0;
 }
 
-// ── daemon helpers ────────────────────────────────────────────────────────────
+// ── daemon helpers
+// ────────────────────────────────────────────────────────────
 
 // Run: systemctl --user <args...>  (NULL-terminated)
 // Inherits stdout/stderr so output goes straight to the terminal.
 static int systemctl_user(const char *const *args) {
   int n = 0;
-  while (args[n]) n++;
+  while (args[n])
+    n++;
 
   char **argv = malloc((size_t)(n + 3) * sizeof(char *));
-  if (!argv) return 1;
+  if (!argv)
+    return 1;
 
   argv[0] = "systemctl";
   argv[1] = "--user";
-  for (int i = 0; i < n; i++) argv[i + 2] = (char *)args[i];
+  for (int i = 0; i < n; i++)
+    argv[i + 2] = (char *)args[i];
   argv[n + 2] = NULL;
 
   pid_t pid = fork();
-  if (pid < 0) { free(argv); return 1; }
+  if (pid < 0) {
+    free(argv);
+    return 1;
+  }
   if (pid == 0) {
     execvp("systemctl", argv);
     _exit(127);
@@ -634,17 +669,20 @@ static const char *get_home(void) {
   const char *home = getenv("HOME");
   if (!home) {
     struct passwd *pw = getpwuid(getuid());
-    if (pw) home = pw->pw_dir;
+    if (pw)
+      home = pw->pw_dir;
   }
   return home;
 }
 
-// ── daemon subcommands ────────────────────────────────────────────────────────
+// ── daemon subcommands
+// ────────────────────────────────────────────────────────
 
 static int daemon_install(void) {
   // Resolve the path of the running binary
   char binary_path[PATH_MAX];
-  ssize_t len = readlink("/proc/self/exe", binary_path, sizeof(binary_path) - 1);
+  ssize_t len =
+      readlink("/proc/self/exe", binary_path, sizeof(binary_path) - 1);
   if (len <= 0) {
     fprintf(stderr, "Error: Cannot determine binary path\n");
     return 1;
@@ -663,23 +701,25 @@ static int daemon_install(void) {
 
   // Write service file
   char service_path[PATH_MAX + 32];
-  snprintf(service_path, sizeof(service_path), "%s/muslimtify.service", systemd_dir);
+  snprintf(service_path, sizeof(service_path), "%s/muslimtify.service",
+           systemd_dir);
   FILE *f = fopen(service_path, "w");
   if (!f) {
-    fprintf(stderr, "Error: Cannot write %s: %s\n", service_path, strerror(errno));
+    fprintf(stderr, "Error: Cannot write %s: %s\n", service_path,
+            strerror(errno));
     return 1;
   }
   fprintf(f,
-    "[Unit]\n"
-    "Description=Prayer Time Notification Check\n"
-    "After=network-online.target\n"
-    "\n"
-    "[Service]\n"
-    "Type=oneshot\n"
-    "ExecStart=%s check\n"
-    "StandardOutput=journal\n"
-    "StandardError=journal\n",
-    binary_path);
+          "[Unit]\n"
+          "Description=Prayer Time Notification Check\n"
+          "After=network-online.target\n"
+          "\n"
+          "[Service]\n"
+          "Type=oneshot\n"
+          "ExecStart=%s check\n"
+          "StandardOutput=journal\n"
+          "StandardError=journal\n",
+          binary_path);
   fclose(f);
 
   // Write timer file
@@ -687,21 +727,21 @@ static int daemon_install(void) {
   snprintf(timer_path, sizeof(timer_path), "%s/muslimtify.timer", systemd_dir);
   f = fopen(timer_path, "w");
   if (!f) {
-    fprintf(stderr, "Error: Cannot write %s: %s\n", timer_path, strerror(errno));
+    fprintf(stderr, "Error: Cannot write %s: %s\n", timer_path,
+            strerror(errno));
     return 1;
   }
-  fprintf(f,
-    "[Unit]\n"
-    "Description=Check prayer times every minute\n"
-    "After=network-online.target\n"
-    "\n"
-    "[Timer]\n"
-    "OnCalendar=*:*:00\n"
-    "Persistent=true\n"
-    "AccuracySec=1s\n"
-    "\n"
-    "[Install]\n"
-    "WantedBy=timers.target\n");
+  fprintf(f, "[Unit]\n"
+             "Description=Check prayer times every minute\n"
+             "After=network-online.target\n"
+             "\n"
+             "[Timer]\n"
+             "OnCalendar=*:*:00\n"
+             "Persistent=true\n"
+             "AccuracySec=1s\n"
+             "\n"
+             "[Install]\n"
+             "WantedBy=timers.target\n");
   fclose(f);
 
   printf("✓ Created %s\n", service_path);
@@ -714,13 +754,15 @@ static int daemon_install(void) {
   }
   printf("✓ Reloaded systemd\n");
 
-  if (systemctl_user((const char *[]){"enable", "muslimtify.timer", NULL}) != 0) {
+  if (systemctl_user((const char *[]){"enable", "muslimtify.timer", NULL}) !=
+      0) {
     fprintf(stderr, "Error: Failed to enable muslimtify.timer\n");
     return 1;
   }
   printf("✓ Enabled muslimtify.timer\n");
 
-  if (systemctl_user((const char *[]){"start", "muslimtify.timer", NULL}) != 0) {
+  if (systemctl_user((const char *[]){"start", "muslimtify.timer", NULL}) !=
+      0) {
     fprintf(stderr, "Error: Failed to start muslimtify.timer\n");
     return 1;
   }
@@ -733,13 +775,15 @@ static int daemon_install(void) {
 
 static int daemon_uninstall(void) {
   // Stop (ignore error — may not be running)
-  if (systemctl_user((const char *[]){"is-active", "--quiet", "muslimtify.timer", NULL}) == 0) {
+  if (systemctl_user((const char *[]){"is-active", "--quiet",
+                                      "muslimtify.timer", NULL}) == 0) {
     systemctl_user((const char *[]){"stop", "muslimtify.timer", NULL});
     printf("✓ Stopped muslimtify.timer\n");
   }
 
   // Disable (ignore error — may not be enabled)
-  if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.timer", NULL}) == 0) {
+  if (systemctl_user((const char *[]){"is-enabled", "--quiet",
+                                      "muslimtify.timer", NULL}) == 0) {
     systemctl_user((const char *[]){"disable", "muslimtify.timer", NULL});
     printf("✓ Disabled muslimtify.timer\n");
   }
@@ -776,11 +820,13 @@ static int daemon_uninstall(void) {
 static int daemon_status(void) {
   // Show timer status
   printf("=== Timer ===\n");
-  systemctl_user((const char *[]){"status", "muslimtify.timer", "--no-pager", NULL});
+  systemctl_user(
+      (const char *[]){"status", "muslimtify.timer", "--no-pager", NULL});
 
   // Show next trigger
   printf("\n=== Next trigger ===\n");
-  systemctl_user((const char *[]){"list-timers", "muslimtify", "--no-pager", NULL});
+  systemctl_user(
+      (const char *[]){"list-timers", "muslimtify", "--no-pager", NULL});
   return 0;
 }
 
@@ -818,13 +864,16 @@ void cli_print_help(const char *command) {
     printf("  show              Display today's prayer times (default)\n");
     printf("  check             Check and send notification if prayer time\n");
     printf("  next              Show time until next prayer\n");
+    printf("  next time         Print next prayer time only (e.g. 12:05)\n");
+    printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
     printf("  config            Manage configuration\n");
     printf("  location          Manage location settings\n");
     printf("  enable <prayer>   Enable prayer notification\n");
     printf("  disable <prayer>  Disable prayer notification\n");
     printf("  list              List prayer notification status\n");
     printf("  reminder          Manage prayer reminders\n");
-    printf("  daemon            Manage systemd daemon [install|uninstall|status]\n");
+    printf("  daemon            Manage systemd daemon "
+           "[install|uninstall|status]\n");
     printf("  version           Show version information\n");
     printf("  help              Show this help message\n\n");
     printf("Examples:\n");
