@@ -858,7 +858,7 @@ static int cli_handle_daemon(const CliArgs *args) {
 static int cli_handle_version(const CliArgs *args) {
   (void)args; // Unused
 
-  printf("Muslimtify v0.1.0\n");
+  printf("Muslimtify v0.1.1\n");
   printf("Prayer Time Notification Daemon\n\n");
   printf("Build: %s %s\n", __DATE__, __TIME__);
   printf("Method: Kemenag Indonesia\n");
