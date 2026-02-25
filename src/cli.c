@@ -250,6 +250,17 @@ static int cli_handle_next(const CliArgs *args) {
       tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday, cfg.latitude,
       cfg.longitude, cfg.timezone_offset);
 
+  if (args->subcommand && strcmp(args->subcommand, "name") == 0) {
+    int minutes_until = 0;
+    PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
+    if (next == PRAYER_NONE) {
+      fprintf(stderr, "No upcoming prayers enabled.\n");
+      return 1;
+    }
+    printf("%s\n", prayer_get_name(next));
+    return 0;
+  }
+
   if (args->subcommand && strcmp(args->subcommand, "time") == 0) {
     int minutes_until = 0;
     PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
@@ -864,6 +875,7 @@ void cli_print_help(const char *command) {
     printf("  show              Display today's prayer times (default)\n");
     printf("  check             Check and send notification if prayer time\n");
     printf("  next              Show time until next prayer\n");
+    printf("  next name         Print next prayer name only (e.g. Ashr)\n");
     printf("  next time         Print next prayer time only (e.g. 12:05)\n");
     printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
     printf("  config            Manage configuration\n");
