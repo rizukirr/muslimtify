@@ -119,7 +119,8 @@ int cli_execute(const CliArgs *args) {
 
 static int ensure_location(Config *cfg) {
   // Check if we need to auto-detect location
-  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
+  if (cfg->auto_detect &&
+      (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
     printf("Detecting location...\n");
     if (location_fetch(cfg) != 0) {
       fprintf(stderr, "Error: Failed to detect location\n");
@@ -283,7 +284,7 @@ static int cli_handle_next(const CliArgs *args) {
       return 1;
     }
     int hours = minutes_until / 60;
-    int mins  = minutes_until % 60;
+    int mins = minutes_until % 60;
     if (hours > 0) {
       printf("%d:%02d\n", hours, mins);
     } else {
@@ -870,7 +871,7 @@ static int cli_handle_daemon(const CliArgs *args) {
 static int cli_handle_version(const CliArgs *args) {
   (void)args; // Unused
 
-  printf("Muslimtify v0.1.1\n");
+  printf("Muslimtify v0.1.2\n");
   printf("Prayer Time Notification Daemon\n\n");
   printf("Build: %s %s\n", __DATE__, __TIME__);
   printf("Method: Kemenag Indonesia\n");
@@ -889,7 +890,8 @@ void cli_print_help(const char *command) {
     printf("  next              Show time until next prayer\n");
     printf("  next name         Print next prayer name only (e.g. Ashr)\n");
     printf("  next time         Print next prayer time only (e.g. 12:05)\n");
-    printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
+    printf(
+        "  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
     printf("  config            Manage configuration\n");
     printf("  location          Manage location settings\n");
     printf("  enable <prayer>   Enable prayer notification\n");
