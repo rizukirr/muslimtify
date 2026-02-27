@@ -104,6 +104,7 @@ int location_fetch(Config *cfg) {
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "muslimtify/1.0");
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXFILESIZE, 65536L);
     
     CURLcode res = curl_easy_perform(curl);
     
@@ -172,5 +173,5 @@ int location_auto_detect(Config *cfg) {
 }
 
 void location_cleanup(void) {
-    curl_global_cleanup();
+    // No-op: main() owns the curl_global_init/cleanup lifecycle
 }

@@ -43,24 +43,32 @@ const char *config_get_path(void) {
 static int ensure_config_dir(void) {
     char dir_path[512];
     const char *path = config_get_path();
-    
+
     // Extract directory path
     snprintf(dir_path, sizeof(dir_path), "%s", path);
     char *last_slash = strrchr(dir_path, '/');
     if (last_slash) {
         *last_slash = '\0';
     }
-    
-    // Create directory if it doesn't exist
-    struct stat st = {0};
-    if (stat(dir_path, &st) == -1) {
-        if (mkdir(dir_path, 0755) != 0) {
-            fprintf(stderr, "Error: Cannot create config directory: %s\n", 
-                    strerror(errno));
-            return -1;
+
+    // Recursively create directories (mkdir -p)
+    for (char *p = dir_path + 1; *p; p++) {
+        if (*p == '/') {
+            *p = '\0';
+            if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+                fprintf(stderr, "Error: Cannot create directory '%s': %s\n",
+                        dir_path, strerror(errno));
+                return -1;
+            }
+            *p = '/';
         }
     }
-    
+    if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+        fprintf(stderr, "Error: Cannot create config directory '%s': %s\n",
+                dir_path, strerror(errno));
+        return -1;
+    }
+
     return 0;
 }
 
@@ -114,16 +122,39 @@ Config config_default(void) {
     return cfg;
 }
 
+static void json_escape_string(FILE *f, const char *s) {
+    fputc('"', f);
+    for (; *s; s++) {
+        switch (*s) {
+        case '"':  fputs("\\\"", f); break;
+        case '\\': fputs("\\\\", f); break;
+        case '\b': fputs("\\b", f);  break;
+        case '\f': fputs("\\f", f);  break;
+        case '\n': fputs("\\n", f);  break;
+        case '\r': fputs("\\r", f);  break;
+        case '\t': fputs("\\t", f);  break;
+        default:
+            if ((unsigned char)*s < 0x20) {
+                fprintf(f, "\\u%04x", (unsigned char)*s);
+            } else {
+                fputc(*s, f);
+            }
+            break;
+        }
+    }
+    fputc('"', f);
+}
+
 static void write_json_file(FILE *f, const Config *cfg) {
     fprintf(f, "{\n");
     fprintf(f, "  \"location\": {\n");
     fprintf(f, "    \"latitude\": %.6f,\n", cfg->latitude);
     fprintf(f, "    \"longitude\": %.6f,\n", cfg->longitude);
-    fprintf(f, "    \"timezone\": \"%s\",\n", cfg->timezone);
+    fprintf(f, "    \"timezone\": "); json_escape_string(f, cfg->timezone); fprintf(f, ",\n");
     fprintf(f, "    \"timezone_offset\": %.1f,\n", cfg->timezone_offset);
     fprintf(f, "    \"auto_detect\": %s,\n", cfg->auto_detect ? "true" : "false");
-    fprintf(f, "    \"city\": \"%s\",\n", cfg->city);
-    fprintf(f, "    \"country\": \"%s\"\n", cfg->country);
+    fprintf(f, "    \"city\": "); json_escape_string(f, cfg->city); fprintf(f, ",\n");
+    fprintf(f, "    \"country\": "); json_escape_string(f, cfg->country); fprintf(f, "\n");
     fprintf(f, "  },\n");
     
     fprintf(f, "  \"prayers\": {\n");
@@ -148,14 +179,14 @@ static void write_json_file(FILE *f, const Config *cfg) {
     
     fprintf(f, "  \"notification\": {\n");
     fprintf(f, "    \"timeout\": %d,\n", cfg->notification_timeout);
-    fprintf(f, "    \"urgency\": \"%s\",\n", cfg->notification_urgency);
+    fprintf(f, "    \"urgency\": "); json_escape_string(f, cfg->notification_urgency); fprintf(f, ",\n");
     fprintf(f, "    \"sound\": %s,\n", cfg->notification_sound ? "true" : "false");
-    fprintf(f, "    \"icon\": \"%s\"\n", cfg->notification_icon);
+    fprintf(f, "    \"icon\": "); json_escape_string(f, cfg->notification_icon); fprintf(f, "\n");
     fprintf(f, "  },\n");
-    
+
     fprintf(f, "  \"calculation\": {\n");
-    fprintf(f, "    \"method\": \"%s\",\n", cfg->calculation_method);
-    fprintf(f, "    \"madhab\": \"%s\"\n", cfg->madhab);
+    fprintf(f, "    \"method\": "); json_escape_string(f, cfg->calculation_method); fprintf(f, ",\n");
+    fprintf(f, "    \"madhab\": "); json_escape_string(f, cfg->madhab); fprintf(f, "\n");
     fprintf(f, "  }\n");
     fprintf(f, "}\n");
 }
@@ -245,12 +276,15 @@ int config_load(Config *cfg) {
         return 0;
     }
     
+    // Initialize with defaults so partial JSON still has sane values
+    *cfg = config_default();
+
     char *content = read_file(path);
     if (!content) {
         fprintf(stderr, "Error: Cannot read config file\n");
         return -1;
     }
-    
+
     JsonContext *ctx = json_begin();
     if (!ctx) {
         free(content);

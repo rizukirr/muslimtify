@@ -82,17 +82,20 @@ static void print_horizontal_line(char pos) {
 
 void display_prayer_times_table(const struct PrayerTimes *times,
                                 const Config *cfg, struct tm *date) {
+  // Copy the caller's date to avoid clobbering it when localtime() is called below
+  struct tm date_copy = *date;
+
   const char *days[] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
                         "Thursday", "Friday", "Saturday"};
   const char *months[] = {"January",   "February", "March",    "April",
                           "May",       "June",     "July",     "August",
                           "September", "October",  "November", "December"};
 
-  int wday = (date->tm_wday >= 0 && date->tm_wday <= 6) ? date->tm_wday : 0;
-  int mon  = (date->tm_mon  >= 0 && date->tm_mon  <= 11) ? date->tm_mon  : 0;
+  int wday = (date_copy.tm_wday >= 0 && date_copy.tm_wday <= 6) ? date_copy.tm_wday : 0;
+  int mon  = (date_copy.tm_mon  >= 0 && date_copy.tm_mon  <= 11) ? date_copy.tm_mon  : 0;
   printf("\n%sPrayer Times for %s, %s %d, %d%s\n",
          C(COL_BOLD), days[wday], months[mon],
-         date->tm_mday, date->tm_year + 1900, C(COL_RESET));
+         date_copy.tm_mday, date_copy.tm_year + 1900, C(COL_RESET));
 
   if (cfg->city[0] != '\0') {
     printf("Location: %s, %s (%.4f, %.4f)\n\n", cfg->city, cfg->country,
@@ -110,11 +113,12 @@ void display_prayer_times_table(const struct PrayerTimes *times,
   int next_idx = -1;
   {
     time_t now_t = time(NULL);
-    struct tm *now_tm = localtime(&now_t);
+    struct tm now_buf;
+    struct tm *now_tm = localtime_r(&now_t, &now_buf);
     if (now_tm != NULL &&
-        date->tm_year == now_tm->tm_year &&
-        date->tm_mon  == now_tm->tm_mon  &&
-        date->tm_mday == now_tm->tm_mday) {
+        date_copy.tm_year == now_tm->tm_year &&
+        date_copy.tm_mon  == now_tm->tm_mon  &&
+        date_copy.tm_mday == now_tm->tm_mday) {
       int dummy;
       PrayerType next = prayer_get_next(cfg, now_tm,
                                         (struct PrayerTimes *)times, &dummy);
@@ -195,6 +199,29 @@ void display_prayer_times_table(const struct PrayerTimes *times,
   printf("\n");
 }
 
+static void json_print_escaped(const char *s) {
+    putchar('"');
+    for (; *s; s++) {
+        switch (*s) {
+        case '"':  fputs("\\\"", stdout); break;
+        case '\\': fputs("\\\\", stdout); break;
+        case '\b': fputs("\\b", stdout);  break;
+        case '\f': fputs("\\f", stdout);  break;
+        case '\n': fputs("\\n", stdout);  break;
+        case '\r': fputs("\\r", stdout);  break;
+        case '\t': fputs("\\t", stdout);  break;
+        default:
+            if ((unsigned char)*s < 0x20) {
+                printf("\\u%04x", (unsigned char)*s);
+            } else {
+                putchar(*s);
+            }
+            break;
+        }
+    }
+    putchar('"');
+}
+
 void display_prayer_times_json(const struct PrayerTimes *times,
                                const Config *cfg, struct tm *date) {
   printf("{\n");
@@ -203,8 +230,8 @@ void display_prayer_times_json(const struct PrayerTimes *times,
   printf("  \"location\": {\n");
   printf("    \"latitude\": %.6f,\n", cfg->latitude);
   printf("    \"longitude\": %.6f,\n", cfg->longitude);
-  printf("    \"city\": \"%s\",\n", cfg->city);
-  printf("    \"country\": \"%s\"\n", cfg->country);
+  printf("    \"city\": "); json_print_escaped(cfg->city); printf(",\n");
+  printf("    \"country\": "); json_print_escaped(cfg->country); printf("\n");
   printf("  },\n");
   printf("  \"prayers\": {\n");
 

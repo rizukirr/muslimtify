@@ -55,28 +55,29 @@ PrayerMatch prayer_check_current(const Config *cfg,
         .prayer_time = 0.0 
     };
     
-    // Get current time in hours
-    double current_time = now->tm_hour + now->tm_min / 60.0;
-    
+    // Compare at integer-minute granularity to avoid double-firing
+    // when a prayer time falls between two minutes (e.g., 19:24:30).
+    int current_min = now->tm_hour * 60 + now->tm_min;
+
     // Array of all prayers to check
     PrayerType prayers[] = {
         PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA,
         PRAYER_DHUHR, PRAYER_ASR, PRAYER_MAGHRIB, PRAYER_ISHA
     };
-    
+
     for (int i = 0; i < 7; i++) {
         PrayerType type = prayers[i];
-        
+
         // Skip if disabled
         if (!prayer_is_enabled(cfg, type)) continue;
-        
-        // Get prayer time
+
+        // Get prayer time and round to nearest minute
         double prayer_time = prayer_get_time(times, type);
+        int prayer_min = (int)(prayer_time * 60.0 + 0.5);
         const PrayerConfig *pcfg = prayer_get_config(cfg, type);
-        
-        // Check exact prayer time (within 1-minute window)
-        double diff_minutes = (prayer_time - current_time) * 60.0;
-        if (fabs(diff_minutes) < 1.0) {  // Within 1 minute
+
+        // Check exact prayer time (same minute)
+        if (prayer_min == current_min) {
             PrayerMatch match = {
                 .type = type,
                 .minutes_before = 0,
@@ -84,18 +85,18 @@ PrayerMatch prayer_check_current(const Config *cfg,
             };
             return match;
         }
-        
+
         // Check reminders
         for (int j = 0; j < pcfg->reminder_count; j++) {
-            int reminder_min = pcfg->reminders[j];
-            double reminder_time = prayer_time - (reminder_min / 60.0);
-            double reminder_diff = (reminder_time - current_time) * 60.0;
-            
-            // Within 1-minute window for reminder
-            if (fabs(reminder_diff) < 1.0) {
+            int reminder_offset = pcfg->reminders[j];
+            int reminder_min = prayer_min - reminder_offset;
+            // Normalize for midnight crossover
+            if (reminder_min < 0) reminder_min += 24 * 60;
+
+            if (reminder_min == current_min) {
                 PrayerMatch match = {
                     .type = type,
-                    .minutes_before = reminder_min,
+                    .minutes_before = reminder_offset,
                     .prayer_time = prayer_time
                 };
                 return match;

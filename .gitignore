@@ -27,3 +27,5 @@ Thumbs.db
 .packages/
 /.cache/clangd/index
 /CLAUDE.md
+/publish
+/AGENTS.md

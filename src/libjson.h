@@ -446,6 +446,7 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
     }
     value_len = value_end - cursor;
     char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
+    if (!result) return NULL;
     memcpy(result, cursor, value_len);
     result[value_len] = '\0';
     return result;
@@ -461,6 +462,7 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
 
     value_len = value_end - start + 1; // Include closing bracket
     char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
+    if (!result) return NULL;
     memcpy(result, start, value_len);
     result[value_len] = '\0';
     return result;
@@ -475,6 +477,7 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
 
     value_len = value_end - cursor;
     char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
+    if (!result) return NULL;
     memcpy(result, cursor, value_len);
     result[value_len] = '\0';
     return result;
@@ -499,6 +502,7 @@ JsonContext *json_begin(void) {
   ctx->stack = json_alloc(arena, sizeof(JsonArray), ARENA_ALIGNOF(JsonArray));
   if (!ctx->stack) {
     fprintf(stderr, "Failed to allocate JsonArray\n");
+    json_alloc_free(arena);
     return NULL;
   }
   ctx->stack->count = 0;

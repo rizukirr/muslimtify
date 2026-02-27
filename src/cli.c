@@ -8,6 +8,7 @@
 #include "prayertimes.h"
 #include <errno.h>
 #include <linux/limits.h>
+#include <math.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,7 +119,7 @@ int cli_execute(const CliArgs *args) {
 
 static int ensure_location(Config *cfg) {
   // Check if we need to auto-detect location
-  if (cfg->auto_detect && (cfg->latitude == 0.0 && cfg->longitude == 0.0)) {
+  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
     printf("Detecting location...\n");
     if (location_fetch(cfg) != 0) {
       fprintf(stderr, "Error: Failed to detect location\n");
@@ -384,8 +385,19 @@ static int cli_handle_location(const CliArgs *args) {
       return 1;
     }
 
-    cfg.latitude = atof(args->argv[0]);
-    cfg.longitude = atof(args->argv[1]);
+    char *end_lat, *end_lon;
+    errno = 0;
+    cfg.latitude = strtod(args->argv[0], &end_lat);
+    if (end_lat == args->argv[0] || *end_lat != '\0' || errno == ERANGE) {
+      fprintf(stderr, "Error: Invalid latitude '%s'\n", args->argv[0]);
+      return 1;
+    }
+    errno = 0;
+    cfg.longitude = strtod(args->argv[1], &end_lon);
+    if (end_lon == args->argv[1] || *end_lon != '\0' || errno == ERANGE) {
+      fprintf(stderr, "Error: Invalid longitude '%s'\n", args->argv[1]);
+      return 1;
+    }
     cfg.auto_detect = false;
 
     if (config_save(&cfg) != 0) {

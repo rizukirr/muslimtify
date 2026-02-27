@@ -58,8 +58,10 @@ static const char *get_icon_path(void) {
     }
   }
 
-  // Check each path
-  for (int i = 0; possible_paths[i] != NULL; i++) {
+  // Check each path (counted loop — NULL entries are skipped, not sentinels)
+  int path_count = (int)(sizeof(possible_paths) / sizeof(possible_paths[0]));
+  for (int i = 0; i < path_count; i++) {
+    if (possible_paths[i] == NULL) continue;
     if (access(possible_paths[i], R_OK) == 0) {
       // Found readable icon - convert to absolute path
       if (possible_paths[i][0] == '/') {
