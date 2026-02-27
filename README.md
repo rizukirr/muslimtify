@@ -210,11 +210,30 @@ Config file location: `~/.config/muslimtify/config.json`
       "enabled": true,
       "reminders": [30, 15, 5]
     },
+    "sunrise": {
+      "enabled": false,
+      "reminders": []
+    },
+    "dhuha": {
+      "enabled": false,
+      "reminders": []
+    },
     "dhuhr": {
       "enabled": true,
       "reminders": [30, 15, 5]
+    },
+    "asr": {
+      "enabled": true,
+      "reminders": [30, 15, 5]
+    },
+    "maghrib": {
+      "enabled": true,
+      "reminders": [30, 15, 5]
+    },
+    "isha": {
+      "enabled": true,
+      "reminders": [30, 15, 5]
     }
-    ...
   },
   "notification": {
     "timeout": 5000,
