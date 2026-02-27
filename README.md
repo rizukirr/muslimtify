@@ -311,36 +311,6 @@ journalctl --user -u muslimtify -f
 - **Reminder** - Shows "Prayer Reminder: Fajr in 30 minutes" with NORMAL urgency
 - **Multiple reminders** - Each reminder triggers separately (e.g., 30 min, 15 min, 5 min before)
 
-## Prayer Calculation Method
-
-Muslimtify uses the **Kemenag** (Kementerian Agama RI — Indonesian Ministry of Religious Affairs) calculation standard, which is the official method used in Indonesia.
-
-### Parameters
-
-| Parameter | Value |
-|-----------|-------|
-| Fajr depression angle | 20° below horizon |
-| Isha depression angle | 18° below horizon |
-| Maghrib | Sun sets below horizon (0.833° refraction correction) |
-| Asr shadow factor | 1× object height (Shafi/standard madhab) |
-| Dhuha | 28 minutes after sunrise |
-| Minute rounding | Always rounded up (ceiling) |
-
-### Ihtiyat (Precautionary Adjustments)
-
-Kemenag adds a precautionary buffer to each prayer time to account for calculation variance and local conditions:
-
-| Prayer | Adjustment |
-|--------|-----------|
-| Fajr | +2 minutes |
-| Sunrise | −2 minutes |
-| Dhuhr | +2 minutes |
-| Asr | +2 minutes |
-| Maghrib | +2 minutes |
-| Isha | +2 minutes |
-
-> Dhuha is computed from the adjusted sunrise time (after the −2 min ihtiyat is applied).
-
 ## Troubleshooting
 
 ### Running without system-wide installation
