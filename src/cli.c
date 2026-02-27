@@ -402,12 +402,14 @@ static int location_show_handler(int argc, char **argv);
 static int location_auto_handler(int argc, char **argv);
 static int location_set_handler(int argc, char **argv);
 static int location_clear_handler(int argc, char **argv);
+static int location_refresh_handler(int argc, char **argv);
 
 static const CommandEntry location_commands[] = {
     {"show", location_show_handler},
     {"auto", location_auto_handler},
     {"set", location_set_handler},
     {"clear", location_clear_handler},
+    {"refresh", location_refresh_handler},
 };
 static const int location_commands_n =
     (int)(sizeof(location_commands) / sizeof(location_commands[0]));
@@ -449,6 +451,37 @@ static int location_auto_handler(int argc, char **argv) {
   printf("  Timezone: %s (UTC%+.1f)\n", cfg.timezone, cfg.timezone_offset);
 
   cfg.auto_detect = true;
+  if (config_save(&cfg) != 0) {
+    fprintf(stderr, "Error: Failed to save config\n");
+    return 1;
+  }
+  printf("✓ Saved to config\n");
+  return 0;
+}
+
+static int location_refresh_handler(int argc, char **argv) {
+  (void)argc;
+  (void)argv;
+
+  Config cfg;
+  if (config_load(&cfg) != 0) {
+    fprintf(stderr, "Error: Failed to load config\n");
+    return 1;
+  }
+
+  printf("Refreshing location...\n");
+  if (location_fetch(&cfg) != 0) {
+    fprintf(stderr, "Error: Failed to fetch location\n");
+    return 1;
+  }
+  printf("✓ Location detected: ");
+  if (cfg.city[0] != '\0') {
+    printf("%s, %s\n", cfg.city, cfg.country);
+  } else {
+    printf("%.4f, %.4f\n", cfg.latitude, cfg.longitude);
+  }
+  printf("  Timezone: %s (UTC%+.1f)\n", cfg.timezone, cfg.timezone_offset);
+
   if (config_save(&cfg) != 0) {
     fprintf(stderr, "Error: Failed to save config\n");
     return 1;
@@ -1020,7 +1053,8 @@ void cli_print_help(void) {
   printf("  next time         Print next prayer time only (e.g. 12:05)\n");
   printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
   printf("  config            Manage configuration\n");
-  printf("  location          Manage location settings\n");
+  printf("  location          Manage location settings "
+         "[show|auto|set|clear|refresh]\n");
   printf("  enable <prayer>   Enable prayer notification\n");
   printf("  disable <prayer>  Disable prayer notification\n");
   printf("  list              List prayer notification status\n");
