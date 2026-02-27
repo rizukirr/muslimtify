@@ -127,6 +127,7 @@ muslimtify location auto    # Auto-detect location via ipinfo.io
 muslimtify location show    # Display current location
 muslimtify location set <lat> <lon>  # Set manual coordinates
 muslimtify location clear   # Clear location (will auto-detect next time)
+muslimtify location refresh # Re-fetch location from ipinfo.io
 ```
 
 ### Prayer Notifications
