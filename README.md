@@ -2,14 +2,14 @@
 
 ![Muslimtify Banner](images/banner.png)
 
-A prayer time notification daemon for Linux with customizable reminders, automatic location detection, and systemd integration. This project is build on top of [libmuslim](https://github.com/rizukirr/libmuslim)
+A prayer time notification daemon for Linux with customizable reminders, automatic location detection, and systemd integration. Built on top of [libmuslim](https://github.com/rizukirr/libmuslim).
+
+**All prayer times are calculated locally using pure astronomical formulas** — no external prayer time API is called (please refer to [docs](docs/) for more information about calculation method). The only network request is a one-time location detection via ipinfo.io (which can be skipped by setting coordinates manually). Currently supports the **Kemenag** (Indonesian Ministry of Religious Affairs) calculation method; more methods may be added in the future.
 
 ## Features
 
 - **Automatic Location Detection** - Uses ipinfo.io to detect your location  
 - **Multiple Prayer Reminders** - Set custom reminders (e.g., 30, 15, 5 minutes before)  
-- **Custom Icon** - Beautiful notifications with custom mosque icon (`assets/muslimtify.png`)  
-- **Kemenag Method** - Uses official Indonesian Kemenag calculation method  
 - **Beautiful CLI** - Unicode table output with colored status  
 - **JSON Configuration** - Easy to read and edit config file  
 - **Systemd Ready** - Designed to run as a systemd timer  
@@ -215,8 +215,7 @@ Config file location: `~/.config/muslimtify/config.json`
   "notification": {
     "timeout": 5000,
     "urgency": "normal",
-    "sound": true,
-    "icon": "mosque"
+    "sound": true
   }
 }
 ```
@@ -299,7 +298,7 @@ journalctl --user -u muslimtify -f
 
 1. **Timer runs every minute** - Systemd timer triggers `muslimtify check` every minute
 2. **Checks current time** - Compares current time with prayer times and configured reminders
-3. **Sends notification** - If match found (within 1-minute window), sends desktop notification
+3. **Sends notification** - If match found (exact minute match), sends desktop notification
 4. **Exits** - Process exits immediately (no background daemon)
 
 ## Notification Behavior
@@ -307,10 +306,6 @@ journalctl --user -u muslimtify -f
 - **Exact prayer time** - Shows "Prayer Time: Fajr" with CRITICAL urgency
 - **Reminder** - Shows "Prayer Reminder: Fajr in 30 minutes" with NORMAL urgency
 - **Multiple reminders** - Each reminder triggers separately (e.g., 30 min, 15 min, 5 min before)
-- **Custom icon** - Uses custom icon from `assets/muslimtify.png`
-  - Automatically found when running from source directory
-  - Installed to system icon directories when using `sudo make install`
-  - Falls back to "mosque" icon from system theme if custom icon not found
 
 ## Prayer Calculation Method
 
@@ -414,35 +409,6 @@ muslimtify config reset
 ```
 
 ## Development
-
-### Project Structure
-
-```
-muslimtify/
-├── include/          # Header files
-│   ├── config.h      # Configuration management
-│   ├── location.h    # Location detection
-│   ├── prayer_checker.h  # Prayer time matching
-│   ├── notification.h    # Desktop notifications
-│   ├── display.h     # Output formatting
-│   └── cli.h         # CLI argument parsing
-├── src/              # Source files
-│   ├── muslimtify.c  # Main entry point
-│   ├── config.c
-│   ├── location.c
-│   ├── prayer_checker.c
-│   ├── notification.c
-│   ├── display.c
-│   ├── cli.c
-│   ├── prayertimes.h # Prayer calculation (header-only)
-│   └── libjson.h     # JSON parser (header-only)
-├── assets/
-│   └── muslimtify.png    # Notification icon
-├── CMakeLists.txt
-├── install.sh            # Build, install binary, and set up systemd timer
-├── uninstall.sh          # Remove binary, icons, and systemd units
-└── README.md
-```
 
 ### Building for Development
 
