@@ -2,7 +2,11 @@
 
 ![Muslimtify Banner](images/banner.png)
 
-A prayer time notification daemon for Linux with customizable reminders, automatic location detection, and systemd integration. Built on top of [libmuslim](https://github.com/rizukirr/libmuslim).
+Muslimtify is a minimalist, privacy-focused prayer time notification tool designed specifically for Linux desktops. Built in modern C, it provides a seamless way to receive accurate prayer alerts directly through native system notifications and a clean command-line interface.
+
+Muslimtify is a "one-shot" notification daemon. Unlike traditional daemons that stay in your system memory 24/7, Muslimtify utilizes systemd timers to trigger a check every minute. It calculates prayer times, sends a notification if a match is found, and then immediately exits—making it one of the most resource-efficient prayer tools available for Linux.
+
+> Muslimtify Built on top of [libmuslim](https://github.com/rizukirr/libmuslim).
 
 **All prayer times are calculated locally using pure astronomical formulas** — no external prayer time API is called (please refer to [docs](docs/) for more information about calculation method). The only network request is a one-time location detection via ipinfo.io (which can be skipped by setting coordinates manually). Currently supports the **Kemenag** (Indonesian Ministry of Religious Affairs) calculation method; more methods may be added in the future.
 
