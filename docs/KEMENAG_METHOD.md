@@ -8,7 +8,7 @@ Dokumen ini menjelaskan metode perhitungan waktu shalat yang digunakan oleh Keme
 1. [Kriteria Kemenag](#kriteria-kemenag)
 2. [Konstanta dan Parameter](#konstanta-dan-parameter)
 3. [Langkah-Langkah Perhitungan](#langkah-langkah-perhitungan)
-4. [Perhitungan 5 Waktu Shalat](#perhitungan-5-waktu-shalat)
+4. [Perhitungan Waktu Shalat](#perhitungan-waktu-shalat)
 5. [Implementasi](#implementasi)
 6. [Contoh Perhitungan](#contoh-perhitungan)
 7. [Referensi](#referensi)
@@ -25,6 +25,7 @@ Kementerian Agama Republik Indonesia menggunakan kriteria berikut untuk perhitun
 |--------------|----------------|------------|
 | **Subuh** | -20° | Matahari 20° di bawah ufuk timur |
 | **Terbit** | -0.833° | Koreksi refraksi atmosfer |
+| **Dhuha** | +4.3° | Matahari setinggi tombak di atas ufuk timur (irtifa' syams) |
 | **Dzuhur** | Transit | Matahari melintasi meridian |
 | **Ashar** | tan(h) = 1/(tan(|φ-δ|) + 1) | Bayangan = panjang benda + panjang bayangan saat dzuhur |
 | **Maghrib** | -0.833° | Sama dengan waktu terbenam |
@@ -79,6 +80,9 @@ Kemenag menambahkan **ihtiyat (koreksi kehati-hatian)** sebesar **2 menit** untu
 #define FAJR_ANGLE_KEMENAG 20.0    // Sudut Subuh = -20°
 #define ISHA_ANGLE_KEMENAG 18.0    // Sudut Isya = -18°
 #define SHADOW_FACTOR_STANDARD 1.0 // Faktor bayangan Ashar (Syafi'i)
+
+// Dhuha: ketinggian matahari setinggi tombak (irtifa' syams)
+#define DHUHA_ALTITUDE 4.3         // Sudut Dhuha = +4.3° di atas ufuk
 
 // Ihtiyat (dalam menit)
 #define IHTIYAT_FAJR 2.0
@@ -232,7 +236,7 @@ H = acos(cos(H)) × RAD_TO_DEG / 15.0  // Konversi ke jam
 
 ---
 
-## Perhitungan 5 Waktu Shalat
+## Perhitungan Waktu Shalat
 
 ### 1. Subuh
 
@@ -284,9 +288,38 @@ H = acos(cos(H)) × RAD_TO_DEG / 15.0  // Konversi ke jam
    Terbit = Terbit - (2 / 60.0)  // -2 menit
    ```
 
-**Catatan:** Terbit bukan waktu shalat, tetapi digunakan untuk menandai akhir waktu Subuh dan awal waktu Dhuha.
+**Catatan:** Terbit bukan waktu shalat wajib, tetapi digunakan untuk menandai akhir waktu Subuh dan sebagai referensi astronomi.
 
-### 3. Dzuhur
+### 3. Dhuha
+
+**Definisi:** Waktu ketika matahari telah naik setinggi tombak (*irtifa' syams* / *rumhi*) di atas ufuk timur. Dalam ilmu falak Indonesia, ketinggian ini setara dengan sudut +4.3° di atas horizon.
+
+**Langkah:**
+
+1. Hitung hour angle untuk h = +4.3° (di atas horizon):
+   ```
+   cos(H_dhuha) = [sin(+4.3°) - sin(φ) × sin(δ)] / [cos(φ) × cos(δ)]
+   H_dhuha = acos(cos(H_dhuha)) × RAD_TO_DEG / 15.0
+   ```
+
+2. Hitung waktu Dhuha:
+   ```
+   Dhuha = Transit - H_dhuha
+   ```
+
+3. Format dengan ceiling:
+   ```
+   jam = floor(Dhuha)
+   menit = ceil((Dhuha - jam) × 60)
+   ```
+
+**Catatan:**
+- Dhuha adalah shalat sunnah, sehingga tidak mendapat ihtiyat terpisah.
+- Ulama berbeda pendapat tentang nilai sudut "setinggi tombak": 3.5°, 4.3°, 4.5°, dan 5°. Nilai 4.3° dipilih karena paling sesuai dengan data referensi jadwalsholat.org (Kemenag).
+- Di wilayah Indonesia (lintang -11° s.d. +6°), waktu Dhuha jatuh sekitar 22-25 menit setelah terbit matahari, tergantung lokasi dan musim.
+- Waktu Dhuha berakhir menjelang Dzuhur (sekitar 15 menit sebelum transit).
+
+### 4. Dzuhur
 
 **Definisi:** Waktu ketika matahari melewati meridian (garis bujur lokal) dan mulai condong ke barat.
 
@@ -310,7 +343,7 @@ H = acos(cos(H)) × RAD_TO_DEG / 15.0  // Konversi ke jam
 
 **Catatan:** Dalam praktik, waktu Dzuhur ditambah beberapa menit untuk memastikan matahari benar-benar sudah condong (zawal).
 
-### 4. Ashar
+### 5. Ashar
 
 **Definisi:** Waktu ketika panjang bayangan suatu benda sama dengan panjang benda ditambah panjang bayangan saat dzuhur.
 
@@ -347,7 +380,7 @@ H = acos(cos(H)) × RAD_TO_DEG / 15.0  // Konversi ke jam
    menit = ceil((Ashar - jam) × 60)
    ```
 
-### 5. Maghrib
+### 6. Maghrib
 
 **Definisi:** Waktu ketika piringan atas matahari terbenam di ufuk barat.
 
@@ -377,7 +410,7 @@ H = acos(cos(H)) × RAD_TO_DEG / 15.0  // Konversi ke jam
 
 **Catatan:** `H_maghrib` sama dengan `H_terbit` karena geometri simetris.
 
-### 6. Isya
+### 7. Isya
 
 **Definisi:** Waktu ketika ufuk barat menjadi gelap (syafaq ahmar hilang), yaitu saat matahari berada 18° di bawah ufuk barat.
 
@@ -414,10 +447,11 @@ H = acos(cos(H)) × RAD_TO_DEG / 15.0  // Konversi ke jam
 ```c
 struct PrayerTimes {
     double fajr;     // Subuh
-    double dhuha;  // Terbit
+    double sunrise;  // Terbit
+    double dhuha;    // Dhuha (matahari setinggi tombak, +4.3°)
     double dhuhr;    // Dzuhur
     double asr;      // Ashar
-    double maghrib;   // Maghrib
+    double maghrib;  // Maghrib
     double isha;     // Isya
 };
 ```
@@ -471,9 +505,9 @@ FUNCTION calculate_prayer_times(year, month, day, latitude, longitude, timezone)
     noon = 12.0 + timezone - (longitude / 15.0) - eqt
 
     // Langkah 4: Terbit dan Maghrib (h = -0.833°)
-    ha_dhuha = hour_angle(latitude, decl, 0.833)
-    dhuha = noon - ha_dhuha
-    maghrib = noon + ha_dhuha
+    ha_sunrise = hour_angle(latitude, decl, 0.833)
+    sunrise = noon - ha_sunrise
+    maghrib = noon + ha_sunrise
 
     // Langkah 5: Subuh (h = -20°)
     ha_fajr = hour_angle(latitude, decl, 20.0)
@@ -488,16 +522,20 @@ FUNCTION calculate_prayer_times(year, month, day, latitude, longitude, timezone)
     ha_asr = hour_angle(latitude, decl, asr_angle)
     asr = noon + ha_asr
 
-    // Langkah 8: Tambahkan Ihtiyat
+    // Langkah 8: Dhuha (h = +4.3°, matahari setinggi tombak)
+    ha_dhuha = hour_angle(latitude, decl, -4.3)  // negatif = di atas horizon
+    dhuha = noon - ha_dhuha
+
+    // Langkah 9: Tambahkan Ihtiyat (Dhuha tidak mendapat ihtiyat)
     fajr = fajr + (2.0 / 60.0)
-    dhuha = dhuha - (2.0 / 60.0)
+    sunrise = sunrise - (2.0 / 60.0)
     noon = noon + (2.0 / 60.0)
     asr = asr + (2.0 / 60.0)
     maghrib = maghrib + (2.0 / 60.0)
     isha = isha + (2.0 / 60.0)
 
-    // Langkah 9: Kembalikan hasil
-    RETURN {fajr, dhuha, noon, asr, maghrib, isha}
+    // Langkah 10: Kembalikan hasil
+    RETURN {fajr, sunrise, dhuha, noon, asr, maghrib, isha}
 
 FUNCTION format_time_hm(timeHours):
     hours = floor(timeHours)
@@ -624,7 +662,26 @@ Terbit = 5.379 - (2 / 60.0) = 5.346 jam
 Terbit = 05:21 (setelah ceiling)
 ```
 
-#### Langkah 6: Ashar
+#### Langkah 6: Dhuha
+
+```
+Dhuha menggunakan sudut +4.3° (matahari setinggi tombak, di atas horizon).
+
+cos(H_dhuha) = [sin(+4.3°) - sin(-6.2851°) × sin(-18.58°)] / [cos(-6.2851°) × cos(-18.58°)]
+cos(H_dhuha) = [0.0750 - 0.0349] / 0.9423
+cos(H_dhuha) = 0.0426
+
+H_dhuha = acos(0.0426) = 87.56° = 5.837 jam
+
+Dhuha = 11.5790 - 5.837 = 5.742 jam
+Dhuha = 05:45 (ceiling)
+
+(Catatan: Dhuha tidak mendapat ihtiyat.
+ Dengan konstanta presisi penuh, hasilnya 05:48 — perbedaan
+ disebabkan pembulatan angka dalam contoh ini.)
+```
+
+#### Langkah 7: Ashar
 
 ```
 asr_angle = atan(1 / (1 + tan(|-6.2851 - (-18.58)|)))
@@ -644,7 +701,7 @@ Ashar = 14.945 + (2 / 60.0) = 14.978 jam
 Ashar = 14:59 → 15:00 (ceiling)
 ```
 
-#### Langkah 7: Maghrib
+#### Langkah 8: Maghrib
 
 ```
 H_maghrib = H_terbit = 6.20 jam
@@ -654,7 +711,7 @@ Maghrib = 17.779 + (2 / 60.0) = 17.812 jam
 Maghrib = 17:49 → 17:49 (ceiling)
 ```
 
-#### Langkah 8: Isya
+#### Langkah 9: Isya
 
 ```
 cos(H_isya) = [sin(-18°) - sin(-6.2851°) × sin(-18.58°)] / [cos(-6.2851°) × cos(-18.58°)]
@@ -674,6 +731,7 @@ Isya = 19:03 → 19:03 (ceiling)
 |-------|-------------|-------------|---------|
 | Subuh | 04:05 | 04:05 | ✅ Match |
 | Terbit | 05:22 | 05:22 | ✅ Match |
+| Dhuha | 05:48 | — | (shalat sunnah, tidak di API) |
 | Dzuhur | 11:41 | 11:41 | ✅ Match |
 | Ashar | 15:04 | 15:04 | ✅ Match |
 | Maghrib | 17:54 | 17:54 | ✅ Match |
@@ -819,9 +877,8 @@ Namun untuk tujuan ibadah, metode Jean Meeus yang disederhanakan ini **sudah san
 ## Lampiran: Kode Lengkap
 
 Lihat implementasi lengkap di:
-- `include/prayertimes.h` - Header file dengan konstanta
-- `src/prayertimes.c` - Implementasi perhitungan
-- `main.c` - Contoh penggunaan
+- `src/prayertimes.h` - Header-only library (konstanta + implementasi, diaktifkan dengan `#define PRAYERTIMES_IMPLEMENTATION`)
+- `src/muslimtify.c` - Entry point aplikasi
 
 ### Kompilasi
 
@@ -830,7 +887,7 @@ mkdir build
 cd build
 cmake ..
 make
-./muslimify
+./bin/muslimtify
 ```
 
 ### Penggunaan
@@ -854,8 +911,11 @@ int main() {
     format_time_hm(pt.fajr, buf, sizeof(buf));
     printf("Subuh:   %s\n", buf);
 
-    format_time_hm(pt.dhuha, buf, sizeof(buf));
+    format_time_hm(pt.sunrise, buf, sizeof(buf));
     printf("Terbit:  %s\n", buf);
+
+    format_time_hm(pt.dhuha, buf, sizeof(buf));
+    printf("Dhuha:   %s\n", buf);
 
     format_time_hm(pt.dhuhr, buf, sizeof(buf));
     printf("Dzuhur:  %s\n", buf);
@@ -878,6 +938,7 @@ int main() {
 ```
 Subuh:   04:05
 Terbit:  05:22
+Dhuha:   05:48
 Dzuhur:  11:41
 Ashar:   15:04
 Maghrib: 17:54
@@ -890,8 +951,8 @@ Isya:    19:07
 
 Untuk pertanyaan, saran, atau pelaporan bug terkait implementasi ini, silakan hubungi:
 
-- **GitHub:** https://github.com/[your-username]/muslimify
-- **Email:** [your-email]
+- **GitHub:** https://github.com/rizukirr/muslimtify
+- **Email:** rizkirr.xyz@gmail.com
 
 **Catatan:** Dokumen ini dibuat berdasarkan penelitian dan verifikasi dengan API resmi Kemenag per November 2025. Untuk informasi terbaru, selalu rujuk ke sumber resmi Kementerian Agama RI.
 
