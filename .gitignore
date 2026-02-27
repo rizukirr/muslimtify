@@ -24,9 +24,11 @@ muslimtify
 Thumbs.db
 
 # Packaging
-.packages/
+*.tar.gz
+*.tar.xz
 /.cache/clangd/index
 /CLAUDE.md
 /publish
 /AGENTS.md
 /GEMINI.md
+/.packages/aur
