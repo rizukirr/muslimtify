@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "cli.h"
+#include "version.h"
 #include "config.h"
 #include "display.h"
 #include "location.h"
@@ -989,7 +990,7 @@ static int handle_version(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  printf("Muslimtify v0.1.2\n");
+  printf("Muslimtify v%s\n", MUSLIMTIFY_VERSION);
   printf("Prayer Time Notification Daemon\n\n");
   printf("Build: %s %s\n", __DATE__, __TIME__);
   printf("Method: Kemenag Indonesia\n");
