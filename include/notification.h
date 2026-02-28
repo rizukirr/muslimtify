@@ -21,8 +21,9 @@ void notify_send(const char *title, const char *message);
  * minutes_before: 0 for exact time, >0 for reminder
  */
 void notify_prayer(const char *prayer_name,
-                   const char *time_str, 
-                   int minutes_before);
+                   const char *time_str,
+                   int minutes_before,
+                   const char *urgency);
 
 /**
  * Cleanup libnotify resources

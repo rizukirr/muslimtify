@@ -111,9 +111,9 @@ Config config_default(void) {
     
     // Notification defaults
     cfg.notification_timeout = 5000;
-    strcpy(cfg.notification_urgency, "normal");
+    strcpy(cfg.notification_urgency, "critical");
     cfg.notification_sound = true;
-    strcpy(cfg.notification_icon, "mosque");
+    strcpy(cfg.notification_icon, "muslimtify");
     
     // Calculation defaults
     strcpy(cfg.calculation_method, "kemenag");

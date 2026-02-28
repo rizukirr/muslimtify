@@ -162,7 +162,8 @@ static int handle_check(int argc, char **argv) {
 
     char time_str[16];
     format_time_hm(match.prayer_time, time_str, sizeof(time_str));
-    notify_prayer(prayer_get_name(match.type), time_str, match.minutes_before);
+    notify_prayer(prayer_get_name(match.type), time_str, match.minutes_before,
+                  cfg.notification_urgency);
     notify_cleanup();
   }
 

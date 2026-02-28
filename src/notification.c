@@ -86,7 +86,7 @@ static const char *get_icon_path(void) {
   }
 
   // Fallback to icon name (let system find it)
-  return "mosque";
+  return "muslimtify";
 }
 
 int notify_init_once(const char *app_name) { return notify_init(app_name); }
@@ -100,7 +100,7 @@ void notify_send(const char *title, const char *message) {
 }
 
 void notify_prayer(const char *prayer_name, const char *time_str,
-                   int minutes_before) {
+                   int minutes_before, const char *urgency_str) {
   char title[128];
   char message[256];
 
@@ -121,9 +121,12 @@ void notify_prayer(const char *prayer_name, const char *time_str,
 
   notify_notification_set_timeout(n, 5000);
 
-  // Use different urgency for reminders vs exact time
-  NotifyUrgency urgency =
-      minutes_before == 0 ? NOTIFY_URGENCY_CRITICAL : NOTIFY_URGENCY_NORMAL;
+  NotifyUrgency urgency = NOTIFY_URGENCY_CRITICAL;
+  if (urgency_str && strcmp(urgency_str, "low") == 0) {
+    urgency = NOTIFY_URGENCY_LOW;
+  } else if (urgency_str && strcmp(urgency_str, "normal") == 0) {
+    urgency = NOTIFY_URGENCY_NORMAL;
+  }
   notify_notification_set_urgency(n, urgency);
 
   notify_notification_show(n, NULL);
