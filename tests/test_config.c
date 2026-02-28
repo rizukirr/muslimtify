@@ -37,7 +37,7 @@ static void setup(void) {
 static void teardown(void) {
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "rm -rf %s", tmpdir);
-    (void)system(cmd);
+    if (system(cmd) != 0) { /* best-effort cleanup */ }
 }
 
 // ── config_parse_reminders tests ────────────────────────────────────────────
