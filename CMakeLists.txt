@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(muslimtify VERSION 0.1.3 LANGUAGES C)
+project(muslimtify VERSION 0.1.4 LANGUAGES C)
 
 # ── Default build type ────────────────────────────────────────────────────────
 
@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-set(FULL_PROJECT_VERSION "${PROJECT_VERSION}")
+set(FULL_PROJECT_VERSION "${PROJECT_VERSION}-rc.1")
 
 # ── C standard and output dirs ────────────────────────────────────────────────
 
