@@ -1,0 +1,6 @@
+*.deb
+*.changes
+*.dsc
+*.buildinfo
+*.upload
+obj-*/

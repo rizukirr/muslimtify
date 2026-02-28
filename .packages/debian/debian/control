@@ -1,0 +1,17 @@
+Source: muslimtify
+Section: utils
+Priority: optional
+Maintainer: Rizki Rakasiwi <rizkirr.xyz@gmail.com>
+Build-Depends: debhelper-compat (= 13), cmake, pkg-config,
+ libnotify-dev, libcurl4-openssl-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/rizukirr/muslimtify
+Rules-Requires-Root: no
+
+Package: muslimtify
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Prayer time notifier for the desktop
+ Muslimtify is a lightweight CLI tool that sends desktop notifications
+ for Islamic prayer times with customizable reminders. It integrates
+ with systemd user timers and supports per-prayer configuration.
