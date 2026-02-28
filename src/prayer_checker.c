@@ -71,9 +71,9 @@ PrayerMatch prayer_check_current(const Config *cfg,
         // Skip if disabled
         if (!prayer_is_enabled(cfg, type)) continue;
 
-        // Get prayer time and round to nearest minute
+        // Get prayer time and ceil to match display (Kemenag standard)
         double prayer_time = prayer_get_time(times, type);
-        int prayer_min = (int)(prayer_time * 60.0 + 0.5);
+        int prayer_min = (int)ceil(prayer_time * 60.0);
         const PrayerConfig *pcfg = prayer_get_config(cfg, type);
 
         // Check exact prayer time (same minute)
