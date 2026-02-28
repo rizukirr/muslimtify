@@ -1,3 +1,13 @@
+muslimtify (0.1.3-1) unstable; urgency=medium
+
+  * Add `location refresh` command for one-shot location re-fetch
+  * Add unit tests and fix Dhuha calculation
+  * Add Debian packaging support
+  * Restructure CMakeLists.txt for production readiness
+  * Update version handling
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Sat, 28 Feb 2026 11:21:12 +0700
+
 muslimtify (0.1.2-1) unstable; urgency=medium
 
   * Fix security vulnerabilities: JSON string escaping, curl response size limit

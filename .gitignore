@@ -26,9 +26,11 @@ Thumbs.db
 # Packaging
 *.tar.gz
 *.tar.xz
+*.rpm
 /.cache/clangd/index
 /CLAUDE.md
 /publish
 /AGENTS.md
 /GEMINI.md
 /.packages/aur
+Testing/
