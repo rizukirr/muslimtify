@@ -1047,7 +1047,7 @@ void cli_print_help(void) {
   printf("Muslimtify - Prayer Time Notification Daemon\n\n");
   printf("Usage: muslimtify [COMMAND] [OPTIONS]\n\n");
   printf("Commands:\n");
-  printf("  show              Display today's prayer times (default)\n");
+  printf("  show              Display today's prayer times\n");
   printf("  check             Check and send notification if prayer time\n");
   printf("  next              Show time until next prayer\n");
   printf("  next name         Print next prayer name only (e.g. Ashr)\n");
@@ -1065,7 +1065,7 @@ void cli_print_help(void) {
   printf("  version           Show version information\n");
   printf("  help              Show this help message\n\n");
   printf("Examples:\n");
-  printf("  muslimtify                    # Show today's prayer times\n");
+  printf("  muslimtify                    # Show version and help\n");
   printf("  muslimtify next               # Show next prayer\n");
   printf("  muslimtify location auto      # Auto-detect location\n");
   printf("  muslimtify enable fajr        # Enable Fajr notifications\n");
@@ -1074,9 +1074,13 @@ void cli_print_help(void) {
 }
 
 int cli_run(int argc, char **argv) {
-  // No command → default to "show"
-  if (argc < 2)
-    return handle_show(0, NULL);
+  // No command → show version + help
+  if (argc < 2) {
+    handle_version(0, NULL);
+    printf("\n");
+    cli_print_help();
+    return 0;
+  }
 
   const char *cmd = argv[1];
   const CommandEntry *entry =

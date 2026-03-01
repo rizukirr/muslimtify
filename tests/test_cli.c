@@ -403,10 +403,11 @@ static void test_show(void) {
   printf("  show...\n");
   reset_config();
 
-  // show (default, no args → argc=1)
+  // default (no args → version + help)
   run(1, (char *[]){"m", NULL});
-  check_ret("show default ret", 0);
-  check_contains("show default out", "Prayer Times");
+  check_ret("default ret", 0);
+  check_contains("default version", "Muslimtify v");
+  check_contains("default help", "Usage:");
 
   // show (explicit)
   run(2, (char *[]){"m", "show", NULL});
