@@ -98,7 +98,7 @@ CHANGES_FILE="${OUTPUT_DIR}/${PKG_NAME}_${PKG_VERSION}-1_source.changes"
 echo "==> Signing source package on host as ${REAL_USER}..."
 
 # Fix ownership from chroot build
-chown "${REAL_USER}:${REAL_USER}" "${OUTPUT_DIR}/"${PKG_NAME}_${PKG_VERSION}*
+sudo chown "${REAL_USER}:${REAL_USER}" "${OUTPUT_DIR}/"${PKG_NAME}_${PKG_VERSION}*
 
 # Sign as real user: sign .dsc, update checksums in .changes, sign .changes
 sudo -u "${REAL_USER}" bash -c '

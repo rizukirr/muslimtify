@@ -1,7 +1,7 @@
 .PHONY: srpm
 
 srpm:
-	dnf install -y rpm-build
+	dnf install -y rpm-build rpmdevtools
 	spectool -g -R -C $(outdir) .packages/fedora/muslimtify.spec
 	rpmbuild -bs .packages/fedora/muslimtify.spec \
 		--define "_sourcedir $(outdir)" \

@@ -1,5 +1,5 @@
 Name:           muslimtify
-Version:        0.1.3
+Version:        0.1.4
 Release:        1%{?dist}
 Summary:        Prayer time notifier for the desktop
 License:        MIT
@@ -43,5 +43,5 @@ echo ""
 %{_prefix}/lib/systemd/user/muslimtify.timer
 
 %changelog
-* Sat Feb 28 2026 Rizki Rakasiwi <rizkirr.xyz@gmail.com> - 0.1.3-1
-- Release v0.1.3
+* Mon Mar 02 2026 Rizki Rakasiwi <rizkirr.xyz@gmail.com> - 0.1.4-1
+- Release v0.1.4
