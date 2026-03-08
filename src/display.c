@@ -199,6 +199,54 @@ void display_prayer_times_table(const struct PrayerTimes *times,
   printf("\n");
 }
 
+void display_prayer_times_plain(const struct PrayerTimes *times,
+                                const Config *cfg, struct tm *date) {
+  struct tm date_copy = *date;
+
+  const char *prayer_names[] = {"Fajr", "Sunrise", "Dhuha", "Dhuhr",
+                                "Asr",  "Maghrib", "Isha"};
+  PrayerType types[] = {PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA, PRAYER_DHUHR,
+                        PRAYER_ASR,  PRAYER_MAGHRIB, PRAYER_ISHA};
+
+  // Find the next upcoming prayer for today
+  int next_idx = -1;
+  {
+    time_t now_t = time(NULL);
+    struct tm now_buf;
+    struct tm *now_tm = localtime_r(&now_t, &now_buf);
+    if (now_tm != NULL &&
+        date_copy.tm_year == now_tm->tm_year &&
+        date_copy.tm_mon  == now_tm->tm_mon  &&
+        date_copy.tm_mday == now_tm->tm_mday) {
+      int dummy;
+      PrayerType next = prayer_get_next(cfg, now_tm,
+                                        (struct PrayerTimes *)times, &dummy);
+      for (int i = 0; i < 7; i++) {
+        if (types[i] == next) { next_idx = i; break; }
+      }
+    }
+  }
+
+  for (int i = 0; i < 7; i++) {
+    const PrayerConfig *pcfg = prayer_get_config(cfg, types[i]);
+    if (!pcfg->enabled)
+      continue;
+
+    double prayer_time = prayer_get_time(times, types[i]);
+    char time_str[16];
+    format_time_hm(prayer_time, time_str, sizeof(time_str));
+
+    if (i == next_idx) {
+      printf("%s%s%s=%s%s\n",
+             C(COL_BOLD COL_YELLOW), prayer_names[i],
+             C(COL_RESET COL_BOLD COL_YELLOW), time_str,
+             C(COL_RESET));
+    } else {
+      printf("%s=%s\n", prayer_names[i], time_str);
+    }
+  }
+}
+
 static void json_print_escaped(const char *s) {
     putchar('"');
     for (; *s; s++) {

@@ -1,4 +1,3 @@
-#define PRAYERTIMES_IMPLEMENTATION
 #include "prayer_checker.h"
 #include "config.h"
 #include <math.h>

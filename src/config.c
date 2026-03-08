@@ -9,6 +9,7 @@
 #include <pwd.h>
 #include <ctype.h>
 #include <errno.h>
+#include <linux/limits.h>
 
 static char config_path[512] = {0};
 
@@ -145,7 +146,7 @@ static void json_escape_string(FILE *f, const char *s) {
     fputc('"', f);
 }
 
-static void write_json_file(FILE *f, const Config *cfg) {
+static int write_json_file(FILE *f, const Config *cfg) {
     fprintf(f, "{\n");
     fprintf(f, "  \"location\": {\n");
     fprintf(f, "    \"latitude\": %.6f,\n", cfg->latitude);
@@ -189,23 +190,41 @@ static void write_json_file(FILE *f, const Config *cfg) {
     fprintf(f, "    \"madhab\": "); json_escape_string(f, cfg->madhab); fprintf(f, "\n");
     fprintf(f, "  }\n");
     fprintf(f, "}\n");
+
+    return ferror(f) ? -1 : 0;
 }
 
 int config_save(const Config *cfg) {
     if (ensure_config_dir() != 0) {
         return -1;
     }
-    
+
     const char *path = config_get_path();
-    FILE *f = fopen(path, "w");
+    char tmp_path[PATH_MAX];
+    int n = snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
+    if (n < 0 || (size_t)n >= sizeof(tmp_path)) {
+        fprintf(stderr, "Error: Config path too long\n");
+        return -1;
+    }
+
+    FILE *f = fopen(tmp_path, "w");
     if (!f) {
         fprintf(stderr, "Error: Cannot write config file: %s\n", strerror(errno));
         return -1;
     }
-    
-    write_json_file(f, cfg);
-    fclose(f);
-    
+
+    if (write_json_file(f, cfg) != 0 || fflush(f) != 0 || fclose(f) != 0) {
+        fprintf(stderr, "Error: Failed to write config file: %s\n", strerror(errno));
+        remove(tmp_path);
+        return -1;
+    }
+
+    if (rename(tmp_path, path) != 0) {
+        fprintf(stderr, "Error: Failed to save config file: %s\n", strerror(errno));
+        remove(tmp_path);
+        return -1;
+    }
+
     return 0;
 }
 

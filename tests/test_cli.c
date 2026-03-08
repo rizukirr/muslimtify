@@ -418,6 +418,26 @@ static void test_show(void) {
   check_ret("show json ret", 0);
   check_contains("show json prayers", "\"prayers\"");
   check_contains("show json fajr", "\"fajr\"");
+
+  // show --no-header (basic output)
+  run(3, (char *[]){"m", "show", "--no-header", NULL});
+  check_ret("show no-header ret", 0);
+  check_contains("show no-header fajr", "Fajr=");
+  check_contains("show no-header dhuhr", "Dhuhr=");
+  check_contains("show no-header asr", "Asr=");
+  check_contains("show no-header maghrib", "Maghrib=");
+  check_contains("show no-header isha", "Isha=");
+
+  // show --no-header (disabled prayers omitted)
+  check_bool("show no-header no sunrise", strstr(captured, "Sunrise=") == NULL);
+  check_bool("show no-header no dhuha", strstr(captured, "Dhuha=") == NULL);
+
+  // show --no-header (with all prayers enabled)
+  run(3, (char *[]){"m", "enable", "all", NULL});
+  run(3, (char *[]){"m", "show", "--no-header", NULL});
+  check_ret("show no-header all ret", 0);
+  check_contains("show no-header sunrise", "Sunrise=");
+  check_contains("show no-header dhuha", "Dhuha=");
 }
 
 static void test_next(void) {

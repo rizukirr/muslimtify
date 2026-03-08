@@ -18,6 +18,13 @@ void display_prayer_times_table(const struct PrayerTimes *times,
                                 struct tm *date);
 
 /**
+ * Display prayer times in plain key=value format (only enabled prayers)
+ */
+void display_prayer_times_plain(const struct PrayerTimes *times,
+                                const Config *cfg,
+                                struct tm *date);
+
+/**
  * Display prayer times in JSON format
  */
 void display_prayer_times_json(const struct PrayerTimes *times,

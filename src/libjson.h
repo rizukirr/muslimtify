@@ -387,9 +387,9 @@ static char *json_find_key(const char *JSON_RESTRICT key, size_t key_len,
         if (!key_end)
           continue;
 
-        size_t key_len = key_end - key_start;
+        size_t found_len = key_end - key_start;
 
-        if (key_len == target_len && strncmp(key_start, key, key_len) == 0) {
+        if (found_len == target_len && strncmp(key_start, key, found_len) == 0) {
           // skip past the closing quote and find the colon
           cursor = skip_whitespace(key_end + 1);
 

@@ -107,16 +107,24 @@ int location_fetch(Config *cfg) {
     curl_easy_setopt(curl, CURLOPT_MAXFILESIZE, 65536L);
     
     CURLcode res = curl_easy_perform(curl);
-    
+
     if (res != CURLE_OK) {
-        fprintf(stderr, "Error: Failed to fetch location: %s\n", 
+        fprintf(stderr, "Error: Failed to fetch location: %s\n",
                 curl_easy_strerror(res));
         curl_easy_cleanup(curl);
         free(response.data);
         return -1;
     }
-    
+
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     curl_easy_cleanup(curl);
+
+    if (http_code != 200) {
+        fprintf(stderr, "Error: Location API returned HTTP %ld\n", http_code);
+        free(response.data);
+        return -1;
+    }
     
     // Parse JSON response
     JsonContext *ctx = json_begin();

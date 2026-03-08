@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.22...3.31)
 project(muslimtify VERSION 0.1.5 LANGUAGES C)
 
 # ── Default build type ────────────────────────────────────────────────────────
@@ -42,13 +42,25 @@ function(muslimtify_set_target_defaults target)
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_BINARY_DIR}/generated
     )
-    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(${target} PRIVATE
+        -Wall -Wextra -Wpedantic -Wshadow -Wformat=2
+    )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+    endif()
 endfunction()
 
 # ── Object library (shared app sources) ──────────────────────────────────────
 
 add_library(muslimtify_lib OBJECT
     src/cli.c
+    src/cmd_show.c
+    src/cmd_next.c
+    src/cmd_config.c
+    src/cmd_location.c
+    src/cmd_prayer.c
+    src/cmd_daemon.c
     src/config.c
     src/location.c
     src/prayer_checker.c
@@ -102,21 +114,32 @@ if(BUILD_TESTING)
     )
     add_test(NAME cli COMMAND test_cli)
 
-    add_executable(test_prayer_checker
-        tests/test_prayer_checker.c
-        src/prayer_checker.c
-        src/config.c
-    )
+    add_executable(test_prayer_checker tests/test_prayer_checker.c)
     muslimtify_set_target_defaults(test_prayer_checker)
-    target_link_libraries(test_prayer_checker m)
+    target_include_directories(test_prayer_checker PRIVATE
+        ${LIBNOTIFY_INCLUDE_DIRS}
+        ${LIBCURL_INCLUDE_DIRS}
+    )
+    target_link_libraries(test_prayer_checker
+        muslimtify_lib
+        ${LIBNOTIFY_LIBRARIES}
+        ${LIBCURL_LIBRARIES}
+        m
+    )
     add_test(NAME prayer_checker COMMAND test_prayer_checker)
 
-    add_executable(test_config
-        tests/test_config.c
-        src/config.c
-    )
+    add_executable(test_config tests/test_config.c)
     muslimtify_set_target_defaults(test_config)
-    target_link_libraries(test_config m)
+    target_include_directories(test_config PRIVATE
+        ${LIBNOTIFY_INCLUDE_DIRS}
+        ${LIBCURL_INCLUDE_DIRS}
+    )
+    target_link_libraries(test_config
+        muslimtify_lib
+        ${LIBNOTIFY_LIBRARIES}
+        ${LIBCURL_LIBRARIES}
+        m
+    )
     add_test(NAME config COMMAND test_config)
 endif()
 
