@@ -27,6 +27,13 @@ Muslimtify is a minimalist prayer time notification daemon for muslim designed s
 yay -S muslimtify
 ```
 
+### Fedora (COPR)
+
+```bash
+sudo dnf copr enable rizukirr/muslimtify
+sudo dnf install muslimtify
+```
+
 ### Debian/Ubuntu (PPA)
 
 ```bash
@@ -416,7 +423,7 @@ MIT License - See source files for details
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Credits
 
