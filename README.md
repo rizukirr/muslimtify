@@ -10,12 +10,12 @@ Muslimtify is a minimalist prayer time notification daemon for muslim designed s
 
 ## Features
 
-- **Automatic Location Detection** - Uses ipinfo.io to detect your location  
-- **Multiple Prayer Reminders** - Set custom reminders (e.g., 30, 15, 5 minutes before)  
-- **Beautiful CLI** - Unicode table output with colored status  
-- **JSON Configuration** - Easy to read and edit config file  
-- **Systemd Ready** - Designed to run as a systemd timer  
-- **Lightweight** - Written in C, minimal dependencies  
+- **Automatic Location Detection** - Uses ipinfo.io to detect your location
+- **Multiple Prayer Reminders** - Set custom reminders (e.g., 30, 15, 5 minutes before)
+- **Beautiful CLI** - Unicode table output with colored status
+- **JSON Configuration** - Easy to read and edit config file
+- **Systemd Ready** - Designed to run as a systemd timer
+- **Lightweight** - Written in C, minimal dependencies
 
 ![Muslimtify Screenshot](images/example.png)
 
@@ -25,6 +25,7 @@ Muslimtify is a minimalist prayer time notification daemon for muslim designed s
 
 ```bash
 yay -S muslimtify
+muslimtify daemon install    # Install and start the systemd timer
 ```
 
 ### Fedora (COPR)
@@ -32,6 +33,7 @@ yay -S muslimtify
 ```bash
 sudo dnf copr enable rizukirr/muslimtify
 sudo dnf install muslimtify
+muslimtify daemon install    # Install and start the systemd timer
 ```
 
 ### Debian/Ubuntu (PPA)
@@ -40,6 +42,7 @@ sudo dnf install muslimtify
 sudo add-apt-repository ppa:rizukirr/muslimtify
 sudo apt update
 sudo apt install muslimtify
+muslimtify daemon install    # Install and start the systemd timer
 ```
 
 ### Build from Source
@@ -382,7 +385,7 @@ vim ~/.config/systemd/user/muslimtify.service
    ```bash
    # Test system notifications
    notify-send "Test" "If you see this, notifications work"
-   
+
    # Test with custom icon
    ./test_notification.sh
    ```
