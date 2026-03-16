@@ -4,6 +4,29 @@ All notable changes to Muslimtify will be documented in this file.
 
 ---
 
+## [0.1.5] - 2026-03-16
+
+### Added
+- **Fedora build infrastructure** — with `build.sh`, `create-copr.sh`, and `upload-copr.sh`
+- Contributor infrastructure and documentation
+- `location refresh` command for one-shot location re-fetch
+- Comprehensive unit tests
+- Kemenag method documentation
+- MIT license file
+
+### Changed
+- Improved production readiness in CMake and codebase
+- Improved memory safety and security fixes
+- Updated README documentation
+
+### Fixed
+- Fixed Dhuha calculation
+- Fixed ceiling prayer checker
+- Default notification urgency to critical
+- Improved CLI defaults (show version/help by default)
+
+---
+
 ## [0.1.1] - 2026-02-25
 
 ### Added
@@ -120,6 +143,6 @@ Muslimtify follows [Semantic Versioning](https://semver.org/):
 
 ---
 
-**Current Version:** 0.1.1
-**Release Date:** February 25, 2026
-**Status:** Available on AUR and Launchpad PPA
+**Current Version:** 0.1.5
+**Release Date:** March 16, 2026
+**Status:** Available on AUR, Launchpad PPA, and Fedora Copr
