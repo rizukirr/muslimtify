@@ -1,5 +1,11 @@
 muslimtify (0.1.6-1) unstable; urgency=medium
 
+  * Fix the equation of time that was computed as (q / 15.0) - (RA / 15.0) without handling the 0°/360° wrap-around by Normalize the q - RA difference to [-180°, +180°] before converting to hours, so the wrap-around at the 0°/360° boundary is handled correctly.
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Sat, 21 Mar 2026 13:48:00 +0700
+
+muslimtify (0.1.5-1) unstable; urgency=medium
+
   * `location refresh` command for one-shot location re-fetch
   * Improved memory safety and security fixes
   * Fixed Dhuha calculation
