@@ -37,14 +37,138 @@ package manager and build service:
 
 ---
 
+## Setting Up Keys from Scratch
+
+If you have never created GPG or SSH keys before, follow these steps first. Everything
+else in this guide depends on having these keys in place.
+
+### GPG key (required for Launchpad PPA signing)
+
+1. **Generate a new GPG key:**
+
+   ```bash
+   gpg --full-generate-key
+   ```
+
+   When prompted:
+   - Key type: choose **(9) ECC (sign and encrypt)** (or EdDSA/Ed25519 if listed)
+   - Elliptic curve: **Curve 25519**
+   - Expiration: **0** (does not expire), or pick a duration you prefer
+   - Real name: your full name (e.g., `Rizki Rakasiwi`)
+   - Email: the email you use for Launchpad (e.g., `rizkirr.xyz@gmail.com`)
+   - Passphrase: set a strong passphrase — you will need it every time you sign packages
+
+2. **Verify the key was created:**
+
+   ```bash
+   gpg --fingerprint
+   ```
+
+   You should see output like:
+
+   ```
+   pub   ed25519 2026-03-20 [SC]
+         6B24 4C9E BA1B 7433 99C3  C150 4D7F AA67 B1CE CF71
+   uid           [ultimate] Rizki Rakasiwi <rizkirr.xyz@gmail.com>
+   sub   cv25519 2026-03-20 [E]
+   ```
+
+   Note the full fingerprint (40 hex characters, ignoring spaces). You will need it.
+
+3. **Upload the key to Ubuntu keyserver:**
+
+   Launchpad can only find your key if it is on the Ubuntu keyserver.
+
+   ```bash
+   gpg --keyserver keyserver.ubuntu.com --send-keys <YOUR_FINGERPRINT>
+   ```
+
+   Replace `<YOUR_FINGERPRINT>` with the 40-character fingerprint without spaces, e.g.:
+
+   ```bash
+   gpg --keyserver keyserver.ubuntu.com --send-keys 6B244C9EBA1B743399C3C1504D7FAA67B1CECF71
+   ```
+
+4. **Register the key on Launchpad:**
+
+   - Go to https://launchpad.net/~/+editpgpkeys
+   - Paste the fingerprint **without spaces** and submit
+   - Launchpad sends an encrypted confirmation email to your key's email address
+
+5. **Decrypt the confirmation email:**
+
+   The email body is a PGP-encrypted message. Copy the entire block (including the
+   `-----BEGIN PGP MESSAGE-----` and `-----END PGP MESSAGE-----` lines), then:
+
+   ```bash
+   gpg --decrypt
+   ```
+
+   Paste the PGP message and press `Ctrl+D`. It will output a confirmation URL.
+   Open that URL in your browser to complete the registration.
+
+6. **Verify on Launchpad:**
+
+   Visit your Launchpad profile — your GPG key should now appear under "OpenPGP keys".
+
+### SSH key (required for AUR)
+
+1. **Generate a new SSH key:**
+
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   ```
+
+   When prompted:
+   - File: press Enter to accept the default (`~/.ssh/id_ed25519`)
+   - Passphrase: set one for security (or leave empty for convenience)
+
+2. **Start the SSH agent and add your key:**
+
+   ```bash
+   eval "$(ssh-agent -s)"
+   ssh-add ~/.ssh/id_ed25519
+   ```
+
+3. **Copy the public key:**
+
+   ```bash
+   cat ~/.ssh/id_ed25519.pub
+   ```
+
+   Copy the entire output line.
+
+4. **Register the key on AUR:**
+
+   - Create an account at https://aur.archlinux.org/register/ (if you don't have one)
+   - Go to https://aur.archlinux.org/account/YourUsername/edit/
+   - Paste your public key into the **SSH Public Key** field and save
+
+5. **Test the connection:**
+
+   ```bash
+   ssh -T aur@aur.archlinux.org
+   ```
+
+   If it works you will see something like `Welcome to AUR, YourUsername!` (the
+   connection then closes — this is normal, AUR does not provide shell access).
+
+6. **(Optional) Register the same key on GitHub:**
+
+   - Go to https://github.com/settings/ssh/new
+   - Paste the same public key and save
+   - Test: `ssh -T git@github.com`
+
+---
+
 ## Prerequisites
 
 ### Accounts and keys
 
 | Service      | What you need | Link |
 |--------------|---------------|------|
-| AUR          | SSH key registered on AUR | https://aur.archlinux.org/ |
-| Launchpad    | GPG key `F6F1FE418251F4905D994AC747EED10975B13711` registered | https://launchpad.net/~rizukirr |
+| AUR          | SSH key registered on AUR (see above) | https://aur.archlinux.org/ |
+| Launchpad    | GPG key registered (see above) | https://launchpad.net/~rizukirr |
 | Fedora COPR  | Fedora Account (FAS) + COPR API token | https://accounts.fedoraproject.org/ |
 
 ### Repository URLs
