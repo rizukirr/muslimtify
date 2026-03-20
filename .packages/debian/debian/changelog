@@ -1,0 +1,51 @@
+muslimtify (0.1.6-1) unstable; urgency=medium
+
+  * `location refresh` command for one-shot location re-fetch
+  * Improved memory safety and security fixes
+  * Fixed Dhuha calculation
+  * Fixed ceiling prayer checker
+  * Default notification urgency to critical
+  * Improved CLI defaults (show version/help by default)
+  * Add command show --no-header to show key value prayer times
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Mon, 16 Mar 2026 13:00:00 +0700
+
+muslimtify (0.1.4-1) unstable; urgency=medium
+
+  * fix: Default notification urgency set to 'critical' for better visibility.
+  * fix: Improve icon fallback behavior.
+  * fix: Fix ceiling logic in prayer checker for more accurate notifications.
+  * fix: Show version and help as default when no command is provided.
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Mon, 02 Mar 2026 18:30:00 +0700
+
+muslimtify (0.1.3-1) unstable; urgency=medium
+
+  * Add `location refresh` command for one-shot location re-fetch
+  * Add unit tests and fix Dhuha calculation
+  * Add Debian packaging support
+  * Restructure CMakeLists.txt for production readiness
+  * Update version handling
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Sat, 28 Feb 2026 11:21:12 +0700
+
+muslimtify (0.1.2-1) unstable; urgency=medium
+
+  * Fix security vulnerabilities: JSON string escaping, curl response size limit
+  * Fix double notification by using integer-minute comparison
+  * Fix icon path search stopping early at NULL entries
+  * Fix midnight crossover for reminder times
+  * Fix localtime static buffer reuse in display table
+  * Add NULL checks after json_alloc in libjson
+  * Add recursive mkdir for config directory creation
+  * Validate numeric input with strtod in location set
+  * Remove double curl_global_cleanup
+  * Initialize config with defaults before partial JSON parse
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Fri, 27 Feb 2026 14:59:38 +0700
+
+muslimtify (0.1.1-1) unstable; urgency=medium
+
+  * Initial Debian packaging.
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Tue, 25 Feb 2026 00:00:00 +0700

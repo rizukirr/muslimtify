@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    echo "==> Run the following to enable the prayer time daemon:"
+    echo "      muslimtify daemon install"
+fi
