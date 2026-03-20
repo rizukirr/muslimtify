@@ -1,7 +1,7 @@
 Name:           muslimtify
 Version:        0.1.6
 Release:        1%{?dist}
-Summary:        Muslim prayer time notification daemon for linux
+Summary:        A lightweight islamic prayer time notification daemon for Linux
 License:        MIT
 URL:            https://github.com/rizukirr/muslimtify
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
