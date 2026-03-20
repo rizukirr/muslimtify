@@ -111,7 +111,12 @@ static void sun_position(double jd, double *decl, double *eqt) {
       RAD_TO_DEG;
   RA = normalize_deg(RA);
 
-  *eqt = (q / 15.0) - (RA / 15.0);
+  // Normalize difference to [-180, 180] to handle wrap-around near 0/360 boundary
+  double diff = fmod(q - RA + 180.0, 360.0);
+  if (diff < 0)
+    diff += 360.0;
+  diff -= 180.0;
+  *eqt = diff / 15.0;
   *decl = asin(sin(e * DEG_TO_RAD) * sin(L * DEG_TO_RAD)) * RAD_TO_DEG;
 }
 
