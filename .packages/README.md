@@ -54,8 +54,8 @@ else in this guide depends on having these keys in place.
    - Key type: choose **(9) ECC (sign and encrypt)** (or EdDSA/Ed25519 if listed)
    - Elliptic curve: **Curve 25519**
    - Expiration: **0** (does not expire), or pick a duration you prefer
-   - Real name: your full name (e.g., `Rizki Rakasiwi`)
-   - Email: the email you use for Launchpad (e.g., `rizkirr.xyz@gmail.com`)
+   - Real name: your full name
+   - Email: the email you use for Launchpad
    - Passphrase: set a strong passphrase — you will need it every time you sign packages
 
 2. **Verify the key was created:**
@@ -64,16 +64,8 @@ else in this guide depends on having these keys in place.
    gpg --fingerprint
    ```
 
-   You should see output like:
-
-   ```
-   pub   ed25519 2026-03-20 [SC]
-         6B24 4C9E BA1B 7433 99C3  C150 4D7F AA67 B1CE CF71
-   uid           [ultimate] Rizki Rakasiwi <rizkirr.xyz@gmail.com>
-   sub   cv25519 2026-03-20 [E]
-   ```
-
-   Note the full fingerprint (40 hex characters, ignoring spaces). You will need it.
+   You should see output showing your key's fingerprint (40 hex characters).
+   Note the full fingerprint — you will need it.
 
 3. **Upload the key to Ubuntu keyserver:**
 
@@ -86,7 +78,7 @@ else in this guide depends on having these keys in place.
    Replace `<YOUR_FINGERPRINT>` with the 40-character fingerprint without spaces, e.g.:
 
    ```bash
-   gpg --keyserver keyserver.ubuntu.com --send-keys 6B244C9EBA1B743399C3C1504D7FAA67B1CECF71
+   gpg --keyserver keyserver.ubuntu.com --send-keys <YOUR_FINGERPRINT>
    ```
 
 4. **Register the key on Launchpad:**
@@ -168,15 +160,15 @@ else in this guide depends on having these keys in place.
 | Service      | What you need | Link |
 |--------------|---------------|------|
 | AUR          | SSH key registered on AUR (see above) | https://aur.archlinux.org/ |
-| Launchpad    | GPG key registered (see above) | https://launchpad.net/~rizukirr |
+| Launchpad    | GPG key registered (see above) | https://launchpad.net/ |
 | Fedora COPR  | Fedora Account (FAS) + COPR API token | https://accounts.fedoraproject.org/ |
 
 ### Repository URLs
 
-- **GitHub:** https://github.com/rizukirr/muslimtify
+- **GitHub:** `https://github.com/<YOUR_USERNAME>/muslimtify`
 - **AUR:** `ssh://aur@aur.archlinux.org/muslimtify.git`
-- **Launchpad PPA:** `ppa:rizukirr/muslimtify`
-- **COPR:** `rizukirr/muslimtify`
+- **Launchpad PPA:** `ppa:<YOUR_USERNAME>/muslimtify`
+- **COPR:** `<YOUR_USERNAME>/muslimtify`
 
 ### Packages needed on the build machine (Arch)
 
@@ -354,8 +346,8 @@ Users then add the PPA and install with `apt`.
 
 1. **Register your GPG key on Launchpad:**
 
-   Your key `F6F1FE418251F4905D994AC747EED10975B13711` must be registered at
-   https://launchpad.net/~rizukirr/+editpgpkeys
+   Your GPG key must be registered at
+   `https://launchpad.net/~<YOUR_USERNAME>/+editpgpkeys`
 
 2. **Install tools on Arch:**
 
@@ -364,7 +356,7 @@ Users then add the PPA and install with `apt`.
    yay -S dput python-charset-normalizer
    ```
 
-3. **The PPA already exists at:** https://launchpad.net/~rizukirr/+archive/ubuntu/muslimtify
+3. **The PPA already exists at:** `https://launchpad.net/~<YOUR_USERNAME>/+archive/ubuntu/muslimtify`
 
 ### Updating the PPA
 
@@ -375,7 +367,7 @@ Users then add the PPA and install with `apt`.
 
      * Description of changes.
 
-    -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Thu, 27 Feb 2026 00:00:00 +0700
+    -- Your Name <your_email@example.com>  Thu, 27 Feb 2026 00:00:00 +0700
    ```
 
    > The date format **must** be RFC 2822. Generate it with `date -R`.
@@ -398,15 +390,15 @@ Users then add the PPA and install with `apt`.
    - Mount the project directory into the chroot
    - Install build dependencies inside the chroot
    - Build an unsigned source package (`.dsc`, `.orig.tar.gz`, `.debian.tar.xz`)
-   - Sign the `.dsc` and `.changes` files with GPG key `47EED10975B13711` on the host
+   - Sign the `.dsc` and `.changes` files with your GPG key on the host
    - Update checksums in `.changes` to match the signed `.dsc`
    - Prompt you to upload via `dput`
 
 4. **Check build status:**
 
-   https://launchpad.net/~rizukirr/+archive/ubuntu/muslimtify/+packages
+   `https://launchpad.net/~<YOUR_USERNAME>/+archive/ubuntu/muslimtify/+packages`
 
-   You'll also receive an email at rizkirr.xyz@gmail.com when the build completes or fails.
+   You'll also receive an email when the build completes or fails.
 
 ### Targeting multiple Ubuntu series
 
@@ -444,7 +436,7 @@ If Launchpad rejects your upload or you need to re-upload:
 
 ```bash
 rm -f .packages/debian/muslimtify_*
-dput --force ppa:rizukirr/muslimtify .packages/debian/muslimtify_*_source.changes
+dput --force ppa:<YOUR_USERNAME>/muslimtify .packages/debian/muslimtify_*_source.changes
 ```
 
 > **Note:** Launchpad will **not** accept the same version twice. If you need to
@@ -463,8 +455,8 @@ It will be recreated automatically on the next build.
 
 ### Troubleshooting
 
-- **GPG signing fails:** Make sure the key `47EED10975B13711` is in your GPG keyring
-  and not expired. Test with `gpg --list-keys 47EED10975B13711`.
+- **GPG signing fails:** Make sure your signing key is in your GPG keyring
+  and not expired. Test with `gpg --list-keys <YOUR_KEY_ID>`.
 - **Launchpad rejects "already uploaded":** Bump the `-N` suffix in the changelog
   (e.g., `-1` → `-2`).
 - **Build fails inside chroot:** Delete the chroot (`sudo rm -rf ~/.cache/muslimtify-deb-chroot`)
@@ -518,7 +510,7 @@ or the AUR. The workflow is:
    ```ini
    [copr-cli]
    login = <your-login>
-   username = rizukirr
+   username = <your-username>
    token = <your-token>
    copr_url = https://copr.fedorainfracloud.org
    ```
@@ -541,10 +533,10 @@ or the AUR. The workflow is:
        --chroot fedora-41-x86_64 \
        --chroot fedora-40-x86_64 \
        --description "Prayer time notifier for the desktop" \
-       --instructions 'sudo dnf copr enable rizukirr/muslimtify && sudo dnf install muslimtify'
+       --instructions 'sudo dnf copr enable <YOUR_USERNAME>/muslimtify && sudo dnf install muslimtify'
    ```
 
-   You can also create it via the web UI at https://copr.fedorainfracloud.org/coprs/rizukirr/
+   You can also create it via the web UI at `https://copr.fedorainfracloud.org/coprs/<YOUR_USERNAME>/`
 
    To add more chroots later:
 
@@ -565,7 +557,7 @@ or the AUR. The workflow is:
 
    ```
    %changelog
-   * Mon Mar 03 2026 Rizki Rakasiwi <rizkirr.xyz@gmail.com> - X.Y.Z-1
+   * Mon Mar 03 2026 Your Name <your_email@example.com> - X.Y.Z-1
    - Release vX.Y.Z
    ```
 
@@ -580,7 +572,7 @@ or the AUR. The workflow is:
 
    This script will:
    - Read the version from `muslimtify.spec`
-   - Download the source tarball from `https://github.com/rizukirr/muslimtify/archive/v{version}/...`
+   - Download the source tarball from the GitHub release archive URL
      (or use a cached copy if already downloaded)
    - Create a temporary `rpmbuild` tree in `/tmp`
    - Run `rpmbuild -bs` to produce an SRPM
@@ -590,7 +582,7 @@ or the AUR. The workflow is:
 
 3. **Check build status:**
 
-   https://copr.fedorainfracloud.org/coprs/rizukirr/muslimtify/builds/
+   `https://copr.fedorainfracloud.org/coprs/<YOUR_USERNAME>/`muslimtify/builds/
 
 ### Building an RPM locally (for testing)
 
@@ -616,7 +608,7 @@ rpmbuild --rebuild .packages/fedora/muslimtify-*.src.rpm
 Once published, Fedora users install with:
 
 ```bash
-sudo dnf copr enable rizukirr/muslimtify
+sudo dnf copr enable <YOUR_USERNAME>/muslimtify
 sudo dnf install muslimtify
 ```
 
@@ -625,7 +617,7 @@ To uninstall:
 ```bash
 muslimtify daemon uninstall            # remove the systemd timer first
 sudo dnf remove muslimtify
-sudo dnf copr disable rizukirr/muslimtify
+sudo dnf copr disable <YOUR_USERNAME>/muslimtify
 ```
 
 ### COPR update checklist
@@ -636,7 +628,7 @@ sudo dnf copr disable rizukirr/muslimtify
 [ ] Add new %changelog entry
 [ ] Ensure GitHub release tag exists
 [ ] Run upload-copr.sh
-[ ] Verify build at https://copr.fedorainfracloud.org/coprs/rizukirr/muslimtify/builds/
+[ ] Verify build at `https://copr.fedorainfracloud.org/coprs/<YOUR_USERNAME>/`muslimtify/builds/
 ```
 
 ### Troubleshooting
@@ -667,7 +659,7 @@ Complete walkthrough for publishing a new version to all three platforms.
 [ ] Update .packages/fedora/muslimtify.spec (Version, Release, %changelog)
 [ ] Commit all changes
 [ ] Tag and push: git tag vX.Y.Z && git push && git push --tags
-[ ] Create GitHub release from the tag at https://github.com/rizukirr/muslimtify/releases/new
+[ ] Create GitHub release from the tag at https://github.com/<YOUR_USERNAME>/muslimtify/releases/new
 ```
 
 ### 2. Publish to AUR
@@ -685,7 +677,7 @@ Complete walkthrough for publishing a new version to all three platforms.
 ```
 [ ] rm -f .packages/debian/muslimtify_*
 [ ] sudo .packages/debian/upload-ppa.sh
-[ ] Verify: https://launchpad.net/~rizukirr/+archive/ubuntu/muslimtify/+packages
+[ ] Verify: https://launchpad.net/~<YOUR_USERNAME>/+archive/ubuntu/muslimtify/+packages
 ```
 
 ### 4. Publish to Fedora COPR
@@ -693,7 +685,7 @@ Complete walkthrough for publishing a new version to all three platforms.
 ```
 [ ] rm -f .packages/fedora/muslimtify-*.src.rpm
 [ ] .packages/fedora/upload-copr.sh
-[ ] Verify: https://copr.fedorainfracloud.org/coprs/rizukirr/muslimtify/builds/
+[ ] Verify: `https://copr.fedorainfracloud.org/coprs/<YOUR_USERNAME>/`muslimtify/builds/
 ```
 
 ### 5. Post-release verification
@@ -701,5 +693,5 @@ Complete walkthrough for publishing a new version to all three platforms.
 ```
 [ ] Arch:   yay -S muslimtify (or paru -S muslimtify)
 [ ] Ubuntu: sudo apt update && sudo apt install muslimtify
-[ ] Fedora: sudo dnf copr enable rizukirr/muslimtify && sudo dnf install muslimtify
+[ ] Fedora: sudo dnf copr enable <YOUR_USERNAME>/muslimtify && sudo dnf install muslimtify
 ```
