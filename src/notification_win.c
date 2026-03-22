@@ -1,0 +1,563 @@
+#define UNICODE
+#define _UNICODE
+#define COBJMACROS
+
+#include "../include/notification.h"
+#include <Windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* ── WinRT type declarations ──────────────────────────────────────────────── */
+
+/* HSTRING types (from winstring.h) */
+typedef struct HSTRING__ { int unused; } HSTRING__;
+typedef HSTRING__ *HSTRING;
+typedef struct HSTRING_HEADER {
+  union {
+    void *Reserved1;
+#if defined(_WIN64)
+    char Reserved2[24];
+#else
+    char Reserved2[20];
+#endif
+  } Reserved;
+} HSTRING_HEADER;
+
+STDAPI WindowsCreateStringReference(PCWSTR sourceString, UINT32 length,
+                                    HSTRING_HEADER *hstringHeader,
+                                    HSTRING *string);
+STDAPI WindowsDeleteString(HSTRING string);
+
+/* IInspectable (from inspectable.h) */
+typedef interface IInspectable IInspectable;
+typedef enum { BaseTrust = 0, PartialTrust = 1, FullTrust = 2 } TrustLevel;
+typedef struct IInspectableVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IInspectable *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IInspectable *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IInspectable *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IInspectable *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IInspectable *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IInspectable *This, TrustLevel *trustLevel);
+  END_INTERFACE
+} IInspectableVtbl;
+interface IInspectable {
+  CONST_VTBL struct IInspectableVtbl *lpVtbl;
+};
+
+/* Forward declarations for vtable references */
+typedef interface IXmlDocument IXmlDocument;
+typedef interface IXmlDocumentIO IXmlDocumentIO;
+typedef interface IToastNotification IToastNotification;
+typedef interface IToastNotifier IToastNotifier;
+typedef interface IToastNotificationFactory IToastNotificationFactory;
+typedef interface IToastNotificationManagerStatics
+    IToastNotificationManagerStatics;
+
+/* IXmlDocument */
+typedef struct IXmlDocumentVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IXmlDocument *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IXmlDocument *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IXmlDocument *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IXmlDocument *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IXmlDocument *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IXmlDocument *This, TrustLevel *trustLevel);
+  /* IXmlDocument methods — we only need it as an opaque handle passed to
+     CreateToastNotification, so the remaining vtable slots are void* padding */
+  void *get_Doctype;
+  void *get_Implementation;
+  void *get_DocumentElement;
+  void *CreateElement;
+  void *CreateDocumentFragment;
+  void *CreateTextNode;
+  void *CreateComment;
+  void *CreateProcessingInstruction;
+  void *CreateAttribute;
+  void *CreateEntityReference;
+  void *GetElementsByTagName;
+  void *CreateCDataSection;
+  void *get_DocumentUri;
+  void *CreateAttributeNS;
+  void *CreateElementNS;
+  void *GetElementById;
+  void *ImportNode;
+  END_INTERFACE
+} IXmlDocumentVtbl;
+interface IXmlDocument {
+  CONST_VTBL struct IXmlDocumentVtbl *lpVtbl;
+};
+
+/* IXmlDocumentIO */
+typedef struct IXmlDocumentIOVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IXmlDocumentIO *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IXmlDocumentIO *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IXmlDocumentIO *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IXmlDocumentIO *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IXmlDocumentIO *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IXmlDocumentIO *This, TrustLevel *trustLevel);
+  HRESULT(STDMETHODCALLTYPE *LoadXml)(IXmlDocumentIO *This, HSTRING xml);
+  void *LoadXmlWithSettings;
+  void *SaveToFileAsync;
+  END_INTERFACE
+} IXmlDocumentIOVtbl;
+interface IXmlDocumentIO {
+  CONST_VTBL struct IXmlDocumentIOVtbl *lpVtbl;
+};
+
+/* IToastNotification */
+typedef struct IToastNotificationVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IToastNotification *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IToastNotification *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IToastNotification *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IToastNotification *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IToastNotification *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IToastNotification *This, TrustLevel *trustLevel);
+  void *get_Content;
+  void *put_ExpirationTime;
+  void *get_ExpirationTime;
+  void *add_Dismissed;
+  void *remove_Dismissed;
+  void *add_Activated;
+  void *remove_Activated;
+  void *add_Failed;
+  void *remove_Failed;
+  END_INTERFACE
+} IToastNotificationVtbl;
+interface IToastNotification {
+  CONST_VTBL struct IToastNotificationVtbl *lpVtbl;
+};
+
+/* IToastNotifier */
+typedef struct IToastNotifierVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IToastNotifier *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IToastNotifier *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IToastNotifier *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IToastNotifier *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IToastNotifier *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IToastNotifier *This, TrustLevel *trustLevel);
+  HRESULT(STDMETHODCALLTYPE *Show)
+  (IToastNotifier *This, IToastNotification *notification);
+  void *Hide;
+  void *get_Setting;
+  void *AddToSchedule;
+  void *RemoveFromSchedule;
+  void *GetScheduledToastNotifications;
+  END_INTERFACE
+} IToastNotifierVtbl;
+interface IToastNotifier {
+  CONST_VTBL struct IToastNotifierVtbl *lpVtbl;
+};
+
+/* IToastNotificationFactory */
+typedef struct IToastNotificationFactoryVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IToastNotificationFactory *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IToastNotificationFactory *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IToastNotificationFactory *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IToastNotificationFactory *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IToastNotificationFactory *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IToastNotificationFactory *This, TrustLevel *trustLevel);
+  HRESULT(STDMETHODCALLTYPE *CreateToastNotification)
+  (IToastNotificationFactory *This, IXmlDocument *content,
+   IToastNotification **notification);
+  END_INTERFACE
+} IToastNotificationFactoryVtbl;
+interface IToastNotificationFactory {
+  CONST_VTBL struct IToastNotificationFactoryVtbl *lpVtbl;
+};
+
+/* IToastNotificationManagerStatics */
+typedef struct IToastNotificationManagerStaticsVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IToastNotificationManagerStatics *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IToastNotificationManagerStatics *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IToastNotificationManagerStatics *This);
+  HRESULT(STDMETHODCALLTYPE *GetIids)
+  (IToastNotificationManagerStatics *This, ULONG *iidCount, IID **iids);
+  HRESULT(STDMETHODCALLTYPE *GetRuntimeClassName)
+  (IToastNotificationManagerStatics *This, HSTRING *className);
+  HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
+  (IToastNotificationManagerStatics *This, TrustLevel *trustLevel);
+  HRESULT(STDMETHODCALLTYPE *CreateToastNotifier)
+  (IToastNotificationManagerStatics *This, IToastNotifier **notifier);
+  HRESULT(STDMETHODCALLTYPE *CreateToastNotifierWithId)
+  (IToastNotificationManagerStatics *This, HSTRING applicationId,
+   IToastNotifier **notifier);
+  void *GetTemplateContent;
+  END_INTERFACE
+} IToastNotificationManagerStaticsVtbl;
+interface IToastNotificationManagerStatics {
+  CONST_VTBL struct IToastNotificationManagerStaticsVtbl *lpVtbl;
+};
+
+/* ── GUIDs ────────────────────────────────────────────────────────────────── */
+
+static const IID IID_IToastNotificationManagerStatics = {
+    0x50ac103f, 0xd235, 0x4598,
+    {0xbb, 0xef, 0x98, 0xfe, 0x4d, 0x1a, 0x3a, 0xd4}};
+static const IID IID_IToastNotificationFactory = {
+    0x04124b20, 0x82c6, 0x4229,
+    {0xb1, 0x09, 0xfd, 0x9e, 0xd4, 0x66, 0x2b, 0x53}};
+static const IID IID_IXmlDocument = {
+    0xf7f3a506, 0x1e87, 0x42d6,
+    {0xbc, 0xfb, 0xb8, 0xc8, 0x09, 0xfa, 0x54, 0x94}};
+static const IID IID_IXmlDocumentIO = {
+    0x6cd0e74e, 0xee65, 0x4489,
+    {0x9e, 0xbf, 0xca, 0x43, 0xe8, 0x7b, 0xa6, 0x37}};
+
+/* ── Runtime class names ──────────────────────────────────────────────────── */
+
+static const WCHAR RuntimeClass_ToastNotificationManager[] =
+    L"Windows.UI.Notifications.ToastNotificationManager";
+static const WCHAR RuntimeClass_ToastNotification[] =
+    L"Windows.UI.Notifications.ToastNotification";
+static const WCHAR RuntimeClass_XmlDocument[] =
+    L"Windows.Data.Xml.Dom.XmlDocument";
+
+/* ── RoAPI declarations ───────────────────────────────────────────────────── */
+
+#ifndef ROAPI
+#ifdef _ROAPI_
+#define ROAPI
+#else
+#define ROAPI DECLSPEC_IMPORT
+#endif
+typedef enum { RO_INIT_MULTITHREADED = 1 } RO_INIT_TYPE;
+ROAPI HRESULT WINAPI RoInitialize(RO_INIT_TYPE initType);
+ROAPI HRESULT WINAPI RoGetActivationFactory(HSTRING activatableClassId,
+                                            REFIID iid, void **factory);
+ROAPI HRESULT WINAPI RoActivateInstance(HSTRING activatableClassId,
+                                        IInspectable **instance);
+ROAPI void WINAPI RoUninitialize(void);
+#endif
+
+/* ── AUMID for unpackaged app ─────────────────────────────────────────────── */
+
+static const WCHAR MUSLIMTIFY_AUMID[] =
+    L"{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}"
+    L"\\WindowsPowerShell\\v1.0\\powershell.exe";
+
+/* ── File-static state ────────────────────────────────────────────────────── */
+
+typedef struct {
+  IToastNotificationFactory *factory;
+  IToastNotifier *notifier;
+  BOOL initialized;
+} NotifyState;
+
+static NotifyState g_state = {0};
+
+/* ── Helpers ──────────────────────────────────────────────────────────────── */
+
+/* Convert UTF-8 string to UTF-16. Caller must free() the result. */
+static wchar_t *utf8_to_utf16(const char *utf8) {
+  if (!utf8) return NULL;
+  int len = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, NULL, 0);
+  if (len <= 0) return NULL;
+  wchar_t *wide = (wchar_t *)malloc(len * sizeof(wchar_t));
+  if (!wide) return NULL;
+  MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wide, len);
+  return wide;
+}
+
+/* XML-escape a UTF-16 string. Caller must free() the result. */
+static wchar_t *xml_escape(const wchar_t *src) {
+  if (!src) return NULL;
+  /* Worst case: every char becomes "&quot;" or "&apos;" (6x expansion) */
+  size_t src_len = wcslen(src);
+  wchar_t *escaped = (wchar_t *)malloc((src_len * 6 + 1) * sizeof(wchar_t));
+  if (!escaped) return NULL;
+  wchar_t *dst = escaped;
+  for (size_t i = 0; i < src_len; i++) {
+    switch (src[i]) {
+    case L'<':
+      wcscpy(dst, L"&lt;");
+      dst += 4;
+      break;
+    case L'>':
+      wcscpy(dst, L"&gt;");
+      dst += 4;
+      break;
+    case L'&':
+      wcscpy(dst, L"&amp;");
+      dst += 5;
+      break;
+    case L'"':
+      wcscpy(dst, L"&quot;");
+      dst += 6;
+      break;
+    case L'\'':
+      wcscpy(dst, L"&apos;");
+      dst += 6;
+      break;
+    default:
+      *dst++ = src[i];
+      break;
+    }
+  }
+  *dst = L'\0';
+  return escaped;
+}
+
+/* Create HSTRING from static wide string (no allocation — reference only) */
+static HRESULT make_hstring_ref(const WCHAR *str, HSTRING_HEADER *header,
+                                HSTRING *hstr) {
+  return WindowsCreateStringReference(str, (UINT32)wcslen(str), header, hstr);
+}
+
+/* Send a pre-built toast XML wide string through the WinRT pipeline */
+static void send_toast_xml(const wchar_t *xml) {
+  /* Create XmlDocument */
+  HSTRING_HEADER hsh_xml_cls;
+  HSTRING hs_xml_cls = NULL;
+  IInspectable *inspectable = NULL;
+  if (!SUCCEEDED(
+          make_hstring_ref(RuntimeClass_XmlDocument, &hsh_xml_cls, &hs_xml_cls)))
+    return;
+  if (!SUCCEEDED(RoActivateInstance(hs_xml_cls, &inspectable))) {
+    fprintf(stderr, "muslimtify: failed to create XmlDocument\n");
+    return;
+  }
+
+  /* Query IXmlDocument */
+  IXmlDocument *xml_doc = NULL;
+  if (!SUCCEEDED(inspectable->lpVtbl->QueryInterface(
+          inspectable, &IID_IXmlDocument, (void **)&xml_doc))) {
+    inspectable->lpVtbl->Release(inspectable);
+    return;
+  }
+  inspectable->lpVtbl->Release(inspectable);
+
+  /* Query IXmlDocumentIO and load XML */
+  IXmlDocumentIO *xml_io = NULL;
+  if (!SUCCEEDED(xml_doc->lpVtbl->QueryInterface(xml_doc, &IID_IXmlDocumentIO,
+                                                  (void **)&xml_io))) {
+    xml_doc->lpVtbl->Release(xml_doc);
+    return;
+  }
+
+  HSTRING_HEADER hsh_xml;
+  HSTRING hs_xml = NULL;
+  if (!SUCCEEDED(WindowsCreateStringReference(xml, (UINT32)wcslen(xml),
+                                              &hsh_xml, &hs_xml))) {
+    xml_io->lpVtbl->Release(xml_io);
+    xml_doc->lpVtbl->Release(xml_doc);
+    return;
+  }
+  HRESULT hr = xml_io->lpVtbl->LoadXml(xml_io, hs_xml);
+  xml_io->lpVtbl->Release(xml_io);
+  if (!SUCCEEDED(hr)) {
+    fprintf(stderr, "muslimtify: LoadXml failed\n");
+    xml_doc->lpVtbl->Release(xml_doc);
+    return;
+  }
+
+  /* Create and show toast */
+  IToastNotification *toast = NULL;
+  if (!SUCCEEDED(g_state.factory->lpVtbl->CreateToastNotification(
+          g_state.factory, xml_doc, &toast))) {
+    fprintf(stderr, "muslimtify: CreateToastNotification failed\n");
+    xml_doc->lpVtbl->Release(xml_doc);
+    return;
+  }
+  xml_doc->lpVtbl->Release(xml_doc);
+
+  hr = g_state.notifier->lpVtbl->Show(g_state.notifier, toast);
+  if (!SUCCEEDED(hr)) {
+    fprintf(stderr, "muslimtify: toast Show failed\n");
+  }
+  toast->lpVtbl->Release(toast);
+}
+
+/* Build toast XML from title/message with optional scenario attribute */
+static void send_notification(const char *title, const char *message,
+                              const char *scenario) {
+  if (!g_state.initialized) return;
+  if (!title || !message) return;
+
+  /* Convert and escape strings */
+  wchar_t *wtitle_raw = utf8_to_utf16(title);
+  wchar_t *wmsg_raw = utf8_to_utf16(message);
+  wchar_t *wtitle = xml_escape(wtitle_raw);
+  wchar_t *wmsg = xml_escape(wmsg_raw);
+  free(wtitle_raw);
+  free(wmsg_raw);
+  if (!wtitle || !wmsg) {
+    free(wtitle);
+    free(wmsg);
+    return;
+  }
+
+  /* Build toast XML */
+  wchar_t xml[1024];
+  if (scenario) {
+    wchar_t *wscenario = utf8_to_utf16(scenario);
+    _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
+                 L"<toast scenario=\"%ls\" duration=\"short\">"
+                 L"<visual><binding template=\"ToastGeneric\">"
+                 L"<text>%ls</text>"
+                 L"<text>%ls</text>"
+                 L"</binding></visual>"
+                 L"</toast>",
+                 wscenario, wtitle, wmsg);
+    free(wscenario);
+  } else {
+    _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
+                 L"<toast duration=\"short\">"
+                 L"<visual><binding template=\"ToastGeneric\">"
+                 L"<text>%ls</text>"
+                 L"<text>%ls</text>"
+                 L"</binding></visual>"
+                 L"</toast>",
+                 wtitle, wmsg);
+  }
+  free(wtitle);
+  free(wmsg);
+
+  send_toast_xml(xml);
+}
+
+/* ── API implementation ───────────────────────────────────────────────────── */
+
+int notify_init_once(const char *app_name) {
+  (void)app_name; /* AUMID is used instead on Windows */
+
+  if (g_state.initialized) return 1;
+
+  if (!SUCCEEDED(RoInitialize(RO_INIT_MULTITHREADED))) {
+    fprintf(stderr, "muslimtify: RoInitialize failed\n");
+    return 0;
+  }
+
+  /* Get ToastNotificationManager factory */
+  HSTRING_HEADER hsh_mgr;
+  HSTRING hs_mgr = NULL;
+  IToastNotificationManagerStatics *mgr = NULL;
+
+  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_ToastNotificationManager,
+                                  &hsh_mgr, &hs_mgr))) {
+    fprintf(stderr, "muslimtify: failed to create manager HSTRING\n");
+    goto fail;
+  }
+  if (!SUCCEEDED(RoGetActivationFactory(
+          hs_mgr, &IID_IToastNotificationManagerStatics, (void **)&mgr))) {
+    fprintf(stderr, "muslimtify: failed to get ToastNotificationManager\n");
+    goto fail;
+  }
+
+  /* Create notifier with AUMID */
+  HSTRING_HEADER hsh_aumid;
+  HSTRING hs_aumid = NULL;
+  if (!SUCCEEDED(make_hstring_ref(MUSLIMTIFY_AUMID, &hsh_aumid, &hs_aumid))) {
+    mgr->lpVtbl->Release(mgr);
+    goto fail;
+  }
+  if (!SUCCEEDED(mgr->lpVtbl->CreateToastNotifierWithId(
+          mgr, hs_aumid, &g_state.notifier))) {
+    fprintf(stderr, "muslimtify: failed to create ToastNotifier\n");
+    mgr->lpVtbl->Release(mgr);
+    goto fail;
+  }
+  mgr->lpVtbl->Release(mgr);
+
+  /* Get ToastNotification factory */
+  HSTRING_HEADER hsh_notif;
+  HSTRING hs_notif = NULL;
+  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_ToastNotification, &hsh_notif,
+                                  &hs_notif))) {
+    goto fail;
+  }
+  if (!SUCCEEDED(RoGetActivationFactory(
+          hs_notif, &IID_IToastNotificationFactory, (void **)&g_state.factory))) {
+    fprintf(stderr, "muslimtify: failed to get ToastNotificationFactory\n");
+    goto fail;
+  }
+
+  g_state.initialized = TRUE;
+  return 1;
+
+fail:
+  if (g_state.notifier) {
+    g_state.notifier->lpVtbl->Release(g_state.notifier);
+    g_state.notifier = NULL;
+  }
+  RoUninitialize();
+  return 0;
+}
+
+void notify_send(const char *title, const char *message) {
+  send_notification(title, message, NULL);
+}
+
+void notify_prayer(const char *prayer_name, const char *time_str,
+                   int minutes_before, const char *urgency_str) {
+  char title[128];
+  char message[256];
+
+  if (minutes_before == 0) {
+    _snprintf_s(title, sizeof(title), _TRUNCATE, "Prayer Time: %s",
+                prayer_name);
+    _snprintf_s(message, sizeof(message), _TRUNCATE,
+                "It's time for %s prayer\nTime: %s", prayer_name, time_str);
+  } else {
+    _snprintf_s(title, sizeof(title), _TRUNCATE, "Prayer Reminder: %s",
+                prayer_name);
+    _snprintf_s(message, sizeof(message), _TRUNCATE,
+                "%s prayer in %d minutes\nTime: %s", prayer_name,
+                minutes_before, time_str);
+  }
+
+  /* Map urgency: critical -> scenario="reminder", normal/low -> default toast */
+  const char *scenario = NULL;
+  if (!urgency_str || strcmp(urgency_str, "critical") == 0) {
+    scenario = "reminder";
+  }
+
+  send_notification(title, message, scenario);
+}
+
+void notify_cleanup(void) {
+  if (!g_state.initialized) return;
+
+  if (g_state.factory) {
+    g_state.factory->lpVtbl->Release(g_state.factory);
+    g_state.factory = NULL;
+  }
+  if (g_state.notifier) {
+    g_state.notifier->lpVtbl->Release(g_state.notifier);
+    g_state.notifier = NULL;
+  }
+
+  RoUninitialize();
+  g_state.initialized = FALSE;
+}
