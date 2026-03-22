@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22...3.31)
-project(muslimtify VERSION 0.1.6 LANGUAGES C)
+project(muslimtify VERSION 0.2.0 LANGUAGES C)
 
 # ── Default build type ────────────────────────────────────────────────────────
 
@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-set(FULL_PROJECT_VERSION "${PROJECT_VERSION}")
+set(FULL_PROJECT_VERSION "${PROJECT_VERSION}-rc.1")
 
 # ── C standard and output dirs ────────────────────────────────────────────────
 
@@ -149,6 +149,11 @@ if(BUILD_TESTING)
         target_link_libraries(test_config muslimtify_lib ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
     endif()
     add_test(NAME config COMMAND test_config)
+
+    add_executable(test_json tests/test_json.c)
+    muslimtify_set_target_defaults(test_json)
+    target_link_libraries(test_json m)
+    add_test(NAME json COMMAND test_json)
 endif()
 
 # ── Install ──────────────────────────────────────────────────────────────────
