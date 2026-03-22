@@ -2,11 +2,11 @@
 #include <curl/curl.h>
 
 int main(int argc, char **argv) {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+  curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    int result = cli_run(argc, argv);
+  int result = cli_run(argc, argv);
 
-    curl_global_cleanup();
+  curl_global_cleanup();
 
-    return result;
+  return result;
 }

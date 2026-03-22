@@ -72,8 +72,7 @@ static int daemon_install_handler(int argc, char **argv) {
   (void)argv;
 
   char binary_path[PATH_MAX];
-  ssize_t len =
-      readlink("/proc/self/exe", binary_path, sizeof(binary_path) - 1);
+  ssize_t len = readlink("/proc/self/exe", binary_path, sizeof(binary_path) - 1);
   if (len <= 0) {
     fprintf(stderr, "Error: Cannot determine binary path\n");
     return 1;
@@ -91,12 +90,10 @@ static int daemon_install_handler(int argc, char **argv) {
   mkdir_p(systemd_dir);
 
   char service_path[PATH_MAX + 32];
-  snprintf(service_path, sizeof(service_path), "%s/muslimtify.service",
-           systemd_dir);
+  snprintf(service_path, sizeof(service_path), "%s/muslimtify.service", systemd_dir);
   FILE *f = fopen(service_path, "w");
   if (!f) {
-    fprintf(stderr, "Error: Cannot write %s: %s\n", service_path,
-            strerror(errno));
+    fprintf(stderr, "Error: Cannot write %s: %s\n", service_path, strerror(errno));
     return 1;
   }
   fprintf(f,
@@ -111,8 +108,7 @@ static int daemon_install_handler(int argc, char **argv) {
           "StandardError=journal\n",
           binary_path);
   if (ferror(f) || fclose(f) != 0) {
-    fprintf(stderr, "Error: Failed to write %s: %s\n", service_path,
-            strerror(errno));
+    fprintf(stderr, "Error: Failed to write %s: %s\n", service_path, strerror(errno));
     return 1;
   }
 
@@ -120,8 +116,7 @@ static int daemon_install_handler(int argc, char **argv) {
   snprintf(timer_path, sizeof(timer_path), "%s/muslimtify.timer", systemd_dir);
   f = fopen(timer_path, "w");
   if (!f) {
-    fprintf(stderr, "Error: Cannot write %s: %s\n", timer_path,
-            strerror(errno));
+    fprintf(stderr, "Error: Cannot write %s: %s\n", timer_path, strerror(errno));
     return 1;
   }
   fprintf(f, "[Unit]\n"
@@ -136,8 +131,7 @@ static int daemon_install_handler(int argc, char **argv) {
              "[Install]\n"
              "WantedBy=timers.target\n");
   if (ferror(f) || fclose(f) != 0) {
-    fprintf(stderr, "Error: Failed to write %s: %s\n", timer_path,
-            strerror(errno));
+    fprintf(stderr, "Error: Failed to write %s: %s\n", timer_path, strerror(errno));
     return 1;
   }
 
@@ -150,15 +144,13 @@ static int daemon_install_handler(int argc, char **argv) {
   }
   printf("✓ Reloaded systemd\n");
 
-  if (systemctl_user((const char *[]){"enable", "muslimtify.timer", NULL}) !=
-      0) {
+  if (systemctl_user((const char *[]){"enable", "muslimtify.timer", NULL}) != 0) {
     fprintf(stderr, "Error: Failed to enable muslimtify.timer\n");
     return 1;
   }
   printf("✓ Enabled muslimtify.timer\n");
 
-  if (systemctl_user((const char *[]){"start", "muslimtify.timer", NULL}) !=
-      0) {
+  if (systemctl_user((const char *[]){"start", "muslimtify.timer", NULL}) != 0) {
     fprintf(stderr, "Error: Failed to start muslimtify.timer\n");
     return 1;
   }
@@ -173,14 +165,12 @@ static int daemon_uninstall_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  if (systemctl_user((const char *[]){"is-active", "--quiet",
-                                      "muslimtify.timer", NULL}) == 0) {
+  if (systemctl_user((const char *[]){"is-active", "--quiet", "muslimtify.timer", NULL}) == 0) {
     systemctl_user((const char *[]){"stop", "muslimtify.timer", NULL});
     printf("✓ Stopped muslimtify.timer\n");
   }
 
-  if (systemctl_user((const char *[]){"is-enabled", "--quiet",
-                                      "muslimtify.timer", NULL}) == 0) {
+  if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.timer", NULL}) == 0) {
     systemctl_user((const char *[]){"disable", "muslimtify.timer", NULL});
     printf("✓ Disabled muslimtify.timer\n");
   }
@@ -218,12 +208,10 @@ static int daemon_status_handler(int argc, char **argv) {
   (void)argv;
 
   printf("=== Timer ===\n");
-  systemctl_user(
-      (const char *[]){"status", "muslimtify.timer", "--no-pager", NULL});
+  systemctl_user((const char *[]){"status", "muslimtify.timer", "--no-pager", NULL});
 
   printf("\n=== Next trigger ===\n");
-  systemctl_user(
-      (const char *[]){"list-timers", "muslimtify", "--no-pager", NULL});
+  systemctl_user((const char *[]){"list-timers", "muslimtify", "--no-pager", NULL});
   return 0;
 }
 

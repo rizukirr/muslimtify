@@ -24,9 +24,9 @@ int handle_show(int argc, char **argv) {
     return 1;
   }
 
-  struct PrayerTimes times = calculate_prayer_times(
-      tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-      cfg.latitude, cfg.longitude, cfg.timezone_offset);
+  struct PrayerTimes times =
+      calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                             cfg.latitude, cfg.longitude, cfg.timezone_offset);
 
   bool json_format = false;
   bool no_header = false;
@@ -75,20 +75,19 @@ int handle_check(int argc, char **argv) {
 
   int current_min = tm_now->tm_hour * 60 + tm_now->tm_min;
   char today[16];
-  snprintf(today, sizeof(today), "%04d-%02d-%02d",
-           tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday);
+  snprintf(today, sizeof(today), "%04d-%02d-%02d", tm_now->tm_year + 1900, tm_now->tm_mon + 1,
+           tm_now->tm_mday);
 
   // Try to load cache
   PrayerCache cache;
-  bool cache_valid = (cache_load(&cache) == 0 &&
-                      strcmp(cache.date, today) == 0 &&
-                      cache.trigger_count > 0);
+  bool cache_valid =
+      (cache_load(&cache) == 0 && strcmp(cache.date, today) == 0 && cache.trigger_count > 0);
 
   if (!cache_valid) {
     // Recalculate and build cache
-    struct PrayerTimes times = calculate_prayer_times(
-        tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-        cfg.latitude, cfg.longitude, cfg.timezone_offset);
+    struct PrayerTimes times =
+        calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                               cfg.latitude, cfg.longitude, cfg.timezone_offset);
 
     cache_build_triggers(&cache, &cfg, &times, current_min, today);
     cache_save(&cache);
@@ -109,8 +108,7 @@ int handle_check(int argc, char **argv) {
 
       char time_str[16];
       format_time_hm(cache.triggers[i].prayer_time, time_str, sizeof(time_str));
-      notify_prayer(cache.triggers[i].prayer, time_str,
-                    cache.triggers[i].minutes_before,
+      notify_prayer(cache.triggers[i].prayer, time_str, cache.triggers[i].minutes_before,
                     cfg.notification_urgency);
 
       cache_remove_trigger(&cache, i);

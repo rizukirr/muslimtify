@@ -10,8 +10,7 @@
 // ── shared helper ───────────────────────────────────────────────────────────
 
 int ensure_location(Config *cfg) {
-  if (cfg->auto_detect &&
-      (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
+  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
     printf("Detecting location...\n");
     if (location_fetch(cfg) != 0) {
       fprintf(stderr, "Error: Failed to detect location\n");
@@ -31,14 +30,12 @@ int ensure_location(Config *cfg) {
 // ── top-level dispatch table ────────────────────────────────────────────────
 
 static const CommandEntry top_commands[] = {
-    {"show", handle_show},         {"check", handle_check},
-    {"next", handle_next},         {"config", handle_config},
-    {"location", handle_location}, {"enable", handle_enable},
-    {"disable", handle_disable},   {"list", handle_list},
-    {"reminder", handle_reminder}, {"daemon", handle_daemon},
-    {"version", handle_version},   {"--version", handle_version},
-    {"-v", handle_version},        {"help", handle_help},
-    {"--help", handle_help},       {"-h", handle_help},
+    {"show", handle_show},       {"check", handle_check},       {"next", handle_next},
+    {"config", handle_config},   {"location", handle_location}, {"enable", handle_enable},
+    {"disable", handle_disable}, {"list", handle_list},         {"reminder", handle_reminder},
+    {"daemon", handle_daemon},   {"version", handle_version},   {"--version", handle_version},
+    {"-v", handle_version},      {"help", handle_help},         {"--help", handle_help},
+    {"-h", handle_help},
 };
 
 // ── version / help ──────────────────────────────────────────────────────────
@@ -107,12 +104,10 @@ int cli_run(int argc, char **argv) {
   }
 
   const char *cmd = argv[1];
-  const CommandEntry *entry =
-      dispatch_lookup(top_commands, DISPATCH_N(top_commands), cmd);
+  const CommandEntry *entry = dispatch_lookup(top_commands, DISPATCH_N(top_commands), cmd);
   if (entry)
     return entry->handler(argc - 2, argv + 2);
 
-  fprintf(stderr, "Unknown command '%s'. Use 'muslimtify help' for usage.\n",
-          cmd);
+  fprintf(stderr, "Unknown command '%s'. Use 'muslimtify help' for usage.\n", cmd);
   return 1;
 }

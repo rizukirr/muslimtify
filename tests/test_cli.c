@@ -36,7 +36,8 @@ static void setup(void) {
 static void teardown(void) {
   char cmd[1024];
   snprintf(cmd, sizeof(cmd), "rm -rf %s", tmpdir);
-  if (system(cmd) != 0) { /* best-effort cleanup */ }
+  if (system(cmd) != 0) { /* best-effort cleanup */
+  }
 }
 
 static void reset_config(void) {
@@ -101,8 +102,7 @@ static void check_ret(const char *test, int expected) {
     passed++;
   } else {
     failed++;
-    fprintf(stderr, "FAIL [%s]: expected ret=%d, got %d\n", test, expected,
-            last_ret);
+    fprintf(stderr, "FAIL [%s]: expected ret=%d, got %d\n", test, expected, last_ret);
   }
 }
 
@@ -112,8 +112,7 @@ static void check_contains(const char *test, const char *needle) {
   } else {
     failed++;
     fprintf(stderr, "FAIL [%s]: output missing \"%s\"\n", test, needle);
-    fprintf(stderr, "  got: %.200s%s\n", captured,
-            strlen(captured) > 200 ? "..." : "");
+    fprintf(stderr, "  got: %.200s%s\n", captured, strlen(captured) > 200 ? "..." : "");
   }
 }
 
@@ -228,10 +227,8 @@ static void test_location(void) {
   {
     Config cfg;
     config_load(&cfg);
-    check_bool("location set lat",
-               cfg.latitude > -7.26 && cfg.latitude < -7.24);
-    check_bool("location set lon",
-               cfg.longitude > 112.74 && cfg.longitude < 112.76);
+    check_bool("location set lat", cfg.latitude > -7.26 && cfg.latitude < -7.24);
+    check_bool("location set lon", cfg.longitude > 112.74 && cfg.longitude < 112.76);
   }
 
   // location set (no args)

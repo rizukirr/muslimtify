@@ -23,9 +23,9 @@ static int next_name(int argc, char **argv) {
     return 1;
   }
 
-  struct PrayerTimes times = calculate_prayer_times(
-      tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-      cfg.latitude, cfg.longitude, cfg.timezone_offset);
+  struct PrayerTimes times =
+      calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                             cfg.latitude, cfg.longitude, cfg.timezone_offset);
 
   int minutes_until = 0;
   PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
@@ -56,9 +56,9 @@ static int next_time(int argc, char **argv) {
     return 1;
   }
 
-  struct PrayerTimes times = calculate_prayer_times(
-      tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-      cfg.latitude, cfg.longitude, cfg.timezone_offset);
+  struct PrayerTimes times =
+      calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                             cfg.latitude, cfg.longitude, cfg.timezone_offset);
 
   int minutes_until = 0;
   PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
@@ -91,9 +91,9 @@ static int next_remaining(int argc, char **argv) {
     return 1;
   }
 
-  struct PrayerTimes times = calculate_prayer_times(
-      tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-      cfg.latitude, cfg.longitude, cfg.timezone_offset);
+  struct PrayerTimes times =
+      calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                             cfg.latitude, cfg.longitude, cfg.timezone_offset);
 
   int minutes_until = 0;
   PrayerType next = prayer_get_next(&cfg, tm_now, &times, &minutes_until);
@@ -119,8 +119,7 @@ static const CommandEntry next_commands[] = {
 
 int handle_next(int argc, char **argv) {
   if (argc > 0) {
-    const CommandEntry *sub =
-        dispatch_lookup(next_commands, DISPATCH_N(next_commands), argv[0]);
+    const CommandEntry *sub = dispatch_lookup(next_commands, DISPATCH_N(next_commands), argv[0]);
     if (sub)
       return sub->handler(argc - 1, argv + 1);
   }
@@ -140,9 +139,9 @@ int handle_next(int argc, char **argv) {
     return 1;
   }
 
-  struct PrayerTimes times = calculate_prayer_times(
-      tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-      cfg.latitude, cfg.longitude, cfg.timezone_offset);
+  struct PrayerTimes times =
+      calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+                             cfg.latitude, cfg.longitude, cfg.timezone_offset);
 
   display_next_prayer(&times, &cfg, tm_now);
   return 0;

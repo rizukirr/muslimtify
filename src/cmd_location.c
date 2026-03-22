@@ -148,16 +148,15 @@ static int location_clear_handler(int argc, char **argv) {
 }
 
 static const CommandEntry location_commands[] = {
-    {"show", location_show_handler},   {"auto", location_auto_handler},
-    {"set", location_set_handler},     {"clear", location_clear_handler},
+    {"show", location_show_handler},       {"auto", location_auto_handler},
+    {"set", location_set_handler},         {"clear", location_clear_handler},
     {"refresh", location_refresh_handler},
 };
 
 int handle_location(int argc, char **argv) {
   if (argc > 0) {
-    const CommandEntry *sub = dispatch_lookup(location_commands,
-                                             DISPATCH_N(location_commands),
-                                             argv[0]);
+    const CommandEntry *sub =
+        dispatch_lookup(location_commands, DISPATCH_N(location_commands), argv[0]);
     if (sub)
       return sub->handler(argc - 1, argv + 1);
 

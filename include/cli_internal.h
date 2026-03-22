@@ -14,8 +14,8 @@ typedef struct {
   HandlerFn handler;
 } CommandEntry;
 
-static inline const CommandEntry *dispatch_lookup(const CommandEntry *table,
-                                                  int n, const char *name) {
+static inline const CommandEntry *dispatch_lookup(const CommandEntry *table, int n,
+                                                  const char *name) {
   for (int i = 0; i < n; i++) {
     if (strcmp(table[i].name, name) == 0)
       return &table[i];

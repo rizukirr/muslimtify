@@ -12,16 +12,16 @@ extern "C" {
 #define MAX_TRIGGERS 64
 
 typedef struct {
-    char prayer[16];       // Prayer name (e.g., "fajr")
-    int minute;            // Absolute minute of day (hour*60 + min)
-    int minutes_before;    // 0 = exact time, >0 = reminder
-    double prayer_time;    // Prayer time in decimal hours
+  char prayer[16];    // Prayer name (e.g., "fajr")
+  int minute;         // Absolute minute of day (hour*60 + min)
+  int minutes_before; // 0 = exact time, >0 = reminder
+  double prayer_time; // Prayer time in decimal hours
 } CacheTrigger;
 
 typedef struct {
-    char date[16];                   // "YYYY-MM-DD"
-    CacheTrigger triggers[MAX_TRIGGERS];
-    int trigger_count;
+  char date[16]; // "YYYY-MM-DD"
+  CacheTrigger triggers[MAX_TRIGGERS];
+  int trigger_count;
 } PrayerCache;
 
 /**
@@ -51,11 +51,8 @@ void cache_invalidate(void);
  * Only includes triggers at or after current_minute.
  * Returns: number of triggers added
  */
-int cache_build_triggers(PrayerCache *cache,
-                         const Config *cfg,
-                         const struct PrayerTimes *times,
-                         int current_minute,
-                         const char *date_str);
+int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct PrayerTimes *times,
+                         int current_minute, const char *date_str);
 
 /**
  * Remove a trigger by index (caller must call cache_save afterward).

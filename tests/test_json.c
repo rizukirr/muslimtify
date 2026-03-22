@@ -8,16 +8,15 @@
 static int failures = 0;
 static int total = 0;
 
-static void check_str(const char *result, const char *expected,
-                      const char *label) {
+static void check_str(const char *result, const char *expected, const char *label) {
   total++;
   if (result == NULL && expected == NULL) {
     printf("  PASS: %s\n", label);
   } else if (result != NULL && expected != NULL && strcmp(result, expected) == 0) {
     printf("  PASS: %s\n", label);
   } else {
-    printf("  FAIL: %s — got \"%s\", expected \"%s\"\n", label,
-           result ? result : "(null)", expected ? expected : "(null)");
+    printf("  FAIL: %s — got \"%s\", expected \"%s\"\n", label, result ? result : "(null)",
+           expected ? expected : "(null)");
     failures++;
   }
 }

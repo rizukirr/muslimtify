@@ -11,7 +11,9 @@
 /* ── WinRT type declarations ──────────────────────────────────────────────── */
 
 /* HSTRING types (from winstring.h) */
-typedef struct HSTRING__ { int unused; } HSTRING__;
+typedef struct HSTRING__ {
+  int unused;
+} HSTRING__;
 typedef HSTRING__ *HSTRING;
 typedef struct HSTRING_HEADER {
   union {
@@ -25,8 +27,7 @@ typedef struct HSTRING_HEADER {
 } HSTRING_HEADER;
 
 STDAPI WindowsCreateStringReference(PCWSTR sourceString, UINT32 length,
-                                    HSTRING_HEADER *hstringHeader,
-                                    HSTRING *string);
+                                    HSTRING_HEADER *hstringHeader, HSTRING *string);
 STDAPI WindowsDeleteString(HSTRING string);
 
 /* IInspectable (from inspectable.h) */
@@ -56,8 +57,7 @@ typedef interface IXmlDocumentIO IXmlDocumentIO;
 typedef interface IToastNotification IToastNotification;
 typedef interface IToastNotifier IToastNotifier;
 typedef interface IToastNotificationFactory IToastNotificationFactory;
-typedef interface IToastNotificationManagerStatics
-    IToastNotificationManagerStatics;
+typedef interface IToastNotificationManagerStatics IToastNotificationManagerStatics;
 
 /* IXmlDocument */
 typedef struct IXmlDocumentVtbl {
@@ -187,8 +187,7 @@ typedef struct IToastNotificationFactoryVtbl {
   HRESULT(STDMETHODCALLTYPE *GetTrustLevel)
   (IToastNotificationFactory *This, TrustLevel *trustLevel);
   HRESULT(STDMETHODCALLTYPE *CreateToastNotification)
-  (IToastNotificationFactory *This, IXmlDocument *content,
-   IToastNotification **notification);
+  (IToastNotificationFactory *This, IXmlDocument *content, IToastNotification **notification);
   END_INTERFACE
 } IToastNotificationFactoryVtbl;
 interface IToastNotificationFactory {
@@ -211,8 +210,7 @@ typedef struct IToastNotificationManagerStaticsVtbl {
   HRESULT(STDMETHODCALLTYPE *CreateToastNotifier)
   (IToastNotificationManagerStatics *This, IToastNotifier **notifier);
   HRESULT(STDMETHODCALLTYPE *CreateToastNotifierWithId)
-  (IToastNotificationManagerStatics *This, HSTRING applicationId,
-   IToastNotifier **notifier);
+  (IToastNotificationManagerStatics *This, HSTRING applicationId, IToastNotifier **notifier);
   void *GetTemplateContent;
   END_INTERFACE
 } IToastNotificationManagerStaticsVtbl;
@@ -223,26 +221,20 @@ interface IToastNotificationManagerStatics {
 /* ── GUIDs ────────────────────────────────────────────────────────────────── */
 
 static const IID IID_IToastNotificationManagerStatics = {
-    0x50ac103f, 0xd235, 0x4598,
-    {0xbb, 0xef, 0x98, 0xfe, 0x4d, 0x1a, 0x3a, 0xd4}};
+    0x50ac103f, 0xd235, 0x4598, {0xbb, 0xef, 0x98, 0xfe, 0x4d, 0x1a, 0x3a, 0xd4}};
 static const IID IID_IToastNotificationFactory = {
-    0x04124b20, 0x82c6, 0x4229,
-    {0xb1, 0x09, 0xfd, 0x9e, 0xd4, 0x66, 0x2b, 0x53}};
+    0x04124b20, 0x82c6, 0x4229, {0xb1, 0x09, 0xfd, 0x9e, 0xd4, 0x66, 0x2b, 0x53}};
 static const IID IID_IXmlDocument = {
-    0xf7f3a506, 0x1e87, 0x42d6,
-    {0xbc, 0xfb, 0xb8, 0xc8, 0x09, 0xfa, 0x54, 0x94}};
+    0xf7f3a506, 0x1e87, 0x42d6, {0xbc, 0xfb, 0xb8, 0xc8, 0x09, 0xfa, 0x54, 0x94}};
 static const IID IID_IXmlDocumentIO = {
-    0x6cd0e74e, 0xee65, 0x4489,
-    {0x9e, 0xbf, 0xca, 0x43, 0xe8, 0x7b, 0xa6, 0x37}};
+    0x6cd0e74e, 0xee65, 0x4489, {0x9e, 0xbf, 0xca, 0x43, 0xe8, 0x7b, 0xa6, 0x37}};
 
 /* ── Runtime class names ──────────────────────────────────────────────────── */
 
 static const WCHAR RuntimeClass_ToastNotificationManager[] =
     L"Windows.UI.Notifications.ToastNotificationManager";
-static const WCHAR RuntimeClass_ToastNotification[] =
-    L"Windows.UI.Notifications.ToastNotification";
-static const WCHAR RuntimeClass_XmlDocument[] =
-    L"Windows.Data.Xml.Dom.XmlDocument";
+static const WCHAR RuntimeClass_ToastNotification[] = L"Windows.UI.Notifications.ToastNotification";
+static const WCHAR RuntimeClass_XmlDocument[] = L"Windows.Data.Xml.Dom.XmlDocument";
 
 /* ── RoAPI declarations ───────────────────────────────────────────────────── */
 
@@ -254,18 +246,15 @@ static const WCHAR RuntimeClass_XmlDocument[] =
 #endif
 typedef enum { RO_INIT_MULTITHREADED = 1 } RO_INIT_TYPE;
 ROAPI HRESULT WINAPI RoInitialize(RO_INIT_TYPE initType);
-ROAPI HRESULT WINAPI RoGetActivationFactory(HSTRING activatableClassId,
-                                            REFIID iid, void **factory);
-ROAPI HRESULT WINAPI RoActivateInstance(HSTRING activatableClassId,
-                                        IInspectable **instance);
+ROAPI HRESULT WINAPI RoGetActivationFactory(HSTRING activatableClassId, REFIID iid, void **factory);
+ROAPI HRESULT WINAPI RoActivateInstance(HSTRING activatableClassId, IInspectable **instance);
 ROAPI void WINAPI RoUninitialize(void);
 #endif
 
 /* ── AUMID for unpackaged app ─────────────────────────────────────────────── */
 
-static const WCHAR MUSLIMTIFY_AUMID[] =
-    L"{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}"
-    L"\\WindowsPowerShell\\v1.0\\powershell.exe";
+static const WCHAR MUSLIMTIFY_AUMID[] = L"{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}"
+                                        L"\\WindowsPowerShell\\v1.0\\powershell.exe";
 
 /* ── File-static state ────────────────────────────────────────────────────── */
 
@@ -281,22 +270,27 @@ static NotifyState g_state = {0};
 
 /* Convert UTF-8 string to UTF-16. Caller must free() the result. */
 static wchar_t *utf8_to_utf16(const char *utf8) {
-  if (!utf8) return NULL;
+  if (!utf8)
+    return NULL;
   int len = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, NULL, 0);
-  if (len <= 0) return NULL;
+  if (len <= 0)
+    return NULL;
   wchar_t *wide = (wchar_t *)malloc(len * sizeof(wchar_t));
-  if (!wide) return NULL;
+  if (!wide)
+    return NULL;
   MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wide, len);
   return wide;
 }
 
 /* XML-escape a UTF-16 string. Caller must free() the result. */
 static wchar_t *xml_escape(const wchar_t *src) {
-  if (!src) return NULL;
+  if (!src)
+    return NULL;
   /* Worst case: every char becomes "&quot;" or "&apos;" (6x expansion) */
   size_t src_len = wcslen(src);
   wchar_t *escaped = (wchar_t *)malloc((src_len * 6 + 1) * sizeof(wchar_t));
-  if (!escaped) return NULL;
+  if (!escaped)
+    return NULL;
   wchar_t *dst = escaped;
   for (size_t i = 0; i < src_len; i++) {
     switch (src[i]) {
@@ -330,8 +324,7 @@ static wchar_t *xml_escape(const wchar_t *src) {
 }
 
 /* Create HSTRING from static wide string (no allocation — reference only) */
-static HRESULT make_hstring_ref(const WCHAR *str, HSTRING_HEADER *header,
-                                HSTRING *hstr) {
+static HRESULT make_hstring_ref(const WCHAR *str, HSTRING_HEADER *header, HSTRING *hstr) {
   return WindowsCreateStringReference(str, (UINT32)wcslen(str), header, hstr);
 }
 
@@ -341,8 +334,7 @@ static void send_toast_xml(const wchar_t *xml) {
   HSTRING_HEADER hsh_xml_cls;
   HSTRING hs_xml_cls = NULL;
   IInspectable *inspectable = NULL;
-  if (!SUCCEEDED(
-          make_hstring_ref(RuntimeClass_XmlDocument, &hsh_xml_cls, &hs_xml_cls)))
+  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_XmlDocument, &hsh_xml_cls, &hs_xml_cls)))
     return;
   if (!SUCCEEDED(RoActivateInstance(hs_xml_cls, &inspectable))) {
     fprintf(stderr, "muslimtify: failed to create XmlDocument\n");
@@ -351,8 +343,8 @@ static void send_toast_xml(const wchar_t *xml) {
 
   /* Query IXmlDocument */
   IXmlDocument *xml_doc = NULL;
-  if (!SUCCEEDED(inspectable->lpVtbl->QueryInterface(
-          inspectable, &IID_IXmlDocument, (void **)&xml_doc))) {
+  if (!SUCCEEDED(
+          inspectable->lpVtbl->QueryInterface(inspectable, &IID_IXmlDocument, (void **)&xml_doc))) {
     inspectable->lpVtbl->Release(inspectable);
     return;
   }
@@ -360,16 +352,14 @@ static void send_toast_xml(const wchar_t *xml) {
 
   /* Query IXmlDocumentIO and load XML */
   IXmlDocumentIO *xml_io = NULL;
-  if (!SUCCEEDED(xml_doc->lpVtbl->QueryInterface(xml_doc, &IID_IXmlDocumentIO,
-                                                  (void **)&xml_io))) {
+  if (!SUCCEEDED(xml_doc->lpVtbl->QueryInterface(xml_doc, &IID_IXmlDocumentIO, (void **)&xml_io))) {
     xml_doc->lpVtbl->Release(xml_doc);
     return;
   }
 
   HSTRING_HEADER hsh_xml;
   HSTRING hs_xml = NULL;
-  if (!SUCCEEDED(WindowsCreateStringReference(xml, (UINT32)wcslen(xml),
-                                              &hsh_xml, &hs_xml))) {
+  if (!SUCCEEDED(WindowsCreateStringReference(xml, (UINT32)wcslen(xml), &hsh_xml, &hs_xml))) {
     xml_io->lpVtbl->Release(xml_io);
     xml_doc->lpVtbl->Release(xml_doc);
     return;
@@ -384,8 +374,8 @@ static void send_toast_xml(const wchar_t *xml) {
 
   /* Create and show toast */
   IToastNotification *toast = NULL;
-  if (!SUCCEEDED(g_state.factory->lpVtbl->CreateToastNotification(
-          g_state.factory, xml_doc, &toast))) {
+  if (!SUCCEEDED(
+          g_state.factory->lpVtbl->CreateToastNotification(g_state.factory, xml_doc, &toast))) {
     fprintf(stderr, "muslimtify: CreateToastNotification failed\n");
     xml_doc->lpVtbl->Release(xml_doc);
     return;
@@ -400,10 +390,11 @@ static void send_toast_xml(const wchar_t *xml) {
 }
 
 /* Build toast XML from title/message with optional scenario attribute */
-static void send_notification(const char *title, const char *message,
-                              const char *scenario) {
-  if (!g_state.initialized) return;
-  if (!title || !message) return;
+static void send_notification(const char *title, const char *message, const char *scenario) {
+  if (!g_state.initialized)
+    return;
+  if (!title || !message)
+    return;
 
   /* Convert and escape strings */
   wchar_t *wtitle_raw = utf8_to_utf16(title);
@@ -452,7 +443,8 @@ static void send_notification(const char *title, const char *message,
 int notify_init_once(const char *app_name) {
   (void)app_name; /* AUMID is used instead on Windows */
 
-  if (g_state.initialized) return 1;
+  if (g_state.initialized)
+    return 1;
 
   if (!SUCCEEDED(RoInitialize(RO_INIT_MULTITHREADED))) {
     fprintf(stderr, "muslimtify: RoInitialize failed\n");
@@ -464,13 +456,12 @@ int notify_init_once(const char *app_name) {
   HSTRING hs_mgr = NULL;
   IToastNotificationManagerStatics *mgr = NULL;
 
-  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_ToastNotificationManager,
-                                  &hsh_mgr, &hs_mgr))) {
+  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_ToastNotificationManager, &hsh_mgr, &hs_mgr))) {
     fprintf(stderr, "muslimtify: failed to create manager HSTRING\n");
     goto fail;
   }
-  if (!SUCCEEDED(RoGetActivationFactory(
-          hs_mgr, &IID_IToastNotificationManagerStatics, (void **)&mgr))) {
+  if (!SUCCEEDED(
+          RoGetActivationFactory(hs_mgr, &IID_IToastNotificationManagerStatics, (void **)&mgr))) {
     fprintf(stderr, "muslimtify: failed to get ToastNotificationManager\n");
     goto fail;
   }
@@ -482,8 +473,7 @@ int notify_init_once(const char *app_name) {
     mgr->lpVtbl->Release(mgr);
     goto fail;
   }
-  if (!SUCCEEDED(mgr->lpVtbl->CreateToastNotifierWithId(
-          mgr, hs_aumid, &g_state.notifier))) {
+  if (!SUCCEEDED(mgr->lpVtbl->CreateToastNotifierWithId(mgr, hs_aumid, &g_state.notifier))) {
     fprintf(stderr, "muslimtify: failed to create ToastNotifier\n");
     mgr->lpVtbl->Release(mgr);
     goto fail;
@@ -493,12 +483,11 @@ int notify_init_once(const char *app_name) {
   /* Get ToastNotification factory */
   HSTRING_HEADER hsh_notif;
   HSTRING hs_notif = NULL;
-  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_ToastNotification, &hsh_notif,
-                                  &hs_notif))) {
+  if (!SUCCEEDED(make_hstring_ref(RuntimeClass_ToastNotification, &hsh_notif, &hs_notif))) {
     goto fail;
   }
-  if (!SUCCEEDED(RoGetActivationFactory(
-          hs_notif, &IID_IToastNotificationFactory, (void **)&g_state.factory))) {
+  if (!SUCCEEDED(RoGetActivationFactory(hs_notif, &IID_IToastNotificationFactory,
+                                        (void **)&g_state.factory))) {
     fprintf(stderr, "muslimtify: failed to get ToastNotificationFactory\n");
     goto fail;
   }
@@ -519,22 +508,19 @@ void notify_send(const char *title, const char *message) {
   send_notification(title, message, NULL);
 }
 
-void notify_prayer(const char *prayer_name, const char *time_str,
-                   int minutes_before, const char *urgency_str) {
+void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
+                   const char *urgency_str) {
   char title[128];
   char message[256];
 
   if (minutes_before == 0) {
-    _snprintf_s(title, sizeof(title), _TRUNCATE, "Prayer Time: %s",
-                prayer_name);
-    _snprintf_s(message, sizeof(message), _TRUNCATE,
-                "It's time for %s prayer\nTime: %s", prayer_name, time_str);
+    _snprintf_s(title, sizeof(title), _TRUNCATE, "Prayer Time: %s", prayer_name);
+    _snprintf_s(message, sizeof(message), _TRUNCATE, "It's time for %s prayer\nTime: %s",
+                prayer_name, time_str);
   } else {
-    _snprintf_s(title, sizeof(title), _TRUNCATE, "Prayer Reminder: %s",
-                prayer_name);
-    _snprintf_s(message, sizeof(message), _TRUNCATE,
-                "%s prayer in %d minutes\nTime: %s", prayer_name,
-                minutes_before, time_str);
+    _snprintf_s(title, sizeof(title), _TRUNCATE, "Prayer Reminder: %s", prayer_name);
+    _snprintf_s(message, sizeof(message), _TRUNCATE, "%s prayer in %d minutes\nTime: %s",
+                prayer_name, minutes_before, time_str);
   }
 
   /* Map urgency: critical -> scenario="reminder", normal/low -> default toast */
@@ -547,7 +533,8 @@ void notify_prayer(const char *prayer_name, const char *time_str,
 }
 
 void notify_cleanup(void) {
-  if (!g_state.initialized) return;
+  if (!g_state.initialized)
+    return;
 
   if (g_state.factory) {
     g_state.factory->lpVtbl->Release(g_state.factory);

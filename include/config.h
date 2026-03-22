@@ -8,42 +8,42 @@
 extern "C" {
 #endif
 
-#define MAX_REMINDERS 10  // Maximum reminders per prayer
+#define MAX_REMINDERS 10 // Maximum reminders per prayer
 
 typedef struct {
-    bool enabled;
-    int reminders[MAX_REMINDERS];  // Minutes before prayer
-    int reminder_count;            // Number of reminders
+  bool enabled;
+  int reminders[MAX_REMINDERS]; // Minutes before prayer
+  int reminder_count;           // Number of reminders
 } PrayerConfig;
 
 typedef struct {
-    // Location
-    double latitude;
-    double longitude;
-    char timezone[64];
-    double timezone_offset;
-    bool auto_detect;
-    char city[128];
-    char country[64];
-    
-    // Prayers
-    PrayerConfig fajr;
-    PrayerConfig sunrise;
-    PrayerConfig dhuha;
-    PrayerConfig dhuhr;
-    PrayerConfig asr;
-    PrayerConfig maghrib;
-    PrayerConfig isha;
-    
-    // Notification
-    int notification_timeout;
-    char notification_urgency[16];
-    bool notification_sound;
-    char notification_icon[64];
-    
-    // Calculation
-    char calculation_method[32];
-    char madhab[16];
+  // Location
+  double latitude;
+  double longitude;
+  char timezone[64];
+  double timezone_offset;
+  bool auto_detect;
+  char city[128];
+  char country[64];
+
+  // Prayers
+  PrayerConfig fajr;
+  PrayerConfig sunrise;
+  PrayerConfig dhuha;
+  PrayerConfig dhuhr;
+  PrayerConfig asr;
+  PrayerConfig maghrib;
+  PrayerConfig isha;
+
+  // Notification
+  int notification_timeout;
+  char notification_urgency[16];
+  bool notification_sound;
+  char notification_icon[64];
+
+  // Calculation
+  char calculation_method[32];
+  char madhab[16];
 } Config;
 
 /**
@@ -84,16 +84,12 @@ PrayerConfig *config_get_prayer(Config *cfg, const char *prayer_name);
  * Parse reminder string (e.g., "30,15,5") into array
  * Returns: number of reminders parsed, -1 on error
  */
-int config_parse_reminders(const char *reminder_str, 
-                           int *reminders, 
-                           int max_reminders);
+int config_parse_reminders(const char *reminder_str, int *reminders, int max_reminders);
 
 /**
  * Format reminders array to string (e.g., "30,15,5")
  */
-void config_format_reminders(const PrayerConfig *prayer, 
-                             char *buffer, 
-                             size_t bufsize);
+void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bufsize);
 
 #ifdef __cplusplus
 }

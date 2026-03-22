@@ -1,9 +1,9 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include "../src/prayertimes.h"
 #include "config.h"
 #include "prayer_checker.h"
-#include "../src/prayertimes.h"
 #include <time.h>
 
 #ifdef __cplusplus
@@ -13,29 +13,24 @@ extern "C" {
 /**
  * Display prayer times in table format
  */
-void display_prayer_times_table(const struct PrayerTimes *times, 
-                                const Config *cfg,
+void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
                                 struct tm *date);
 
 /**
  * Display prayer times in plain key=value format (only enabled prayers)
  */
-void display_prayer_times_plain(const struct PrayerTimes *times,
-                                const Config *cfg,
+void display_prayer_times_plain(const struct PrayerTimes *times, const Config *cfg,
                                 struct tm *date);
 
 /**
  * Display prayer times in JSON format
  */
-void display_prayer_times_json(const struct PrayerTimes *times,
-                               const Config *cfg,
-                               struct tm *date);
+void display_prayer_times_json(const struct PrayerTimes *times, const Config *cfg, struct tm *date);
 
 /**
  * Display next prayer info
  */
-void display_next_prayer(const struct PrayerTimes *times,
-                         const Config *cfg,
+void display_next_prayer(const struct PrayerTimes *times, const Config *cfg,
                          struct tm *current_time);
 
 /**

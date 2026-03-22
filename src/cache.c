@@ -2,277 +2,303 @@
 #include "json.h"
 #include <errno.h>
 #include <math.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <pwd.h>
 
 static char cache_path_buf[512] = {0};
 
 const char *cache_get_path(void) {
-    if (cache_path_buf[0] != '\0') {
-        return cache_path_buf;
-    }
-
-    const char *xdg_cache = getenv("XDG_CACHE_HOME");
-    const char *home = getenv("HOME");
-
-    if (!home) {
-        struct passwd *pw = getpwuid(getuid());
-        if (pw)
-            home = pw->pw_dir;
-    }
-
-    if (xdg_cache) {
-        snprintf(cache_path_buf, sizeof(cache_path_buf),
-                 "%s/muslimtify/next_prayer.json", xdg_cache);
-    } else if (home) {
-        snprintf(cache_path_buf, sizeof(cache_path_buf),
-                 "%s/.cache/muslimtify/next_prayer.json", home);
-    }
-
+  if (cache_path_buf[0] != '\0') {
     return cache_path_buf;
+  }
+
+  const char *xdg_cache = getenv("XDG_CACHE_HOME");
+  const char *home = getenv("HOME");
+
+  if (!home) {
+    struct passwd *pw = getpwuid(getuid());
+    if (pw)
+      home = pw->pw_dir;
+  }
+
+  if (xdg_cache) {
+    snprintf(cache_path_buf, sizeof(cache_path_buf), "%s/muslimtify/next_prayer.json", xdg_cache);
+  } else if (home) {
+    snprintf(cache_path_buf, sizeof(cache_path_buf), "%s/.cache/muslimtify/next_prayer.json", home);
+  }
+
+  return cache_path_buf;
 }
 
 static int ensure_cache_dir(void) {
-    char dir_path[512];
-    const char *path = cache_get_path();
+  char dir_path[512];
+  const char *path = cache_get_path();
 
-    snprintf(dir_path, sizeof(dir_path), "%s", path);
-    char *last_slash = strrchr(dir_path, '/');
-    if (last_slash) {
-        *last_slash = '\0';
-    }
+  snprintf(dir_path, sizeof(dir_path), "%s", path);
+  char *last_slash = strrchr(dir_path, '/');
+  if (last_slash) {
+    *last_slash = '\0';
+  }
 
-    for (char *p = dir_path + 1; *p; p++) {
-        if (*p == '/') {
-            *p = '\0';
-            if (mkdir(dir_path, 0755) != 0 && errno != EEXIST)
-                return -1;
-            *p = '/';
-        }
-    }
-    if (mkdir(dir_path, 0755) != 0 && errno != EEXIST)
+  for (char *p = dir_path + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      if (mkdir(dir_path, 0755) != 0 && errno != EEXIST)
         return -1;
+      *p = '/';
+    }
+  }
+  if (mkdir(dir_path, 0755) != 0 && errno != EEXIST)
+    return -1;
 
-    return 0;
+  return 0;
 }
 
 static char *read_file(const char *path) {
-    FILE *f = fopen(path, "r");
-    if (!f) return NULL;
+  FILE *f = fopen(path, "r");
+  if (!f)
+    return NULL;
 
-    fseek(f, 0, SEEK_END);
-    long size = ftell(f);
-    if (size < 0) { fclose(f); return NULL; }
-    fseek(f, 0, SEEK_SET);
-
-    char *content = malloc((size_t)size + 1);
-    if (!content) { fclose(f); return NULL; }
-
-    size_t n = fread(content, 1, (size_t)size, f);
-    content[n] = '\0';
+  fseek(f, 0, SEEK_END);
+  long size = ftell(f);
+  if (size < 0) {
     fclose(f);
-    return content;
+    return NULL;
+  }
+  fseek(f, 0, SEEK_SET);
+
+  char *content = malloc((size_t)size + 1);
+  if (!content) {
+    fclose(f);
+    return NULL;
+  }
+
+  size_t n = fread(content, 1, (size_t)size, f);
+  content[n] = '\0';
+  fclose(f);
+  return content;
 }
 
 int cache_load(PrayerCache *cache) {
-    if (!cache) return -1;
+  if (!cache)
+    return -1;
 
-    const char *path = cache_get_path();
-    char *content = read_file(path);
-    if (!content) return -1;
+  const char *path = cache_get_path();
+  char *content = read_file(path);
+  if (!content)
+    return -1;
 
-    JsonContext *ctx = json_begin();
-    if (!ctx) { free(content); return -1; }
+  JsonContext *ctx = json_begin();
+  if (!ctx) {
+    free(content);
+    return -1;
+  }
 
-    memset(cache, 0, sizeof(*cache));
+  memset(cache, 0, sizeof(*cache));
 
-    char *date_str = get_value(ctx, "date", content);
-    if (!date_str) { json_end(ctx); free(content); return -1; }
-    strncpy(cache->date, date_str, sizeof(cache->date) - 1);
-
-    char *triggers = get_value(ctx, "triggers", content);
-    if (!triggers || triggers[0] != '[') {
-        json_end(ctx); free(content); return -1;
-    }
-
-    // Parse trigger array manually
-    // Format: [{"prayer":"X","minute":N,"minutes_before":N,"prayer_time":F}, ...]
-    char *p = triggers + 1; // skip '['
-    cache->trigger_count = 0;
-
-    while (*p && *p != ']' && cache->trigger_count < MAX_TRIGGERS) {
-        // Find next '{'
-        while (*p && *p != '{') p++;
-        if (!*p) break;
-
-        // Find matching '}'
-        char *obj_start = p;
-        int depth = 0;
-        char *obj_end = NULL;
-        for (char *q = p; *q; q++) {
-            if (*q == '{') depth++;
-            else if (*q == '}') {
-                depth--;
-                if (depth == 0) { obj_end = q; break; }
-            }
-        }
-        if (!obj_end) break;
-
-        // Null-terminate the object temporarily
-        char saved = *(obj_end + 1);
-        *(obj_end + 1) = '\0';
-
-        CacheTrigger *t = &cache->triggers[cache->trigger_count];
-
-        char *prayer = get_value(ctx, "prayer", obj_start);
-        if (prayer) {
-            strncpy(t->prayer, prayer, sizeof(t->prayer) - 1);
-        }
-
-        char *minute_str = get_value(ctx, "minute", obj_start);
-        if (minute_str) t->minute = atoi(minute_str);
-
-        char *mb_str = get_value(ctx, "minutes_before", obj_start);
-        if (mb_str) t->minutes_before = atoi(mb_str);
-
-        char *pt_str = get_value(ctx, "prayer_time", obj_start);
-        if (pt_str) t->prayer_time = atof(pt_str);
-
-        cache->trigger_count++;
-
-        *(obj_end + 1) = saved;
-        p = obj_end + 1;
-    }
-
+  char *date_str = get_value(ctx, "date", content);
+  if (!date_str) {
     json_end(ctx);
     free(content);
-    return 0;
+    return -1;
+  }
+  strncpy(cache->date, date_str, sizeof(cache->date) - 1);
+
+  char *triggers = get_value(ctx, "triggers", content);
+  if (!triggers || triggers[0] != '[') {
+    json_end(ctx);
+    free(content);
+    return -1;
+  }
+
+  // Parse trigger array manually
+  // Format: [{"prayer":"X","minute":N,"minutes_before":N,"prayer_time":F}, ...]
+  char *p = triggers + 1; // skip '['
+  cache->trigger_count = 0;
+
+  while (*p && *p != ']' && cache->trigger_count < MAX_TRIGGERS) {
+    // Find next '{'
+    while (*p && *p != '{')
+      p++;
+    if (!*p)
+      break;
+
+    // Find matching '}'
+    char *obj_start = p;
+    int depth = 0;
+    char *obj_end = NULL;
+    for (char *q = p; *q; q++) {
+      if (*q == '{')
+        depth++;
+      else if (*q == '}') {
+        depth--;
+        if (depth == 0) {
+          obj_end = q;
+          break;
+        }
+      }
+    }
+    if (!obj_end)
+      break;
+
+    // Null-terminate the object temporarily
+    char saved = *(obj_end + 1);
+    *(obj_end + 1) = '\0';
+
+    CacheTrigger *t = &cache->triggers[cache->trigger_count];
+
+    char *prayer = get_value(ctx, "prayer", obj_start);
+    if (prayer) {
+      strncpy(t->prayer, prayer, sizeof(t->prayer) - 1);
+    }
+
+    char *minute_str = get_value(ctx, "minute", obj_start);
+    if (minute_str)
+      t->minute = atoi(minute_str);
+
+    char *mb_str = get_value(ctx, "minutes_before", obj_start);
+    if (mb_str)
+      t->minutes_before = atoi(mb_str);
+
+    char *pt_str = get_value(ctx, "prayer_time", obj_start);
+    if (pt_str)
+      t->prayer_time = atof(pt_str);
+
+    cache->trigger_count++;
+
+    *(obj_end + 1) = saved;
+    p = obj_end + 1;
+  }
+
+  json_end(ctx);
+  free(content);
+  return 0;
 }
 
 int cache_save(const PrayerCache *cache) {
-    if (!cache) return -1;
-    if (ensure_cache_dir() != 0) return -1;
+  if (!cache)
+    return -1;
+  if (ensure_cache_dir() != 0)
+    return -1;
 
-    const char *path = cache_get_path();
-    char tmp_path[520];
-    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
+  const char *path = cache_get_path();
+  char tmp_path[520];
+  snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
 
-    FILE *f = fopen(tmp_path, "w");
-    if (!f) return -1;
+  FILE *f = fopen(tmp_path, "w");
+  if (!f)
+    return -1;
 
-    fprintf(f, "{\n");
-    fprintf(f, "  \"date\": \"%s\",\n", cache->date);
-    fprintf(f, "  \"triggers\": [\n");
+  fprintf(f, "{\n");
+  fprintf(f, "  \"date\": \"%s\",\n", cache->date);
+  fprintf(f, "  \"triggers\": [\n");
 
-    for (int i = 0; i < cache->trigger_count; i++) {
-        const CacheTrigger *t = &cache->triggers[i];
-        fprintf(f, "    {\"prayer\": \"%s\", \"minute\": %d, "
-                   "\"minutes_before\": %d, \"prayer_time\": %.4f}%s\n",
-                t->prayer, t->minute, t->minutes_before, t->prayer_time,
-                i < cache->trigger_count - 1 ? "," : "");
-    }
+  for (int i = 0; i < cache->trigger_count; i++) {
+    const CacheTrigger *t = &cache->triggers[i];
+    fprintf(f,
+            "    {\"prayer\": \"%s\", \"minute\": %d, "
+            "\"minutes_before\": %d, \"prayer_time\": %.4f}%s\n",
+            t->prayer, t->minute, t->minutes_before, t->prayer_time,
+            i < cache->trigger_count - 1 ? "," : "");
+  }
 
-    fprintf(f, "  ]\n");
-    fprintf(f, "}\n");
+  fprintf(f, "  ]\n");
+  fprintf(f, "}\n");
 
-    if (ferror(f) || fflush(f) != 0 || fclose(f) != 0) {
-        remove(tmp_path);
-        return -1;
-    }
+  if (ferror(f) || fflush(f) != 0 || fclose(f) != 0) {
+    remove(tmp_path);
+    return -1;
+  }
 
-    if (rename(tmp_path, path) != 0) {
-        remove(tmp_path);
-        return -1;
-    }
+  if (rename(tmp_path, path) != 0) {
+    remove(tmp_path);
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 void cache_invalidate(void) {
-    const char *path = cache_get_path();
-    unlink(path);
+  const char *path = cache_get_path();
+  unlink(path);
 }
 
 void cache_reset_path(void) {
-    cache_path_buf[0] = '\0';
+  cache_path_buf[0] = '\0';
 }
 
 static int compare_triggers(const void *a, const void *b) {
-    const CacheTrigger *ta = (const CacheTrigger *)a;
-    const CacheTrigger *tb = (const CacheTrigger *)b;
-    return ta->minute - tb->minute;
+  const CacheTrigger *ta = (const CacheTrigger *)a;
+  const CacheTrigger *tb = (const CacheTrigger *)b;
+  return ta->minute - tb->minute;
 }
 
-int cache_build_triggers(PrayerCache *cache,
-                         const Config *cfg,
-                         const struct PrayerTimes *times,
-                         int current_minute,
-                         const char *date_str) {
-    if (!cache || !cfg || !times || !date_str) return 0;
+int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct PrayerTimes *times,
+                         int current_minute, const char *date_str) {
+  if (!cache || !cfg || !times || !date_str)
+    return 0;
 
-    memset(cache, 0, sizeof(*cache));
-    strncpy(cache->date, date_str, sizeof(cache->date) - 1);
+  memset(cache, 0, sizeof(*cache));
+  strncpy(cache->date, date_str, sizeof(cache->date) - 1);
 
-    PrayerType prayer_types[] = {
-        PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA,
-        PRAYER_DHUHR, PRAYER_ASR, PRAYER_MAGHRIB, PRAYER_ISHA
-    };
+  PrayerType prayer_types[] = {PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA, PRAYER_DHUHR,
+                               PRAYER_ASR,  PRAYER_MAGHRIB, PRAYER_ISHA};
 
-    for (int i = 0; i < 7; i++) {
-        PrayerType type = prayer_types[i];
-        if (!prayer_is_enabled(cfg, type)) continue;
+  for (int i = 0; i < 7; i++) {
+    PrayerType type = prayer_types[i];
+    if (!prayer_is_enabled(cfg, type))
+      continue;
 
-        double pt = prayer_get_time(times, type);
-        int prayer_min = (int)ceil(pt * 60.0);
-        const char *name = prayer_get_name(type);
-        const PrayerConfig *pcfg = prayer_get_config(cfg, type);
+    double pt = prayer_get_time(times, type);
+    int prayer_min = (int)ceil(pt * 60.0);
+    const char *name = prayer_get_name(type);
+    const PrayerConfig *pcfg = prayer_get_config(cfg, type);
 
-        // Add exact prayer time
-        if (prayer_min >= current_minute &&
-            cache->trigger_count < MAX_TRIGGERS) {
-            CacheTrigger *t = &cache->triggers[cache->trigger_count];
-            strncpy(t->prayer, name, sizeof(t->prayer) - 1);
-            t->minute = prayer_min;
-            t->minutes_before = 0;
-            t->prayer_time = pt;
-            cache->trigger_count++;
-        }
-
-        // Add reminders
-        for (int j = 0; j < pcfg->reminder_count; j++) {
-            int reminder_min = prayer_min - pcfg->reminders[j];
-            if (reminder_min < 0) reminder_min += 24 * 60;
-
-            if (reminder_min >= current_minute &&
-                cache->trigger_count < MAX_TRIGGERS) {
-                CacheTrigger *t = &cache->triggers[cache->trigger_count];
-                strncpy(t->prayer, name, sizeof(t->prayer) - 1);
-                t->minute = reminder_min;
-                t->minutes_before = pcfg->reminders[j];
-                t->prayer_time = pt;
-                cache->trigger_count++;
-            }
-        }
+    // Add exact prayer time
+    if (prayer_min >= current_minute && cache->trigger_count < MAX_TRIGGERS) {
+      CacheTrigger *t = &cache->triggers[cache->trigger_count];
+      strncpy(t->prayer, name, sizeof(t->prayer) - 1);
+      t->minute = prayer_min;
+      t->minutes_before = 0;
+      t->prayer_time = pt;
+      cache->trigger_count++;
     }
 
-    // Sort triggers by minute ascending
-    if (cache->trigger_count > 1) {
-        qsort(cache->triggers, (size_t)cache->trigger_count,
-              sizeof(CacheTrigger), compare_triggers);
-    }
+    // Add reminders
+    for (int j = 0; j < pcfg->reminder_count; j++) {
+      int reminder_min = prayer_min - pcfg->reminders[j];
+      if (reminder_min < 0)
+        reminder_min += 24 * 60;
 
-    return cache->trigger_count;
+      if (reminder_min >= current_minute && cache->trigger_count < MAX_TRIGGERS) {
+        CacheTrigger *t = &cache->triggers[cache->trigger_count];
+        strncpy(t->prayer, name, sizeof(t->prayer) - 1);
+        t->minute = reminder_min;
+        t->minutes_before = pcfg->reminders[j];
+        t->prayer_time = pt;
+        cache->trigger_count++;
+      }
+    }
+  }
+
+  // Sort triggers by minute ascending
+  if (cache->trigger_count > 1) {
+    qsort(cache->triggers, (size_t)cache->trigger_count, sizeof(CacheTrigger), compare_triggers);
+  }
+
+  return cache->trigger_count;
 }
 
 void cache_remove_trigger(PrayerCache *cache, int index) {
-    if (!cache || index < 0 || index >= cache->trigger_count) return;
+  if (!cache || index < 0 || index >= cache->trigger_count)
+    return;
 
-    for (int i = index; i < cache->trigger_count - 1; i++) {
-        cache->triggers[i] = cache->triggers[i + 1];
-    }
-    cache->trigger_count--;
+  for (int i = index; i < cache->trigger_count - 1; i++) {
+    cache->triggers[i] = cache->triggers[i + 1];
+  }
+  cache->trigger_count--;
 }

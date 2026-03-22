@@ -147,7 +147,7 @@ int handle_reminder(int argc, char **argv) {
 
   if (strcmp(prayer_name, "all") == 0) {
     PrayerConfig *prayers[] = {&cfg.fajr, &cfg.sunrise, &cfg.dhuha, &cfg.dhuhr,
-                               &cfg.asr, &cfg.maghrib, &cfg.isha};
+                               &cfg.asr,  &cfg.maghrib, &cfg.isha};
 
     int reminders[MAX_REMINDERS];
     int count = config_parse_reminders(reminder_str, reminders, MAX_REMINDERS);
@@ -176,8 +176,7 @@ int handle_reminder(int argc, char **argv) {
     if (count == 0) {
       printf("✓ Reminders cleared for all enabled prayers\n");
     } else {
-      printf("✓ Reminders updated for all enabled prayers: %s\n",
-             reminder_str);
+      printf("✓ Reminders updated for all enabled prayers: %s\n", reminder_str);
     }
     return 0;
   }
@@ -210,8 +209,7 @@ int handle_reminder(int argc, char **argv) {
   if (count == 0) {
     printf("✓ Reminders cleared for %s\n", prayer_name);
   } else {
-    printf("✓ Set %d reminder(s) for %s: %s\n", count, prayer_name,
-           reminder_str);
+    printf("✓ Set %d reminder(s) for %s: %s\n", count, prayer_name, reminder_str);
   }
 
   return 0;
