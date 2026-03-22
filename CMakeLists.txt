@@ -26,9 +26,14 @@ include(GNUInstallDirs)
 
 # ── Dependencies ──────────────────────────────────────────────────────────────
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBNOTIFY REQUIRED libnotify)
-pkg_check_modules(LIBCURL REQUIRED libcurl)
+if(WIN32)
+    # Notification uses WinRT — linked directly, no pkg-config needed
+    # libcurl Windows integration is out of scope for this plan
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBNOTIFY REQUIRED libnotify)
+    pkg_check_modules(LIBCURL REQUIRED libcurl)
+endif()
 
 # ── Generated version header ─────────────────────────────────────────────────
 
@@ -68,26 +73,28 @@ add_library(muslimtify_lib OBJECT
     src/config.c
     src/location.c
     src/prayer_checker.c
-    src/notification.c
+    $<IF:$<BOOL:${WIN32}>,src/notification_win.c,src/notification.c>
     src/display.c
 )
 muslimtify_set_target_defaults(muslimtify_lib)
-target_include_directories(muslimtify_lib PRIVATE
-    ${LIBNOTIFY_INCLUDE_DIRS}
-    ${LIBCURL_INCLUDE_DIRS}
-)
+if(NOT WIN32)
+    target_include_directories(muslimtify_lib PRIVATE ${LIBNOTIFY_INCLUDE_DIRS})
+endif()
+target_include_directories(muslimtify_lib PRIVATE ${LIBCURL_INCLUDE_DIRS})
 
 # ── Main executable ──────────────────────────────────────────────────────────
 
 add_executable(muslimtify src/muslimtify.c)
 muslimtify_set_target_defaults(muslimtify)
-target_include_directories(muslimtify PRIVATE
-    ${LIBNOTIFY_INCLUDE_DIRS}
-    ${LIBCURL_INCLUDE_DIRS}
-)
+if(NOT WIN32)
+    target_include_directories(muslimtify PRIVATE ${LIBNOTIFY_INCLUDE_DIRS})
+endif()
+target_include_directories(muslimtify PRIVATE ${LIBCURL_INCLUDE_DIRS})
 target_link_libraries(muslimtify
     muslimtify_lib
-    ${LIBNOTIFY_LIBRARIES}
+    $<$<BOOL:${WIN32}>:ole32>
+    $<$<BOOL:${WIN32}>:runtimeobject>
+    $<$<NOT:$<BOOL:${WIN32}>>:${LIBNOTIFY_LIBRARIES}>
     ${LIBCURL_LIBRARIES}
     m
 )
@@ -106,44 +113,41 @@ if(BUILD_TESTING)
 
     add_executable(test_cli tests/test_cli.c)
     muslimtify_set_target_defaults(test_cli)
-    target_include_directories(test_cli PRIVATE
-        ${LIBNOTIFY_INCLUDE_DIRS}
-        ${LIBCURL_INCLUDE_DIRS}
-    )
-    target_link_libraries(test_cli
-        muslimtify_lib
-        ${LIBNOTIFY_LIBRARIES}
-        ${LIBCURL_LIBRARIES}
-        m
-    )
+    if(NOT WIN32)
+        target_include_directories(test_cli PRIVATE ${LIBNOTIFY_INCLUDE_DIRS})
+    endif()
+    target_include_directories(test_cli PRIVATE ${LIBCURL_INCLUDE_DIRS})
+    if(WIN32)
+        target_link_libraries(test_cli muslimtify_lib ole32 runtimeobject ${LIBCURL_LIBRARIES} m)
+    else()
+        target_link_libraries(test_cli muslimtify_lib ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+    endif()
     add_test(NAME cli COMMAND test_cli)
 
     add_executable(test_prayer_checker tests/test_prayer_checker.c)
     muslimtify_set_target_defaults(test_prayer_checker)
-    target_include_directories(test_prayer_checker PRIVATE
-        ${LIBNOTIFY_INCLUDE_DIRS}
-        ${LIBCURL_INCLUDE_DIRS}
-    )
-    target_link_libraries(test_prayer_checker
-        muslimtify_lib
-        ${LIBNOTIFY_LIBRARIES}
-        ${LIBCURL_LIBRARIES}
-        m
-    )
+    if(NOT WIN32)
+        target_include_directories(test_prayer_checker PRIVATE ${LIBNOTIFY_INCLUDE_DIRS})
+    endif()
+    target_include_directories(test_prayer_checker PRIVATE ${LIBCURL_INCLUDE_DIRS})
+    if(WIN32)
+        target_link_libraries(test_prayer_checker muslimtify_lib ole32 runtimeobject ${LIBCURL_LIBRARIES} m)
+    else()
+        target_link_libraries(test_prayer_checker muslimtify_lib ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+    endif()
     add_test(NAME prayer_checker COMMAND test_prayer_checker)
 
     add_executable(test_config tests/test_config.c)
     muslimtify_set_target_defaults(test_config)
-    target_include_directories(test_config PRIVATE
-        ${LIBNOTIFY_INCLUDE_DIRS}
-        ${LIBCURL_INCLUDE_DIRS}
-    )
-    target_link_libraries(test_config
-        muslimtify_lib
-        ${LIBNOTIFY_LIBRARIES}
-        ${LIBCURL_LIBRARIES}
-        m
-    )
+    if(NOT WIN32)
+        target_include_directories(test_config PRIVATE ${LIBNOTIFY_INCLUDE_DIRS})
+    endif()
+    target_include_directories(test_config PRIVATE ${LIBCURL_INCLUDE_DIRS})
+    if(WIN32)
+        target_link_libraries(test_config muslimtify_lib ole32 runtimeobject ${LIBCURL_LIBRARIES} m)
+    else()
+        target_link_libraries(test_config muslimtify_lib ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+    endif()
     add_test(NAME config COMMAND test_config)
 endif()
 
