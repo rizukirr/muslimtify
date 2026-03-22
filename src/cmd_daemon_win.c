@@ -2,7 +2,6 @@
 #include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <windows.h>
 
 static int run_schtasks(const char *args) {
@@ -35,7 +34,7 @@ static int run_schtasks(const char *args) {
   return (int)exit_code;
 }
 
-int daemon_install_handler(int argc, char **argv) {
+static int daemon_install_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
@@ -60,7 +59,7 @@ int daemon_install_handler(int argc, char **argv) {
   return result;
 }
 
-int daemon_uninstall_handler(int argc, char **argv) {
+static int daemon_uninstall_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
@@ -71,9 +70,29 @@ int daemon_uninstall_handler(int argc, char **argv) {
   return result;
 }
 
-int daemon_status_handler(int argc, char **argv) {
+static int daemon_status_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
   return run_schtasks("/query /tn \"muslimtify\"");
+}
+
+static const CommandEntry daemon_commands[] = {
+    {"install", daemon_install_handler},
+    {"uninstall", daemon_uninstall_handler},
+    {"status", daemon_status_handler},
+};
+
+int handle_daemon(int argc, char **argv) {
+  if (argc > 0) {
+    const CommandEntry *sub =
+        dispatch_lookup(daemon_commands, DISPATCH_N(daemon_commands), argv[0]);
+    if (sub)
+      return sub->handler(argc - 1, argv + 1);
+
+    fprintf(stderr, "Usage: muslimtify daemon [install|uninstall|status]\n");
+    return 1;
+  }
+
+  return daemon_status_handler(0, NULL);
 }
