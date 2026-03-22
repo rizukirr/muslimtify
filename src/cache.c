@@ -1,60 +1,34 @@
 #include "../include/cache.h"
+#include "../include/platform.h"
 #include "json.h"
 #include <errno.h>
 #include <math.h>
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
-static char cache_path_buf[512] = {0};
+static char cache_path_buf[PLATFORM_PATH_MAX] = {0};
 
 const char *cache_get_path(void) {
   if (cache_path_buf[0] != '\0') {
     return cache_path_buf;
   }
 
-  const char *xdg_cache = getenv("XDG_CACHE_HOME");
-  const char *home = getenv("HOME");
-
-  if (!home) {
-    struct passwd *pw = getpwuid(getuid());
-    if (pw)
-      home = pw->pw_dir;
-  }
-
-  if (xdg_cache) {
-    snprintf(cache_path_buf, sizeof(cache_path_buf), "%s/muslimtify/next_prayer.json", xdg_cache);
-  } else if (home) {
-    snprintf(cache_path_buf, sizeof(cache_path_buf), "%s/.cache/muslimtify/next_prayer.json", home);
+  const char *dir = platform_cache_dir();
+  if (dir[0] != '\0') {
+    snprintf(cache_path_buf, sizeof(cache_path_buf), "%s%cnext_prayer.json", dir,
+             PLATFORM_PATH_SEP);
   }
 
   return cache_path_buf;
 }
 
 static int ensure_cache_dir(void) {
-  char dir_path[512];
-  const char *path = cache_get_path();
-
-  snprintf(dir_path, sizeof(dir_path), "%s", path);
-  char *last_slash = strrchr(dir_path, '/');
-  if (last_slash) {
-    *last_slash = '\0';
-  }
-
-  for (char *p = dir_path + 1; *p; p++) {
-    if (*p == '/') {
-      *p = '\0';
-      if (mkdir(dir_path, 0755) != 0 && errno != EEXIST)
-        return -1;
-      *p = '/';
-    }
-  }
-  if (mkdir(dir_path, 0755) != 0 && errno != EEXIST)
+  const char *dir = platform_cache_dir();
+  if (dir[0] == '\0')
     return -1;
-
+  if (platform_mkdir_p(dir) != 0)
+    return -1;
   return 0;
 }
 
@@ -186,7 +160,7 @@ int cache_save(const PrayerCache *cache) {
     return -1;
 
   const char *path = cache_get_path();
-  char tmp_path[520];
+  char tmp_path[PLATFORM_PATH_MAX + 4];
   snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
 
   FILE *f = fopen(tmp_path, "w");
@@ -214,7 +188,7 @@ int cache_save(const PrayerCache *cache) {
     return -1;
   }
 
-  if (rename(tmp_path, path) != 0) {
+  if (platform_atomic_rename(tmp_path, path) != 0) {
     remove(tmp_path);
     return -1;
   }
@@ -224,7 +198,7 @@ int cache_save(const PrayerCache *cache) {
 
 void cache_invalidate(void) {
   const char *path = cache_get_path();
-  unlink(path);
+  platform_file_delete(path);
 }
 
 void cache_reset_path(void) {
