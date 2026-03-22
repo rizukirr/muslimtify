@@ -1,3 +1,4 @@
+#include "cache.h"
 #include "cli_internal.h"
 #include "display.h"
 #include "location.h"
@@ -46,6 +47,7 @@ static int location_auto_handler(int argc, char **argv) {
     fprintf(stderr, "Error: Failed to save config\n");
     return 1;
   }
+  cache_invalidate();
   printf("✓ Saved to config\n");
   return 0;
 }
@@ -77,6 +79,7 @@ static int location_refresh_handler(int argc, char **argv) {
     fprintf(stderr, "Error: Failed to save config\n");
     return 1;
   }
+  cache_invalidate();
   printf("✓ Saved to config\n");
   return 0;
 }
@@ -113,6 +116,7 @@ static int location_set_handler(int argc, char **argv) {
     return 1;
   }
 
+  cache_invalidate();
   printf("✓ Location set to: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
   return 0;
 }
@@ -138,6 +142,7 @@ static int location_clear_handler(int argc, char **argv) {
     return 1;
   }
 
+  cache_invalidate();
   printf("✓ Location cleared. Will auto-detect on next run.\n");
   return 0;
 }

@@ -1,3 +1,4 @@
+#include "cache.h"
 #include "cli_internal.h"
 #include "display.h"
 #include <stdio.h>
@@ -24,6 +25,7 @@ static int config_reset_handler(int argc, char **argv) {
     fprintf(stderr, "Error: Failed to save config\n");
     return 1;
   }
+  cache_invalidate();
   printf("✓ Configuration reset to defaults\n");
   printf("  Config file: %s\n", config_get_path());
   return 0;

@@ -1,3 +1,4 @@
+#include "cache.h"
 #include "cli_internal.h"
 #include "display.h"
 #include "notification.h"
@@ -72,23 +73,56 @@ int handle_check(int argc, char **argv) {
     return 1;
   }
 
-  struct PrayerTimes times = calculate_prayer_times(
-      tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-      cfg.latitude, cfg.longitude, cfg.timezone_offset);
+  int current_min = tm_now->tm_hour * 60 + tm_now->tm_min;
+  char today[16];
+  snprintf(today, sizeof(today), "%04d-%02d-%02d",
+           tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday);
 
-  PrayerMatch match = prayer_check_current(&cfg, tm_now, &times);
+  // Try to load cache
+  PrayerCache cache;
+  bool cache_valid = (cache_load(&cache) == 0 &&
+                      strcmp(cache.date, today) == 0 &&
+                      cache.trigger_count > 0);
 
-  if (match.type != PRAYER_NONE) {
-    if (!notify_init_once("Muslimtify")) {
-      fprintf(stderr, "Error: Failed to initialize notification system\n");
-      return 1;
+  if (!cache_valid) {
+    // Recalculate and build cache
+    struct PrayerTimes times = calculate_prayer_times(
+        tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
+        cfg.latitude, cfg.longitude, cfg.timezone_offset);
+
+    cache_build_triggers(&cache, &cfg, &times, current_min, today);
+    cache_save(&cache);
+  }
+
+  // Fire all triggers matching current minute
+  bool notified = false;
+  int i = 0;
+  while (i < cache.trigger_count) {
+    if (cache.triggers[i].minute == current_min) {
+      if (!notified) {
+        if (!notify_init_once("Muslimtify")) {
+          fprintf(stderr, "Error: Failed to initialize notification system\n");
+          return 1;
+        }
+        notified = true;
+      }
+
+      char time_str[16];
+      format_time_hm(cache.triggers[i].prayer_time, time_str, sizeof(time_str));
+      notify_prayer(cache.triggers[i].prayer, time_str,
+                    cache.triggers[i].minutes_before,
+                    cfg.notification_urgency);
+
+      cache_remove_trigger(&cache, i);
+      // Don't increment i — next element shifted into current position
+    } else {
+      i++;
     }
+  }
 
-    char time_str[16];
-    format_time_hm(match.prayer_time, time_str, sizeof(time_str));
-    notify_prayer(prayer_get_name(match.type), time_str, match.minutes_before,
-                  cfg.notification_urgency);
+  if (notified) {
     notify_cleanup();
+    cache_save(&cache);
   }
 
   return 0;

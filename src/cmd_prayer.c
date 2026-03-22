@@ -1,3 +1,4 @@
+#include "cache.h"
 #include "cli_internal.h"
 #include "display.h"
 #include <stdio.h>
@@ -29,6 +30,7 @@ int handle_enable(int argc, char **argv) {
       return 1;
     }
 
+    cache_invalidate();
     printf("✓ All prayers enabled\n");
     return 0;
   }
@@ -46,6 +48,7 @@ int handle_enable(int argc, char **argv) {
     return 1;
   }
 
+  cache_invalidate();
   printf("✓ %s notifications enabled\n", argv[0]);
   return 0;
 }
@@ -77,6 +80,7 @@ int handle_disable(int argc, char **argv) {
       return 1;
     }
 
+    cache_invalidate();
     printf("✓ All prayers disabled\n");
     return 0;
   }
@@ -94,6 +98,7 @@ int handle_disable(int argc, char **argv) {
     return 1;
   }
 
+  cache_invalidate();
   printf("✓ %s notifications disabled\n", argv[0]);
   return 0;
 }
@@ -167,6 +172,7 @@ int handle_reminder(int argc, char **argv) {
       return 1;
     }
 
+    cache_invalidate();
     if (count == 0) {
       printf("✓ Reminders cleared for all enabled prayers\n");
     } else {
@@ -200,6 +206,7 @@ int handle_reminder(int argc, char **argv) {
     return 1;
   }
 
+  cache_invalidate();
   if (count == 0) {
     printf("✓ Reminders cleared for %s\n", prayer_name);
   } else {

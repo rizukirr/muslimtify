@@ -71,6 +71,7 @@ add_library(muslimtify_lib OBJECT
     src/cmd_prayer.c
     src/cmd_daemon.c
     src/config.c
+    src/cache.c
     src/location.c
     src/prayer_checker.c
     $<IF:$<BOOL:${WIN32}>,src/notification_win.c,src/notification.c>
@@ -154,6 +155,19 @@ if(BUILD_TESTING)
     muslimtify_set_target_defaults(test_json)
     target_link_libraries(test_json m)
     add_test(NAME json COMMAND test_json)
+
+    add_executable(test_cache tests/test_cache.c)
+    muslimtify_set_target_defaults(test_cache)
+    if(NOT WIN32)
+        target_include_directories(test_cache PRIVATE ${LIBNOTIFY_INCLUDE_DIRS})
+    endif()
+    target_include_directories(test_cache PRIVATE ${LIBCURL_INCLUDE_DIRS})
+    if(WIN32)
+        target_link_libraries(test_cache muslimtify_lib ole32 runtimeobject ${LIBCURL_LIBRARIES} m)
+    else()
+        target_link_libraries(test_cache muslimtify_lib ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+    endif()
+    add_test(NAME cache COMMAND test_cache)
 endif()
 
 # ── Install ──────────────────────────────────────────────────────────────────
