@@ -37,7 +37,7 @@ clang-format -i src/*.c src/*.h include/*.h
 
 **Core modules:**
 - `src/prayertimes.h` — Header-only Kemenag prayer time calculator (pure astronomical formulas)
-- `src/libjson.h` — Header-only JSON parser/generator
+- `src/json.h` — Header-only JSON parser
 - `src/config.c` — JSON config management (`~/.config/muslimtify/config.json`)
 - `src/display.c` — Unicode table rendering, colored terminal output, JSON formatting
 - `src/prayer_checker.c` — Matches current time against prayer times + reminders
