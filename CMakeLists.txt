@@ -76,6 +76,7 @@ add_library(muslimtify_lib OBJECT
     src/prayer_checker.c
     $<IF:$<BOOL:${WIN32}>,src/notification_win.c,src/notification.c>
     src/display.c
+    $<IF:$<BOOL:${WIN32}>,src/platform_win.c,src/platform_linux.c>
 )
 muslimtify_set_target_defaults(muslimtify_lib)
 if(NOT WIN32)
