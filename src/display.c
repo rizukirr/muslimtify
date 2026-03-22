@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #define PRAYERTIMES_IMPLEMENTATION
 #include "../include/display.h"
 #include <math.h>
