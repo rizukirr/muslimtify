@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "cli.h"
 #include "cli_internal.h"
 #include "config.h"
@@ -82,8 +81,13 @@ void cli_print_help(void) {
   printf("  disable <prayer>  Disable prayer notification\n");
   printf("  list              List prayer notification status\n");
   printf("  reminder          Manage prayer reminders\n");
+#ifdef _WIN32
+  printf("  daemon            Manage scheduled task "
+         "[install|uninstall|status]\n");
+#else
   printf("  daemon            Manage systemd daemon "
          "[install|uninstall|status]\n");
+#endif
   printf("  version           Show version information\n");
   printf("  help              Show this help message\n\n");
   printf("Examples:\n");
