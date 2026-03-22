@@ -62,17 +62,6 @@ JsonContext *json_begin(void);
 void json_end(JsonContext *ctx);
 
 /**
- * Parse a JSON array and return pointers to its elements.
- * @param ctx The JSON context
- * @param key The key to search for (unused in current implementation)
- * @param raw_json The raw JSON array string
- * @param count Output parameter for the number of elements in the array
- * @return Array of JSON object strings, or NULL on error
- */
-char **get_array(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
-                 char *JSON_RESTRICT raw_json, size_t *JSON_RESTRICT count);
-
-/**
  * Extract a value for the given key from a JSON object.
  * @param ctx The JSON context
  * @param key The key to search for
@@ -90,38 +79,6 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 #include <stdint.h>
 
 // ARENA
-
-#define DA_INIT_CAP 256
-
-#define da_append(da, item)                                                    \
-  do {                                                                         \
-    if ((da)->capacity == 0) {                                                 \
-      (da)->capacity = DA_INIT_CAP;                                            \
-      (da)->items = malloc(sizeof((da)->items[0]) * (da)->capacity);           \
-      if ((da)->items == NULL) {                                               \
-        fprintf(stderr, "Buy more RAM LOL!\n");                                \
-        exit(1);                                                               \
-      }                                                                        \
-    }                                                                          \
-                                                                               \
-    if ((da)->count == (da)->capacity) {                                       \
-      (da)->capacity *= 2;                                                     \
-      (da)->items =                                                            \
-          realloc((da)->items, sizeof((da)->items[0]) * (da)->capacity);       \
-      if ((da)->items == NULL) {                                               \
-        fprintf(stderr, "Buy more RAM LOL!\n");                                \
-        exit(1);                                                               \
-      }                                                                        \
-    }                                                                          \
-    (da)->items[(da)->count++] = item;                                         \
-  } while (0)
-
-#define da_clear(da)                                                           \
-  do {                                                                         \
-    (da)->count = 0;                                                           \
-    (da)->capacity = 0;                                                        \
-    free((da)->items);                                                         \
-  } while (0)
 
 #if __STDC_VERSION__ >= 201112L
 #include <stdalign.h>
@@ -239,7 +196,7 @@ static void *json_alloc(JsonArena *arena, size_t size, size_t alignment) {
   return ptr;
 }
 
-void json_alloc_free(JsonArena *arena) {
+static void json_alloc_free(JsonArena *arena) {
   if (!arena)
     return;
   Region *region = arena->head;
@@ -252,48 +209,15 @@ void json_alloc_free(JsonArena *arena) {
 }
 
 // Json Parser
-typedef struct {
-  size_t count;
-  size_t capacity;
-  char **items;
-} JsonArray;
 
 struct JsonContext {
   JsonArena *arena;
-  JsonArray *stack;
 };
 
 static inline const char *skip_whitespace(const char *cursor) {
   while (*cursor && isspace(*cursor))
     cursor++;
   return cursor;
-}
-
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((unused))
-#endif
-static const char *skip_string(const char *cursor) {
-  if (*cursor != JSON_STRING_QUOTE) {
-    fprintf(stderr, "Expected quote got %s\n", cursor);
-    return NULL;
-  }
-
-  cursor++; // Skip opening quote
-  bool escaped = false;
-
-  while (*cursor) {
-    if (escaped) {
-      escaped = false;
-    } else if (*cursor == JSON_ESCAPE_CHAR) {
-      escaped = true;
-    } else if (*cursor == JSON_STRING_QUOTE) {
-      return cursor + 1; // Return pointer after closing quote
-    }
-    cursor++;
-  }
-
-  fprintf(stderr, "Unterminated string %s\n", cursor);
-  return NULL;
 }
 
 static const char *find_matching_bracket(const char *start, char open_bracket) {
@@ -499,15 +423,6 @@ JsonContext *json_begin(void) {
     return NULL;
   }
 
-  ctx->stack = json_alloc(arena, sizeof(JsonArray), ARENA_ALIGNOF(JsonArray));
-  if (!ctx->stack) {
-    fprintf(stderr, "Failed to allocate JsonArray\n");
-    json_alloc_free(arena);
-    return NULL;
-  }
-  ctx->stack->count = 0;
-  ctx->stack->capacity = 0;
-  ctx->stack->items = NULL;
   ctx->arena = arena;
   return ctx;
 }
@@ -518,9 +433,6 @@ void json_end(JsonContext *ctx) {
     return;
   }
 
-  if (ctx->stack) {
-    da_clear(ctx->stack);
-  }
   json_alloc_free(ctx->arena);
 }
 
@@ -541,66 +453,6 @@ static inline char *get_obj(JsonArena *JSON_RESTRICT arena,
 
   char *result = json_extract_value(arena, value);
   return result;
-}
-
-char **get_array(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
-                 char *JSON_RESTRICT raw_json, size_t *JSON_RESTRICT count) {
-  if (!ctx || !ctx->arena || !key) {
-    fprintf(stderr, "Invalid arguments to get_array\n");
-    return NULL;
-  }
-
-  char *array_start = raw_json;
-
-  // Skip whitespace
-  array_start = (char *)skip_whitespace(array_start);
-
-  // Verify it's an array
-  if (*array_start != '[') {
-    fprintf(stderr, "value is not an array");
-    return NULL;
-  }
-
-  // Start parsing after '['
-  const char *cursor = array_start + 1;
-
-  while (*cursor) {
-    cursor = skip_whitespace(cursor);
-
-    // Check for end of array
-    if (*cursor == ']')
-      break;
-
-    // Skip commas
-    if (*cursor == ',') {
-      cursor++;
-      continue;
-    }
-
-    // Found an object - extract from { to }
-    if (*cursor == '{') {
-      const char *obj_start = cursor;
-      const char *obj_end = find_matching_bracket(cursor, '{');
-
-      if (!obj_end)
-        return NULL;
-
-      // Extract and append the object
-      size_t len = obj_end - obj_start + 1; // Include closing brace
-      char *str = json_alloc(ctx->arena, len + 1, ARENA_ALIGNOF(char));
-      memcpy(str, obj_start, len);
-      str[len] = '\0';
-      da_append(ctx->stack, str);
-
-      cursor = obj_end + 1;
-    } else {
-      // Unexpected character
-      fprintf(stderr, "expected '{' but found '%c'", *cursor);
-      return NULL;
-    }
-  }
-  *count = ctx->stack->count;
-  return ctx->stack->items;
 }
 
 char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
