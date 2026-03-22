@@ -2,7 +2,6 @@
 #include "cli_internal.h"
 #include "display.h"
 #include "notification.h"
-#include "prayer_checker.h"
 #include <stdio.h>
 #include <time.h>
 

@@ -2,7 +2,7 @@
 #define _UNICODE
 #define COBJMACROS
 
-#include "../include/notification.h"
+#include "notification.h"
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>

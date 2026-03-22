@@ -1,5 +1,5 @@
-#include "../include/notification.h"
-#include "../include/platform.h"
+#include "notification.h"
+#include "platform.h"
 #include <libnotify/notify.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -16,7 +16,7 @@ static int systemctl_user(const char *const *args) {
   while (args[n])
     n++;
 
-  char **child_argv = malloc((size_t)(n + 3) * sizeof(char *));
+  char **child_argv = (char **)malloc((size_t)(n + 3) * sizeof(char *));
   if (!child_argv)
     return 1;
 
@@ -28,14 +28,14 @@ static int systemctl_user(const char *const *args) {
 
   pid_t pid = fork();
   if (pid < 0) {
-    free(child_argv);
+    free((void *)child_argv);
     return 1;
   }
   if (pid == 0) {
     execvp("systemctl", child_argv);
     _exit(127);
   }
-  free(child_argv);
+  free((void *)child_argv);
   int wstatus;
   waitpid(pid, &wstatus, 0);
   return WIFEXITED(wstatus) ? WEXITSTATUS(wstatus) : 1;

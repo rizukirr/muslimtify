@@ -1,4 +1,4 @@
-#include "../include/location.h"
+#include "location.h"
 #include "json.h"
 #include <curl/curl.h>
 #include <stdint.h>

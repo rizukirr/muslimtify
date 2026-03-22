@@ -1,5 +1,5 @@
-#include "../include/platform.h"
 #include "cli_internal.h"
+#include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +18,7 @@ static int run_schtasks(const char *args) {
   if (!CreateProcessA(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
     DWORD err = GetLastError();
     if (err == ERROR_ACCESS_DENIED) {
-      fprintf(stderr,
-              "Error: Access denied. Try running as administrator.\n");
+      fprintf(stderr, "Error: Access denied. Try running as administrator.\n");
     } else {
       fprintf(stderr, "Error: Failed to run schtasks (error %lu)\n", err);
     }
@@ -51,8 +50,7 @@ int daemon_install_handler(int argc, char **argv) {
 
   char args[PLATFORM_PATH_MAX * 2];
   snprintf(args, sizeof(args),
-           "/create /tn \"muslimtify\" /tr \"\\\"%s\\\" check\" /sc minute /mo 1 /f",
-           exe_path);
+           "/create /tn \"muslimtify\" /tr \"\\\"%s\\\" check\" /sc minute /mo 1 /f", exe_path);
 
   int result = run_schtasks(args);
   if (result == 0) {

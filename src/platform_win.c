@@ -1,4 +1,4 @@
-#include "../include/platform.h"
+#include "platform.h"
 #include <direct.h>
 #include <io.h>
 #include <stdio.h>

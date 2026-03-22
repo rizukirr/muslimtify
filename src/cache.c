@@ -1,7 +1,6 @@
-#include "../include/cache.h"
-#include "../include/platform.h"
+#include "cache.h"
 #include "json.h"
-#include <errno.h>
+#include "platform.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

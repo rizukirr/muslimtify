@@ -1,7 +1,6 @@
 #define PRAYERTIMES_IMPLEMENTATION
-#include "../include/display.h"
-#include "../include/platform.h"
-#include <math.h>
+#include "display.h"
+#include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +17,7 @@ static bool use_colors(void) {
   static int result = -1;
   if (result == -1) {
     const char *no_color = getenv("NO_COLOR");
-    result =
-        (platform_isatty(stdout) && (no_color == NULL || no_color[0] == '\0')) ? 1 : 0;
+    result = (platform_isatty(stdout) && (no_color == NULL || no_color[0] == '\0')) ? 1 : 0;
   }
   return result == 1;
 }

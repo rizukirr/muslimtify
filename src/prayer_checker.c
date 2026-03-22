@@ -1,4 +1,4 @@
-#include "../include/prayer_checker.h"
+#include "prayer_checker.h"
 #include <math.h>
 #include <stdio.h>
 

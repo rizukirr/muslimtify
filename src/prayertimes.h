@@ -7,7 +7,6 @@ extern "C" {
 
 #define _USE_MATH_DEFINES
 #include <string.h>
-#include <math.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -63,12 +62,12 @@ void format_time_hm(double timeHours, char *outBuffer, size_t bufSize);
 
 void format_time_hms(double timeHours, char *outBuffer, size_t bufSize);
 
-struct PrayerTimes calculate_prayer_times(int year, int month, int day,
-                                          double latitude, double longitude,
-                                          double timezone);
+struct PrayerTimes calculate_prayer_times(int year, int month, int day, double latitude,
+                                          double longitude, double timezone);
 
 #ifdef PRAYERTIMES_IMPLEMENTATION
 
+#include <math.h>
 #include <stdio.h>
 
 // Helper: normalize angle to [0,360)
@@ -87,8 +86,7 @@ static double julian_day(int year, int month, int day) {
   }
   int A = year / 100;
   int B = 2 - A + (A / 4);
-  double jd = floor(365.25 * (year + 4716)) + floor(30.6001 * (month + 1)) +
-              day + B - 1524.5;
+  double jd = floor(365.25 * (year + 4716)) + floor(30.6001 * (month + 1)) + day + B - 1524.5;
   return jd;
 }
 
@@ -97,18 +95,14 @@ static void sun_position(double jd, double *decl, double *eqt) {
   double D = jd - JULIAN_EPOCH;
 
   double g = normalize_deg(SUN_MEAN_ANOMALY_OFFSET + SUN_MEAN_ANOMALY_RATE * D);
-  double q =
-      normalize_deg(SUN_MEAN_LONGITUDE_OFFSET + SUN_MEAN_LONGITUDE_RATE * D);
+  double q = normalize_deg(SUN_MEAN_LONGITUDE_OFFSET + SUN_MEAN_LONGITUDE_RATE * D);
 
-  double L =
-      normalize_deg(q + SUN_ECCENTRICITY_AMPLITUDE1 * sin(g * DEG_TO_RAD) +
-                    SUN_ECCENTRICITY_AMPLITUDE2 * sin(2 * g * DEG_TO_RAD));
+  double L = normalize_deg(q + SUN_ECCENTRICITY_AMPLITUDE1 * sin(g * DEG_TO_RAD) +
+                           SUN_ECCENTRICITY_AMPLITUDE2 * sin(2 * g * DEG_TO_RAD));
 
   double e = OBLIQUITY_COEFF - OBLIQUITY_RATE * D;
 
-  double RA =
-      atan2(cos(e * DEG_TO_RAD) * sin(L * DEG_TO_RAD), cos(L * DEG_TO_RAD)) *
-      RAD_TO_DEG;
+  double RA = atan2(cos(e * DEG_TO_RAD) * sin(L * DEG_TO_RAD), cos(L * DEG_TO_RAD)) * RAD_TO_DEG;
   RA = normalize_deg(RA);
 
   // Normalize difference to [-180, 180] to handle wrap-around near 0/360 boundary
@@ -174,9 +168,8 @@ void format_time_hms(double timeHours, char *outBuffer, size_t bufSize) {
   snprintf(outBuffer, bufSize, "%02d:%02d:%02d", hours, minutes, seconds);
 }
 
-struct PrayerTimes calculate_prayer_times(int year, int month, int day,
-                                          double latitude, double longitude,
-                                          double timezone) {
+struct PrayerTimes calculate_prayer_times(int year, int month, int day, double latitude,
+                                          double longitude, double timezone) {
   double jd = julian_day(year, month, day);
   double decl, eqt;
   sun_position(jd, &decl, &eqt);
@@ -193,9 +186,8 @@ struct PrayerTimes calculate_prayer_times(int year, int month, int day,
   double ha_isha = hour_angle(latitude, decl, ISHA_ANGLE_KEMENAG);
   double isha = noon + ha_isha;
 
-  double asr_angle = atan(1.0 / (SHADOW_FACTOR_STANDARD +
-                                 tan(fabs(latitude - decl) * DEG_TO_RAD))) *
-                     RAD_TO_DEG;
+  double asr_angle =
+      atan(1.0 / (SHADOW_FACTOR_STANDARD + tan(fabs(latitude - decl) * DEG_TO_RAD))) * RAD_TO_DEG;
   // For Asr, angle is above horizon, so we pass negative to indicate positive
   // altitude
   double ha_asr = hour_angle(latitude, decl, -asr_angle);

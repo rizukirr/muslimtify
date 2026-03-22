@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
-#include "../include/platform.h"
+#include "platform.h"
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>

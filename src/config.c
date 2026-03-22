@@ -1,7 +1,7 @@
 #define JSON_IMPLEMENTATION
-#include "../include/config.h"
-#include "../include/platform.h"
+#include "config.h"
 #include "json.h"
+#include "platform.h"
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>

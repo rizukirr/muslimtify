@@ -24,9 +24,6 @@
 #define JSON_H
 
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +74,9 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // ARENA
 
@@ -84,12 +84,12 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 #include <stdalign.h>
 #define ARENA_ALIGNOF(type) alignof(type)
 #else
-#define ARENA_ALIGNOF(type)                                                    \
-  offsetof(                                                                    \
-      struct {                                                                 \
-        char c;                                                                \
-        type d;                                                                \
-      },                                                                       \
+#define ARENA_ALIGNOF(type) \
+  offsetof(                 \
+      struct {              \
+        char c;             \
+        type d;             \
+      },                    \
       d)
 #endif
 
@@ -166,8 +166,7 @@ static void *json_alloc(JsonArena *arena, size_t size, size_t alignment) {
     arena->head = arena->current = region;
   }
 
-  uintptr_t current_ptr =
-      (uintptr_t)(arena->current->data + arena->current->index);
+  uintptr_t current_ptr = (uintptr_t)(arena->current->data + arena->current->index);
   size_t padding = json_alloc_align(current_ptr, alignment);
 
   if (arena->current->index + padding + size > arena->current->cap) {
@@ -226,8 +225,7 @@ static const char *find_matching_bracket(const char *start, char open_bracket) {
     return NULL;
   }
 
-  char close_bracket =
-      (open_bracket == JSON_OBJECT_OPEN) ? JSON_OBJECT_CLOSE : JSON_ARRAY_CLOSE;
+  char close_bracket = (open_bracket == JSON_OBJECT_OPEN) ? JSON_OBJECT_CLOSE : JSON_ARRAY_CLOSE;
   const char *cursor = start + 1;
   int depth = 1;
   bool in_string = false;
@@ -371,7 +369,8 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
 
     // Allocate raw_len + 1 (unescaped is always <= raw length)
     char *result = json_alloc(arena, raw_len + 1, ARENA_ALIGNOF(char));
-    if (!result) return NULL;
+    if (!result)
+      return NULL;
 
     // Copy with unescape
     char *dst = result;
@@ -380,14 +379,30 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
       if (*src == '\\' && src + 1 < scan) {
         src++;
         switch (*src) {
-        case '"':  *dst++ = '"'; break;
-        case '\\': *dst++ = '\\'; break;
-        case '/':  *dst++ = '/'; break;
-        case 'n':  *dst++ = '\n'; break;
-        case 'r':  *dst++ = '\r'; break;
-        case 't':  *dst++ = '\t'; break;
-        case 'b':  *dst++ = '\b'; break;
-        case 'f':  *dst++ = '\f'; break;
+        case '"':
+          *dst++ = '"';
+          break;
+        case '\\':
+          *dst++ = '\\';
+          break;
+        case '/':
+          *dst++ = '/';
+          break;
+        case 'n':
+          *dst++ = '\n';
+          break;
+        case 'r':
+          *dst++ = '\r';
+          break;
+        case 't':
+          *dst++ = '\t';
+          break;
+        case 'b':
+          *dst++ = '\b';
+          break;
+        case 'f':
+          *dst++ = '\f';
+          break;
         case 'u':
           // \uXXXX — pass through as-is (6 chars)
           *dst++ = '\\';
@@ -422,7 +437,8 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
 
     value_len = value_end - start + 1; // Include closing bracket
     char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
-    if (!result) return NULL;
+    if (!result)
+      return NULL;
     memcpy(result, start, value_len);
     result[value_len] = '\0';
     return result;
@@ -430,14 +446,15 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
   } else {
     // Number, boolean, or null - find end
     value_end = cursor;
-    while (*value_end && !isspace(*value_end) && *value_end != ',' &&
-           *value_end != '}' && *value_end != ']') {
+    while (*value_end && !isspace(*value_end) && *value_end != ',' && *value_end != '}' &&
+           *value_end != ']') {
       value_end++;
     }
 
     value_len = value_end - cursor;
     char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
-    if (!result) return NULL;
+    if (!result)
+      return NULL;
     memcpy(result, cursor, value_len);
     result[value_len] = '\0';
     return result;
@@ -451,8 +468,7 @@ JsonContext *json_begin(void) {
     return NULL;
   }
 
-  JsonContext *ctx =
-      json_alloc(arena, sizeof(JsonContext), ARENA_ALIGNOF(JsonContext));
+  JsonContext *ctx = json_alloc(arena, sizeof(JsonContext), ARENA_ALIGNOF(JsonContext));
   if (!ctx) {
     fprintf(stderr, "Cannot create JsonContext, please check your RAM usage\n");
     json_alloc_free(arena);
@@ -471,8 +487,7 @@ void json_end(JsonContext *ctx) {
   json_alloc_free(ctx->arena);
 }
 
-static inline char *get_obj(JsonArena *JSON_RESTRICT arena,
-                            char *JSON_RESTRICT json,
+static inline char *get_obj(JsonArena *JSON_RESTRICT arena, char *JSON_RESTRICT json,
                             const char *JSON_RESTRICT key) {
   if (!json || !arena || !key) {
     fprintf(stderr, "Invalid arguments to get_obj\n");
