@@ -1,5 +1,5 @@
-#define LIBJSON_IMPLEMENTATION
-#include "libjson.h"
+#define JSON_IMPLEMENTATION
+#include "json.h"
 #include "../include/config.h"
 #include <stdio.h>
 #include <stdlib.h>

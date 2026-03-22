@@ -1,5 +1,5 @@
 #include "../include/location.h"
-#include "libjson.h"
+#include "json.h"
 #include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>

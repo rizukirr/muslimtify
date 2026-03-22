@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef LIBJSON_H
-#define LIBJSON_H
+#ifndef JSON_H
+#define JSON_H
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -82,7 +82,7 @@ char **get_array(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
                 char *JSON_RESTRICT raw_json);
 
-#ifdef LIBJSON_IMPLEMENTATION
+#ifdef JSON_IMPLEMENTATION
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -611,10 +611,10 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
   return get_obj(ctx->arena, raw_json, key);
 }
 
-#endif /* LIBJSON_IMPLEMENTATION */
+#endif /* JSON_IMPLEMENTATION */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LIBJSON_H */
+#endif /* JSON_H */
