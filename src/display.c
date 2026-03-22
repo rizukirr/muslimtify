@@ -1,6 +1,7 @@
 #define PRAYERTIMES_IMPLEMENTATION
 #include "display.h"
 #include "platform.h"
+#include "prayer_checker.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

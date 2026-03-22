@@ -2,7 +2,7 @@
 #define CACHE_H
 
 #include "config.h"
-#include "prayer_checker.h"
+#include "prayertimes.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus

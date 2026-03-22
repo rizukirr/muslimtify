@@ -1,8 +1,8 @@
 #ifndef PRAYER_CHECKER_H
 #define PRAYER_CHECKER_H
 
-#include "../src/prayertimes.h"
 #include "config.h"
+#include "prayertimes.h"
 #include <time.h>
 
 #ifdef __cplusplus

@@ -2,7 +2,6 @@
 #define CLI_INTERNAL_H
 
 #include "config.h"
-#include "prayertimes.h"
 #include <string.h>
 
 // ── dispatch table types ────────────────────────────────────────────────────
@@ -23,7 +22,7 @@ static inline const CommandEntry *dispatch_lookup(const CommandEntry *table, int
   return NULL;
 }
 
-#define DISPATCH_N(table) ((int)(sizeof(table) / sizeof(table[0])))
+#define DISPATCH_N(table) ((int)(sizeof(table) / sizeof((table)[0])))
 
 // ── shared helpers ──────────────────────────────────────────────────────────
 

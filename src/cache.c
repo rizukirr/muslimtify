@@ -1,6 +1,7 @@
 #include "cache.h"
 #include "json.h"
 #include "platform.h"
+#include "prayer_checker.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

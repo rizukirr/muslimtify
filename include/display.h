@@ -1,9 +1,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include "../src/prayertimes.h"
 #include "config.h"
-#include "prayer_checker.h"
+#include "prayertimes.h"
 #include <time.h>
 
 #ifdef __cplusplus
