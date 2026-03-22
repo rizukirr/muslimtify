@@ -343,7 +343,6 @@ static char *json_find_key(const char *JSON_RESTRICT key, size_t key_len,
     cursor++;
   }
 
-  fprintf(stderr, "key %s not found\n", key);
   return NULL;
 }
 
@@ -360,19 +359,56 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
   const char *value_end;
 
   if (*cursor == '"') {
-    // String value
+    // String value — find end first to determine max length
     cursor++;
-    value_end = cursor;
-    while (*value_end && *value_end != '"') {
-      if (*value_end == '\\')
-        value_end++; // Skip escaped chars
-      value_end++;
+    const char *scan = cursor;
+    while (*scan && *scan != '"') {
+      if (*scan == '\\')
+        scan++; // Skip escaped char
+      scan++;
     }
-    value_len = value_end - cursor;
-    char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
+    size_t raw_len = scan - cursor;
+
+    // Allocate raw_len + 1 (unescaped is always <= raw length)
+    char *result = json_alloc(arena, raw_len + 1, ARENA_ALIGNOF(char));
     if (!result) return NULL;
-    memcpy(result, cursor, value_len);
-    result[value_len] = '\0';
+
+    // Copy with unescape
+    char *dst = result;
+    const char *src = cursor;
+    while (src < scan) {
+      if (*src == '\\' && src + 1 < scan) {
+        src++;
+        switch (*src) {
+        case '"':  *dst++ = '"'; break;
+        case '\\': *dst++ = '\\'; break;
+        case '/':  *dst++ = '/'; break;
+        case 'n':  *dst++ = '\n'; break;
+        case 'r':  *dst++ = '\r'; break;
+        case 't':  *dst++ = '\t'; break;
+        case 'b':  *dst++ = '\b'; break;
+        case 'f':  *dst++ = '\f'; break;
+        case 'u':
+          // \uXXXX — pass through as-is (6 chars)
+          *dst++ = '\\';
+          *dst++ = 'u';
+          for (int i = 0; i < 4 && src + 1 < scan; i++) {
+            src++;
+            *dst++ = *src;
+          }
+          break;
+        default:
+          // Unknown escape — keep as-is
+          *dst++ = '\\';
+          *dst++ = *src;
+          break;
+        }
+      } else {
+        *dst++ = *src;
+      }
+      src++;
+    }
+    *dst = '\0';
     return result;
 
   } else if (*cursor == '{' || *cursor == '[') {
@@ -429,7 +465,6 @@ JsonContext *json_begin(void) {
 
 void json_end(JsonContext *ctx) {
   if (!ctx) {
-    fprintf(stderr, "Invalid context to json_end\n");
     return;
   }
 
@@ -447,7 +482,6 @@ static inline char *get_obj(JsonArena *JSON_RESTRICT arena,
   size_t keylen = strlen(key);
   char *value = json_find_key(key, keylen, json);
   if (!value) {
-    fprintf(stderr, "Key %s is not found", key);
     return NULL;
   }
 
