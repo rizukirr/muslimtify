@@ -40,7 +40,7 @@ const char *platform_config_dir(void) {
     snprintf(config_dir_buf, sizeof(config_dir_buf), "%s/muslimtify", xdg);
   } else {
     const char *home = platform_home_dir();
-    if (home[0] != '\0')
+    if (home[0] != '\0' && strlen(home) < sizeof(config_dir_buf) - 20)
       snprintf(config_dir_buf, sizeof(config_dir_buf), "%s/.config/muslimtify", home);
   }
 
@@ -56,7 +56,7 @@ const char *platform_cache_dir(void) {
     snprintf(cache_dir_buf, sizeof(cache_dir_buf), "%s/muslimtify", xdg);
   } else {
     const char *home = platform_home_dir();
-    if (home[0] != '\0')
+    if (home[0] != '\0' && strlen(home) < sizeof(cache_dir_buf) - 19)
       snprintf(cache_dir_buf, sizeof(cache_dir_buf), "%s/.cache/muslimtify", home);
   }
 

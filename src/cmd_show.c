@@ -74,7 +74,7 @@ int handle_check(int argc, char **argv) {
   }
 
   int current_min = tm_now->tm_hour * 60 + tm_now->tm_min;
-  char today[16];
+  char today[32];
   snprintf(today, sizeof(today), "%04d-%02d-%02d", tm_now->tm_year + 1900, tm_now->tm_mon + 1,
            tm_now->tm_mday);
 
