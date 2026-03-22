@@ -1,71 +1,33 @@
 #define JSON_IMPLEMENTATION
 #include "../include/config.h"
+#include "../include/platform.h"
 #include "json.h"
 #include <ctype.h>
 #include <errno.h>
-#include <linux/limits.h>
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-static char config_path[512] = {0};
 
 const char *config_get_path(void) {
-  if (config_path[0] != '\0') {
+  static char config_path[PLATFORM_PATH_MAX] = {0};
+  if (config_path[0] != '\0')
     return config_path;
-  }
 
-  const char *xdg_config = getenv("XDG_CONFIG_HOME");
-  const char *home = getenv("HOME");
-
-  if (!home) {
-    struct passwd *pw = getpwuid(getuid());
-    if (!pw) {
-      fprintf(stderr, "Error: Cannot determine home directory\n");
-      return config_path;
-    }
-    home = pw->pw_dir;
-  }
-
-  if (xdg_config) {
-    snprintf(config_path, sizeof(config_path), "%s/muslimtify/config.json", xdg_config);
-  } else {
-    snprintf(config_path, sizeof(config_path), "%s/.config/muslimtify/config.json", home);
-  }
+  const char *dir = platform_config_dir();
+  if (dir[0] != '\0')
+    snprintf(config_path, sizeof(config_path), "%s%cconfig.json", dir, PLATFORM_PATH_SEP);
 
   return config_path;
 }
 
 static int ensure_config_dir(void) {
-  char dir_path[512];
-  const char *path = config_get_path();
-
-  // Extract directory path
-  snprintf(dir_path, sizeof(dir_path), "%s", path);
-  char *last_slash = strrchr(dir_path, '/');
-  if (last_slash) {
-    *last_slash = '\0';
-  }
-
-  // Recursively create directories (mkdir -p)
-  for (char *p = dir_path + 1; *p; p++) {
-    if (*p == '/') {
-      *p = '\0';
-      if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
-        fprintf(stderr, "Error: Cannot create directory '%s': %s\n", dir_path, strerror(errno));
-        return -1;
-      }
-      *p = '/';
-    }
-  }
-  if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
-    fprintf(stderr, "Error: Cannot create config directory '%s': %s\n", dir_path, strerror(errno));
+  const char *dir = platform_config_dir();
+  if (dir[0] == '\0')
+    return -1;
+  if (platform_mkdir_p(dir) != 0) {
+    fprintf(stderr, "Error: Cannot create config directory '%s'\n", dir);
     return -1;
   }
-
   return 0;
 }
 
@@ -225,7 +187,7 @@ int config_save(const Config *cfg) {
   }
 
   const char *path = config_get_path();
-  char tmp_path[PATH_MAX];
+  char tmp_path[PLATFORM_PATH_MAX];
   int n = snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
   if (n < 0 || (size_t)n >= sizeof(tmp_path)) {
     fprintf(stderr, "Error: Config path too long\n");
@@ -244,7 +206,7 @@ int config_save(const Config *cfg) {
     return -1;
   }
 
-  if (rename(tmp_path, path) != 0) {
+  if (platform_atomic_rename(tmp_path, path) != 0) {
     fprintf(stderr, "Error: Failed to save config file: %s\n", strerror(errno));
     remove(tmp_path);
     return -1;
@@ -316,7 +278,7 @@ int config_load(Config *cfg) {
   const char *path = config_get_path();
 
   // Check if file exists
-  if (access(path, F_OK) != 0) {
+  if (!platform_file_exists(path)) {
     // Config doesn't exist, return default
     *cfg = config_default();
     return 0;
