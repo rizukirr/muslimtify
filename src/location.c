@@ -129,8 +129,8 @@ int location_fetch(Config *cfg) {
     char *comma = strchr(loc_str, ',');
     if (comma) {
       *comma = '\0';
-      double lat = atof(loc_str);
-      double lon = atof(comma + 1);
+      double lat = strtod(loc_str, NULL);
+      double lon = strtod(comma + 1, NULL);
       if (lat >= -90.0 && lat <= 90.0)
         cfg->latitude = lat;
       if (lon >= -180.0 && lon <= 180.0)

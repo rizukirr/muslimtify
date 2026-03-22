@@ -236,8 +236,11 @@ static char *read_file(const char *path) {
   }
 
   size_t n = fread(content, 1, (size_t)size, f);
-  content[n] = '\0';
   fclose(f);
+  if (n > (size_t)size)
+    n = (size_t)size;
+  // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound) -- n <= size by fread contract
+  content[n] = '\0';
 
   return content;
 }
@@ -260,7 +263,7 @@ static void parse_prayer_config(JsonContext *ctx, char *prayer_obj, PrayerConfig
         p++;
 
       if (*p >= '0' && *p <= '9') {
-        int value = atoi(p);
+        int value = (int)strtol(p, NULL, 10);
         if (value > 0) {
           pcfg->reminders[pcfg->reminder_count++] = value;
         }
@@ -311,15 +314,15 @@ int config_load(Config *cfg) {
     char *country_str = get_value(ctx, "country", location);
 
     if (lat_str)
-      cfg->latitude = atof(lat_str);
+      cfg->latitude = strtod(lat_str, NULL);
     if (lon_str)
-      cfg->longitude = atof(lon_str);
+      cfg->longitude = strtod(lon_str, NULL);
     if (tz_str) {
       strncpy(cfg->timezone, tz_str, sizeof(cfg->timezone) - 1);
       cfg->timezone[sizeof(cfg->timezone) - 1] = '\0';
     }
     if (tz_offset_str)
-      cfg->timezone_offset = atof(tz_offset_str);
+      cfg->timezone_offset = strtod(tz_offset_str, NULL);
     if (auto_detect_str)
       cfg->auto_detect = strcmp(auto_detect_str, "true") == 0;
     if (city_str) {
@@ -373,7 +376,7 @@ int config_load(Config *cfg) {
     char *icon_str = get_value(ctx, "icon", notification);
 
     if (timeout_str)
-      cfg->notification_timeout = atoi(timeout_str);
+      cfg->notification_timeout = (int)strtol(timeout_str, NULL, 10);
     if (urgency_str) {
       strncpy(cfg->notification_urgency, urgency_str, sizeof(cfg->notification_urgency) - 1);
       cfg->notification_urgency[sizeof(cfg->notification_urgency) - 1] = '\0';
@@ -488,7 +491,7 @@ int config_parse_reminders(const char *reminder_str, int *reminders, int max_rem
     while (*token == ' ')
       token++;
 
-    int value = atoi(token);
+    int value = (int)strtol(token, NULL, 10);
     if (value > 0 && value <= 1440) {
       reminders[count++] = value;
     }

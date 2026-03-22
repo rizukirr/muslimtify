@@ -52,8 +52,11 @@ static char *read_file(const char *path) {
   }
 
   size_t n = fread(content, 1, (size_t)size, f);
-  content[n] = '\0';
   fclose(f);
+  if (n > (size_t)size)
+    n = (size_t)size;
+  // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound) -- n <= size by fread contract
+  content[n] = '\0';
   return content;
 }
 
@@ -132,15 +135,15 @@ int cache_load(PrayerCache *cache) {
 
     char *minute_str = get_value(ctx, "minute", obj_start);
     if (minute_str)
-      t->minute = atoi(minute_str);
+      t->minute = (int)strtol(minute_str, NULL, 10);
 
     char *mb_str = get_value(ctx, "minutes_before", obj_start);
     if (mb_str)
-      t->minutes_before = atoi(mb_str);
+      t->minutes_before = (int)strtol(mb_str, NULL, 10);
 
     char *pt_str = get_value(ctx, "prayer_time", obj_start);
     if (pt_str)
-      t->prayer_time = atof(pt_str);
+      t->prayer_time = strtod(pt_str, NULL);
 
     cache->trigger_count++;
 
@@ -183,7 +186,8 @@ int cache_save(const PrayerCache *cache) {
   fprintf(f, "  ]\n");
   fprintf(f, "}\n");
 
-  if (ferror(f) || fflush(f) != 0 || fclose(f) != 0) {
+  int write_err = ferror(f) || fflush(f) != 0;
+  if (fclose(f) != 0 || write_err) {
     remove(tmp_path);
     return -1;
   }

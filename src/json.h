@@ -103,7 +103,7 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 #define JSON_VALUE_SEP ','
 
 #ifndef ARENA_BLOCK_SIZE
-#define ARENA_BLOCK_SIZE (1024 * 4)
+#define ARENA_BLOCK_SIZE (1024UL * 4)
 #endif
 
 #define JSON_DEPTH_LIMIT 100
@@ -335,6 +335,8 @@ static char *json_find_key(const char *JSON_RESTRICT key, size_t key_len,
     case JSON_ARRAY_CLOSE:
     case JSON_OBJECT_CLOSE:
       depth--;
+      break;
+    default:
       break;
     }
 

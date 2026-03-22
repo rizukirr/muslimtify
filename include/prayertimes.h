@@ -42,7 +42,7 @@ extern "C" {
 
 // Ihtiyat (precautionary) adjustments in minutes (Kemenag standard)
 #define IHTIYAT_FAJR 2.0
-#define IHTIYAT_SUNRISE -2.0
+#define IHTIYAT_SUNRISE (-2.0)
 #define IHTIYAT_DHUHR 2.0
 #define IHTIYAT_ASR 2.0
 #define IHTIYAT_MAGHRIB 2.0
