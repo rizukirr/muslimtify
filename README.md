@@ -1,5 +1,7 @@
 # Muslimtify
 
+> [WARNING] This project is under development to support windows environment. Please avoid build from source, instead go into release version thank you.
+
 ![Muslimtify Banner](images/banner.png)
 
 Muslimtify is a minimalist prayer time notification daemon for muslim designed specifically for Linux desktops. Built in modern C, it provides a seamless way to receive accurate prayer alerts directly through native system notifications and a clean command-line interface.
