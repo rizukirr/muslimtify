@@ -1,11 +1,10 @@
-#define _POSIX_C_SOURCE 200809L
 #define PRAYERTIMES_IMPLEMENTATION
 #include "../include/display.h"
+#include "../include/platform.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 // ANSI color codes
 #define COL_RESET "\033[0m"
@@ -19,7 +18,8 @@ static bool use_colors(void) {
   static int result = -1;
   if (result == -1) {
     const char *no_color = getenv("NO_COLOR");
-    result = (isatty(STDOUT_FILENO) && (no_color == NULL || no_color[0] == '\0')) ? 1 : 0;
+    result =
+        (platform_isatty(stdout) && (no_color == NULL || no_color[0] == '\0')) ? 1 : 0;
   }
   return result == 1;
 }
@@ -111,9 +111,10 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
   {
     time_t now_t = time(NULL);
     struct tm now_buf;
-    struct tm *now_tm = localtime_r(&now_t, &now_buf);
-    if (now_tm != NULL && date_copy.tm_year == now_tm->tm_year &&
-        date_copy.tm_mon == now_tm->tm_mon && date_copy.tm_mday == now_tm->tm_mday) {
+    platform_localtime(&now_t, &now_buf);
+    struct tm *now_tm = &now_buf;
+    if (date_copy.tm_year == now_tm->tm_year && date_copy.tm_mon == now_tm->tm_mon &&
+        date_copy.tm_mday == now_tm->tm_mday) {
       int dummy;
       PrayerType next = prayer_get_next(cfg, now_tm, (struct PrayerTimes *)times, &dummy);
       for (int i = 0; i < 7; i++) {
@@ -196,9 +197,10 @@ void display_prayer_times_plain(const struct PrayerTimes *times, const Config *c
   {
     time_t now_t = time(NULL);
     struct tm now_buf;
-    struct tm *now_tm = localtime_r(&now_t, &now_buf);
-    if (now_tm != NULL && date_copy.tm_year == now_tm->tm_year &&
-        date_copy.tm_mon == now_tm->tm_mon && date_copy.tm_mday == now_tm->tm_mday) {
+    platform_localtime(&now_t, &now_buf);
+    struct tm *now_tm = &now_buf;
+    if (date_copy.tm_year == now_tm->tm_year && date_copy.tm_mon == now_tm->tm_mon &&
+        date_copy.tm_mday == now_tm->tm_mday) {
       int dummy;
       PrayerType next = prayer_get_next(cfg, now_tm, (struct PrayerTimes *)times, &dummy);
       for (int i = 0; i < 7; i++) {
