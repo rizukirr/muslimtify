@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #ifndef _WIN32
 #include <pwd.h>
@@ -36,6 +37,30 @@ static void check_path(const char *label, const char *first, const char *second)
   report_result(non_empty_label,
                 first != NULL && first[0] != '\0' && second != NULL && second[0] != '\0');
   report_result(stable_label, first == second);
+}
+
+static bool tm_fields_equal(const struct tm *a, const struct tm *b) {
+  return a->tm_sec == b->tm_sec && a->tm_min == b->tm_min && a->tm_hour == b->tm_hour &&
+         a->tm_mday == b->tm_mday && a->tm_mon == b->tm_mon && a->tm_year == b->tm_year &&
+         a->tm_wday == b->tm_wday && a->tm_yday == b->tm_yday && a->tm_isdst == b->tm_isdst;
+}
+
+static void test_platform_time_helpers(void) {
+  printf("test_platform_time_helpers\n");
+
+  time_t sample = 0;
+  struct tm first;
+  struct tm second;
+
+  platform_localtime(&sample, &first);
+  platform_localtime(&sample, &second);
+
+  report_result("platform_localtime() is stable", tm_fields_equal(&first, &second));
+
+  int first_tty = platform_isatty(stdout);
+  int second_tty = platform_isatty(stdout);
+  report_result("platform_isatty(stdout) is stable", first_tty == second_tty &&
+                                                       (first_tty == 0 || first_tty == 1));
 }
 
 static void test_platform_boundary(void) {
@@ -250,6 +275,7 @@ int main(void) {
 #else
   test_windows_file_operations();
 #endif
+  test_platform_time_helpers();
   test_platform_boundary();
 
   printf("\n%d/%d tests passed\n", total - failures, total);

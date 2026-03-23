@@ -81,7 +81,7 @@ static void print_horizontal_line(char pos) {
 
 void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
                                 struct tm *date) {
-  // Copy the caller's date to avoid clobbering it when localtime() is called below
+  // Copy the caller's date to avoid clobbering it when platform_localtime() is called below
   struct tm date_copy = *date;
 
   const char *days[] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
