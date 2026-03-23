@@ -13,11 +13,17 @@ static int build_path(char *dst, size_t dst_size, const char *base, const char *
   return 0;
 }
 
-static void copy_path(char *dst, size_t dst_size, const char *src) {
-  int n = snprintf(dst, dst_size, "%s", src);
-  if (n < 0 || (size_t)n >= dst_size) {
-    dst[0] = '\0';
+static int resolve_icon_path(char *dst, size_t dst_size, const char *src) {
+  if (src[0] == PLATFORM_PATH_SEP) {
+    int n = snprintf(dst, dst_size, "%s", src);
+    return (n < 0 || (size_t)n >= dst_size) ? -1 : 0;
   }
+
+  if (realpath(src, dst) == NULL) {
+    return -1;
+  }
+
+  return 0;
 }
 
 // Get the icon path - tries multiple locations
@@ -64,8 +70,9 @@ static const char *get_icon_path(void) {
       continue;
     }
     if (platform_file_exists(possible_paths[i])) {
-      copy_path(icon_path, sizeof(icon_path), possible_paths[i]);
-      return icon_path;
+      if (resolve_icon_path(icon_path, sizeof(icon_path), possible_paths[i]) == 0) {
+        return icon_path;
+      }
     }
   }
 
