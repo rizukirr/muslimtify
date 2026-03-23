@@ -193,6 +193,11 @@ muslimtify daemon uninstall  # Stop, disable, and remove systemd unit files
 muslimtify daemon status     # Show timer state and next trigger time
 ```
 
+On Windows, the same `muslimtify daemon` commands manage a Task Scheduler job
+named `muslimtify` instead of systemd. `install` creates the job that runs
+`muslimtify check` every minute, `status` queries it, and `uninstall` removes
+it. Some systems may require Administrator privileges for those operations.
+
 ### Other Commands
 
 ```bash
