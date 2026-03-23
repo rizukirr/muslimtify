@@ -43,6 +43,11 @@ const char *platform_cache_dir(void);
 const char *platform_home_dir(void);
 
 /**
+ * Returns the full path to the running executable.
+ */
+const char *platform_exe_path(void);
+
+/**
  * Returns the directory containing the running executable. No trailing separator.
  */
 const char *platform_exe_dir(void);

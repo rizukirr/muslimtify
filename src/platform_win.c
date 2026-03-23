@@ -11,6 +11,7 @@
 static char config_dir_buf[PLATFORM_PATH_MAX] = {0};
 static char cache_dir_buf[PLATFORM_PATH_MAX] = {0};
 static char home_dir_buf[PLATFORM_PATH_MAX] = {0};
+static char exe_path_buf[PLATFORM_PATH_MAX] = {0};
 static char exe_dir_buf[PLATFORM_PATH_MAX] = {0};
 
 static wchar_t *utf8_to_wide(const char *text) {
@@ -135,23 +136,39 @@ const char *platform_cache_dir(void) {
   return cache_dir_buf;
 }
 
-const char *platform_exe_dir(void) {
+const char *platform_exe_path(void) {
   wchar_t wide_exe[PLATFORM_PATH_MAX];
 
-  if (exe_dir_buf[0] != '\0')
-    return exe_dir_buf;
+  if (exe_path_buf[0] != '\0')
+    return exe_path_buf;
 
   DWORD len = GetModuleFileNameW(NULL, wide_exe, PLATFORM_PATH_MAX);
   if (len > 0 && len < PLATFORM_PATH_MAX) {
-    /* Strip filename to get directory */
-    wchar_t *last_sep = wcsrchr(wide_exe, L'\\');
+    if (!wide_to_utf8(wide_exe, exe_path_buf, sizeof(exe_path_buf))) {
+      exe_path_buf[0] = '\0';
+    }
+  }
+
+  return exe_path_buf;
+}
+
+const char *platform_exe_dir(void) {
+  if (exe_dir_buf[0] != '\0')
+    return exe_dir_buf;
+
+  const char *exe_path = platform_exe_path();
+  if (exe_path[0] != '\0') {
+    char tmp[PLATFORM_PATH_MAX];
+    snprintf(tmp, sizeof(tmp), "%s", exe_path);
+    tmp[sizeof(tmp) - 1] = '\0';
+
+    char *last_sep = strrchr(tmp, '\\');
     if (!last_sep)
-      last_sep = wcsrchr(wide_exe, L'/');
+      last_sep = strrchr(tmp, '/');
     if (last_sep) {
       *last_sep = '\0';
-      if (!wide_to_utf8(wide_exe, exe_dir_buf, sizeof(exe_dir_buf))) {
-        exe_dir_buf[0] = '\0';
-      }
+      snprintf(exe_dir_buf, sizeof(exe_dir_buf), "%s", tmp);
+      exe_dir_buf[sizeof(exe_dir_buf) - 1] = '\0';
     }
   }
 

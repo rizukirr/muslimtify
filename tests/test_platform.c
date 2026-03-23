@@ -78,6 +78,10 @@ static void test_platform_boundary(void) {
   const char *home_second = platform_home_dir();
   check_path("platform_home_dir()", home_first, home_second);
 
+  const char *exe_path_first = platform_exe_path();
+  const char *exe_path_second = platform_exe_path();
+  check_path("platform_exe_path()", exe_path_first, exe_path_second);
+
   const char *exe_first = platform_exe_dir();
   const char *exe_second = platform_exe_dir();
   check_path("platform_exe_dir()", exe_first, exe_second);
@@ -165,6 +169,10 @@ static void test_windows_file_operations(void) {
   char expected_exe[PLATFORM_PATH_MAX];
   DWORD exe_len = GetModuleFileNameW(NULL, exe_w, PLATFORM_PATH_MAX);
   if (exe_len > 0 && exe_len < PLATFORM_PATH_MAX) {
+    report_result("platform_exe_path() UTF-8 path",
+                  wide_to_utf8(exe_w, expected_exe, sizeof(expected_exe)) &&
+                      strcmp(platform_exe_path(), expected_exe) == 0);
+
     wchar_t *last_sep = wcsrchr(exe_w, L'\\');
     if (!last_sep)
       last_sep = wcsrchr(exe_w, L'/');
@@ -177,6 +185,7 @@ static void test_windows_file_operations(void) {
       report_result("platform_exe_dir() UTF-8 path", false);
     }
   } else {
+    report_result("platform_exe_path() UTF-8 path", false);
     report_result("platform_exe_dir() UTF-8 path", false);
   }
 

@@ -13,6 +13,7 @@
 static char config_dir_buf[PLATFORM_PATH_MAX] = {0};
 static char cache_dir_buf[PLATFORM_PATH_MAX] = {0};
 static char home_dir_buf[PLATFORM_PATH_MAX] = {0};
+static char exe_path_buf[PLATFORM_PATH_MAX] = {0};
 static char exe_dir_buf[PLATFORM_PATH_MAX] = {0};
 
 const char *platform_home_dir(void) {
@@ -66,19 +67,34 @@ const char *platform_cache_dir(void) {
   return cache_dir_buf;
 }
 
+const char *platform_exe_path(void) {
+  if (exe_path_buf[0] != '\0')
+    return exe_path_buf;
+
+  ssize_t len = readlink("/proc/self/exe", exe_path_buf, sizeof(exe_path_buf) - 1);
+  if (len > 0) {
+    exe_path_buf[len] = '\0';
+  } else {
+    exe_path_buf[0] = '\0';
+  }
+
+  return exe_path_buf;
+}
+
 const char *platform_exe_dir(void) {
   if (exe_dir_buf[0] != '\0')
     return exe_dir_buf;
 
-  char exe_path[PLATFORM_PATH_MAX];
-  ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
-  if (len > 0) {
-    exe_path[len] = '\0';
-    /* Strip filename to get directory */
-    char *last_slash = strrchr(exe_path, '/');
+  const char *exe_path = platform_exe_path();
+  if (exe_path[0] != '\0') {
+    char tmp[PLATFORM_PATH_MAX];
+    snprintf(tmp, sizeof(tmp), "%s", exe_path);
+    tmp[sizeof(tmp) - 1] = '\0';
+
+    char *last_slash = strrchr(tmp, '/');
     if (last_slash) {
       *last_slash = '\0';
-      snprintf(exe_dir_buf, sizeof(exe_dir_buf), "%s", exe_path);
+      snprintf(exe_dir_buf, sizeof(exe_dir_buf), "%s", tmp);
     }
   }
 

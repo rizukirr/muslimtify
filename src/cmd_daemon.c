@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "cli_internal.h"
+#include "platform.h"
 #include <errno.h>
 #include <linux/limits.h>
 #include <pwd.h>
@@ -71,13 +72,11 @@ static int daemon_install_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  char binary_path[PATH_MAX];
-  ssize_t len = readlink("/proc/self/exe", binary_path, sizeof(binary_path) - 1);
-  if (len <= 0) {
+  const char *binary_path = platform_exe_path();
+  if (!binary_path || binary_path[0] == '\0') {
     fprintf(stderr, "Error: Cannot determine binary path\n");
     return 1;
   }
-  binary_path[len] = '\0';
 
   const char *home = get_home();
   if (!home) {
