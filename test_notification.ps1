@@ -53,6 +53,8 @@ try {
     throw 'This Windows host does not expose the toast notification runtime types required by this script.'
 }
 
+# Use the documented Windows PowerShell AUMID so the toast host matches the
+# unpackaged desktop identity path used by muslimtify's Windows backend.
 $appId = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
 $samples = @(
     @{
@@ -98,5 +100,6 @@ Write-Host '- This only verifies toast delivery from Windows PowerShell; it does
 
 if ($failures.Count -gt 0) {
     Write-Section 'One or more toast dispatches failed in this environment.'
-    Write-Host 'That usually means the current Windows session does not permit desktop toast delivery from this host.'
+    Write-Host ("{0} notification(s) failed. That usually means the current Windows session does not permit desktop toast delivery from this host." -f $failures.Count)
+    exit 1
 }
