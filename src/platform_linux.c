@@ -23,11 +23,12 @@ const char *platform_home_dir(void) {
   if (home && home[0] != '\0') {
     snprintf(home_dir_buf, sizeof(home_dir_buf), "%s", home);
   } else {
+    const char *fallback_home = NULL;
     struct passwd *pw = getpwuid(getuid());
     if (pw && pw->pw_dir && pw->pw_dir[0] != '\0')
-      home = pw->pw_dir;
-    if (home)
-      snprintf(home_dir_buf, sizeof(home_dir_buf), "%s", home);
+      fallback_home = pw->pw_dir;
+    if (fallback_home)
+      snprintf(home_dir_buf, sizeof(home_dir_buf), "%s", fallback_home);
   }
 
   return home_dir_buf;
