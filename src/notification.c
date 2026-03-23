@@ -4,7 +4,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+static int build_path(char *dst, size_t dst_size, const char *base, const char *leaf) {
+  int n = snprintf(dst, dst_size, "%s%c%s", base, PLATFORM_PATH_SEP, leaf);
+  if (n < 0 || (size_t)n >= dst_size) {
+    return -1;
+  }
+  return 0;
+}
+
+static int resolve_icon_path(char *dst, size_t dst_size, const char *src) {
+  if (src[0] == PLATFORM_PATH_SEP) {
+    int n = snprintf(dst, dst_size, "%s", src);
+    return (n < 0 || (size_t)n >= dst_size) ? -1 : 0;
+  }
+
+  if (realpath(src, dst) == NULL) {
+    return -1;
+  }
+
+  return 0;
+}
 
 // Get the icon path - tries multiple locations
 static const char *get_icon_path(void) {
@@ -16,63 +36,43 @@ static const char *get_icon_path(void) {
   }
 
   // Try different icon locations in order of preference
-  const char *possible_paths[] = {// Installed location (system-wide)
-                                  "/usr/local/share/icons/hicolor/128x128/apps/muslimtify.png",
-                                  "/usr/share/icons/hicolor/128x128/apps/muslimtify.png",
-
-                                  // XDG data directory
-                                  NULL, // Will be filled with XDG_DATA_HOME
-
-                                  // Relative to binary (for source builds)
-                                  NULL, // Will be filled with binary path
-
-                                  // Current directory (fallback)
-                                  "assets/muslimtify.png", "../assets/muslimtify.png",
-
-                                  NULL};
+  const char *possible_paths[] = {
+    "/usr/local/share/icons/hicolor/128x128/apps/muslimtify.png",
+    "/usr/share/icons/hicolor/128x128/apps/muslimtify.png",
+    NULL,
+    NULL,
+    "assets/muslimtify.png",
+    "../assets/muslimtify.png",
+    NULL
+  };
 
   // Try XDG_DATA_HOME
   char xdg_path[PLATFORM_PATH_MAX];
   const char *xdg_data = getenv("XDG_DATA_HOME");
-  if (xdg_data) {
-    snprintf(xdg_path, sizeof(xdg_path), "%s/icons/hicolor/128x128/apps/muslimtify.png", xdg_data);
+  if (xdg_data != NULL &&
+      build_path(xdg_path, sizeof(xdg_path), xdg_data,
+                 "icons/hicolor/128x128/apps/muslimtify.png") == 0) {
     possible_paths[2] = xdg_path;
   }
 
   // Try relative to binary location
   char assets_path[PLATFORM_PATH_MAX];
-  {
-    const char *exe = platform_exe_dir();
-    if (exe[0] != '\0') {
-      snprintf(assets_path, sizeof(assets_path), "%s/../assets/muslimtify.png", exe);
-      possible_paths[3] = assets_path;
-    }
+  const char *exe = platform_exe_dir();
+  if (exe[0] != '\0' &&
+      build_path(assets_path, sizeof(assets_path), exe, "../assets/muslimtify.png") == 0) {
+    possible_paths[3] = assets_path;
   }
 
-  // Check each path (counted loop â€” NULL entries are skipped, not sentinels)
-  int path_count = (int)(sizeof(possible_paths) / sizeof(possible_paths[0]));
-  for (int i = 0; i < path_count; i++) {
-    if (possible_paths[i] == NULL)
+  // Check each path (NULL entries are skipped, not sentinels)
+  size_t path_count = sizeof(possible_paths) / sizeof(possible_paths[0]);
+  for (size_t i = 0; i < path_count; i++) {
+    if (possible_paths[i] == NULL) {
       continue;
+    }
     if (platform_file_exists(possible_paths[i])) {
-      // Found readable icon - convert to absolute path
-      if (possible_paths[i][0] == '/') {
-        // Already absolute
-        strncpy(icon_path, possible_paths[i], sizeof(icon_path) - 1);
-        icon_path[sizeof(icon_path) - 1] = '\0';
-      } else {
-        // Convert relative to absolute
-        char cwd[PLATFORM_PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd)) != NULL) {
-          int n = snprintf(icon_path, sizeof(icon_path), "%s/%s", cwd, possible_paths[i]);
-          if (n < 0 || (size_t)n >= sizeof(icon_path))
-            icon_path[0] = '\0'; // truncated â€” skip this path
-        } else {
-          strncpy(icon_path, possible_paths[i], sizeof(icon_path) - 1);
-          icon_path[sizeof(icon_path) - 1] = '\0';
-        }
+      if (resolve_icon_path(icon_path, sizeof(icon_path), possible_paths[i]) == 0) {
+        return icon_path;
       }
-      return icon_path;
     }
   }
 

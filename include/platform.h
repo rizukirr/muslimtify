@@ -23,20 +23,29 @@ extern "C" {
 
 /**
  * Returns the config directory path (e.g., ~/.config/muslimtify or %APPDATA%\muslimtify).
- * Creates the directory if it doesn't exist. Returns cached static buffer. No trailing separator.
+ *
+ * Creates the directory if it doesn't exist. Returns a cached static buffer. No trailing
+ * separator.
  */
 const char *platform_config_dir(void);
 
 /**
  * Returns the cache directory path (e.g., ~/.cache/muslimtify or %LOCALAPPDATA%\muslimtify).
- * Creates the directory if it doesn't exist. Returns cached static buffer. No trailing separator.
+ *
+ * Creates the directory if it doesn't exist. Returns a cached static buffer. No trailing
+ * separator.
  */
 const char *platform_cache_dir(void);
 
 /**
- * Returns the user's home directory. Returns cached static buffer. No trailing separator.
+ * Returns the user's home directory. Returns a cached static buffer. No trailing separator.
  */
 const char *platform_home_dir(void);
+
+/**
+ * Returns the full path to the running executable.
+ */
+const char *platform_exe_path(void);
 
 /**
  * Returns the directory containing the running executable. No trailing separator.
@@ -52,6 +61,11 @@ int platform_mkdir_p(const char *path);
  * Check if a file exists. Returns 1 if exists, 0 otherwise.
  */
 int platform_file_exists(const char *path);
+
+/**
+ * Open a file using a UTF-8 path on all platforms.
+ */
+FILE *platform_file_open(const char *path, const char *mode);
 
 /**
  * Delete a file. Returns 0 on success, -1 on failure.

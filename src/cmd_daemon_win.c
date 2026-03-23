@@ -38,12 +38,10 @@ static int daemon_install_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  const char *exe = platform_exe_dir();
-  char exe_path[PLATFORM_PATH_MAX];
-  snprintf(exe_path, sizeof(exe_path), "%s\\muslimtify.exe", exe);
-
-  if (!platform_file_exists(exe_path)) {
-    fprintf(stderr, "Error: Cannot find muslimtify.exe at '%s'\n", exe_path);
+  const char *exe_path = platform_exe_path();
+  if (!exe_path || exe_path[0] == '\0' || !platform_file_exists(exe_path)) {
+    fprintf(stderr, "Error: Cannot find muslimtify.exe at '%s'\n",
+            exe_path ? exe_path : "(unknown)");
     return 1;
   }
 

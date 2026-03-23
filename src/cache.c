@@ -43,7 +43,7 @@ static int ensure_cache_dir(void) {
 }
 
 static char *read_file(const char *path) {
-  FILE *f = fopen(path, "r");
+  FILE *f = platform_file_open(path, "r");
   if (!f)
     return NULL;
 
@@ -180,7 +180,7 @@ int cache_save(const PrayerCache *cache) {
   char tmp_path[PLATFORM_PATH_MAX + 4];
   snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
 
-  FILE *f = fopen(tmp_path, "w");
+  FILE *f = platform_file_open(tmp_path, "w");
   if (!f)
     return -1;
 
@@ -202,12 +202,12 @@ int cache_save(const PrayerCache *cache) {
 
   int write_err = ferror(f) || fflush(f) != 0;
   if (fclose(f) != 0 || write_err) {
-    remove(tmp_path);
+    platform_file_delete(tmp_path);
     return -1;
   }
 
   if (platform_atomic_rename(tmp_path, path) != 0) {
-    remove(tmp_path);
+    platform_file_delete(tmp_path);
     return -1;
   }
 

@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "cache.h"
 #include "config.h"
+#include "platform.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -137,7 +138,7 @@ static void test_save_load_roundtrip(void) {
   printf("  save/load roundtrip...\n");
 
   // Redirect cache to a temp directory via XDG_CACHE_HOME
-  char tmpdir[] = "/tmp/muslimtify_test_XXXXXX";
+  char tmpdir[] = "/tmp/mt_cache_XXXXXX";
   if (!mkdtemp(tmpdir)) {
     fprintf(stderr, "FAIL [mkdtemp]\n");
     failed++;
@@ -145,6 +146,10 @@ static void test_save_load_roundtrip(void) {
   }
   setenv("XDG_CACHE_HOME", tmpdir, 1);
   cache_reset_path();
+  check_bool("cache path starts in tmpdir",
+             strncmp(cache_get_path(), tmpdir, strlen(tmpdir)) == 0);
+  check_bool("cache path includes muslimtify dir",
+             strstr(cache_get_path(), "/muslimtify/next_prayer.json") != NULL);
 
   // Build a cache
   PrayerCache original = {0};
@@ -162,6 +167,7 @@ static void test_save_load_roundtrip(void) {
   // Save and reload
   int save_ok = cache_save(&original);
   check_bool("save succeeds", save_ok == 0);
+  check_bool("cache file exists", platform_file_exists(cache_get_path()) == 1);
 
   PrayerCache loaded = {0};
   int load_ok = cache_load(&loaded);
@@ -173,12 +179,41 @@ static void test_save_load_roundtrip(void) {
   check_bool("prayer[1] matches", strcmp(loaded.triggers[1].prayer, "Dhuhr") == 0);
   check_bool("prayer_time[1] close", fabs(loaded.triggers[1].prayer_time - 12.0667) < 0.01);
 
+  cache_invalidate();
+  check_bool("cache file removed", platform_file_exists(cache_get_path()) == 0);
+
+  char tmpdir2[] = "/tmp/mt_cache_reset_XXXXXX";
+  if (!mkdtemp(tmpdir2)) {
+    fprintf(stderr, "FAIL [mkdtemp reset]\n");
+    failed++;
+    unsetenv("XDG_CACHE_HOME");
+    return;
+  }
+  setenv("XDG_CACHE_HOME", tmpdir2, 1);
+  cache_reset_path();
+  check_bool("cache path resets to new tmpdir",
+             strncmp(cache_get_path(), tmpdir2, strlen(tmpdir2)) == 0);
+  check_bool("cache path still includes muslimtify dir",
+             strstr(cache_get_path(), "/muslimtify/next_prayer.json") != NULL);
+
+  check_bool("save after reset succeeds", cache_save(&original) == 0);
+  PrayerCache reloaded = {0};
+  check_bool("load after reset succeeds", cache_load(&reloaded) == 0);
+  check_bool("reset date matches", strcmp(reloaded.date, "2026-03-22") == 0);
+  check_bool("reset count matches", reloaded.trigger_count == 2);
+  check_bool("reset prayer matches", strcmp(reloaded.triggers[0].prayer, "Fajr") == 0);
+
   // Cleanup
   cache_invalidate();
   cache_reset_path();
-  char rm_cmd[512];
-  snprintf(rm_cmd, sizeof(rm_cmd), "rm -rf %s", tmpdir);
-  (void)system(rm_cmd);
+  char dir1[PLATFORM_PATH_MAX];
+  char dir2[PLATFORM_PATH_MAX];
+  snprintf(dir1, sizeof(dir1), "%s/muslimtify", tmpdir);
+  snprintf(dir2, sizeof(dir2), "%s/muslimtify", tmpdir2);
+  (void)rmdir(dir1);
+  (void)rmdir(tmpdir);
+  (void)rmdir(dir2);
+  (void)rmdir(tmpdir2);
   unsetenv("XDG_CACHE_HOME");
 }
 

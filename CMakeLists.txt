@@ -141,6 +141,14 @@ if(BUILD_TESTING)
     endif()
 
     # Cross-platform tests (no POSIX dependencies)
+    add_executable(test_platform
+        tests/test_platform.c
+        $<$<BOOL:${WIN32}>:src/platform_win.c>
+        $<$<NOT:$<BOOL:${WIN32}>>:src/platform_linux.c>
+    )
+    muslimtify_set_target_defaults(test_platform)
+    add_test(NAME platform COMMAND test_platform)
+
     add_executable(test_prayertimes tests/test_prayertimes.c)
     muslimtify_set_target_defaults(test_prayertimes)
     if(NOT WIN32)
