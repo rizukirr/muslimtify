@@ -107,6 +107,10 @@ int platform_file_exists(const char *path) {
   return access(path, F_OK) == 0 ? 1 : 0;
 }
 
+FILE *platform_file_open(const char *path, const char *mode) {
+  return fopen(path, mode);
+}
+
 int platform_file_delete(const char *path) {
   return unlink(path) == 0 ? 0 : -1;
 }

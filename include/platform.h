@@ -58,6 +58,11 @@ int platform_mkdir_p(const char *path);
 int platform_file_exists(const char *path);
 
 /**
+ * Open a file using a UTF-8 path on all platforms.
+ */
+FILE *platform_file_open(const char *path, const char *mode);
+
+/**
  * Delete a file. Returns 0 on success, -1 on failure.
  */
 int platform_file_delete(const char *path);

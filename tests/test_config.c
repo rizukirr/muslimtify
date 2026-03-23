@@ -1,10 +1,10 @@
 #define _GNU_SOURCE
 #include "config.h"
+#include "platform.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 static int passed = 0;
@@ -22,16 +22,12 @@ static void check_bool(const char *test, bool cond) {
 }
 
 static void setup(void) {
-  snprintf(tmpdir, sizeof(tmpdir), "/tmp/muslimtify_cfgtest_XXXXXX");
+  snprintf(tmpdir, sizeof(tmpdir), "/tmp/mt_cfgtest_XXXXXX");
   if (!mkdtemp(tmpdir)) {
     fprintf(stderr, "FATAL: mkdtemp failed\n");
     exit(1);
   }
   setenv("XDG_CONFIG_HOME", tmpdir, 1);
-
-  char dir[512];
-  snprintf(dir, sizeof(dir), "%s/muslimtify", tmpdir);
-  mkdir(dir, 0755);
 }
 
 static void teardown(void) {
@@ -229,6 +225,16 @@ static void test_default(void) {
 
 // ── round-trip save/load test ───────────────────────────────────────────────
 
+static void test_path_resolution(void) {
+  printf("  path resolution...\n");
+  const char *path = config_get_path();
+
+  check_bool("config path starts in tmpdir",
+             strncmp(path, tmpdir, strlen(tmpdir)) == 0);
+  check_bool("config path includes muslimtify dir",
+             strstr(path, "/muslimtify/config.json") != NULL);
+}
+
 static void test_round_trip(void) {
   printf("  round-trip save/load...\n");
 
@@ -250,7 +256,10 @@ static void test_round_trip(void) {
   out.notification_sound = false;
   strncpy(out.notification_urgency, "critical", sizeof(out.notification_urgency) - 1);
 
+  check_bool("config path includes muslimtify dir",
+             strstr(config_get_path(), "/muslimtify/config.json") != NULL);
   check_bool("save ok", config_save(&out) == 0);
+  check_bool("config file exists", platform_file_exists(config_get_path()) == 1);
 
   Config in;
   check_bool("load ok", config_load(&in) == 0);
@@ -285,6 +294,7 @@ int main(void) {
   test_get_prayer();
   test_format_reminders();
   test_default();
+  test_path_resolution();
   test_round_trip();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);

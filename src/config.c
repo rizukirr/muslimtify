@@ -214,7 +214,7 @@ int config_save(const Config *cfg) {
     return -1;
   }
 
-  FILE *f = fopen(tmp_path, "w");
+  FILE *f = platform_file_open(tmp_path, "w");
   if (!f) {
     int err = errno;
     char errbuf[128];
@@ -228,7 +228,7 @@ int config_save(const Config *cfg) {
     char errbuf[128];
     errno_string(err, errbuf, sizeof(errbuf));
     fprintf(stderr, "Error: Failed to write config file: %s\n", errbuf);
-    remove(tmp_path);
+    platform_file_delete(tmp_path);
     return -1;
   }
 
@@ -237,7 +237,7 @@ int config_save(const Config *cfg) {
     char errbuf[128];
     errno_string(err, errbuf, sizeof(errbuf));
     fprintf(stderr, "Error: Failed to save config file: %s\n", errbuf);
-    remove(tmp_path);
+    platform_file_delete(tmp_path);
     return -1;
   }
 
@@ -245,7 +245,7 @@ int config_save(const Config *cfg) {
 }
 
 static char *read_file(const char *path) {
-  FILE *f = fopen(path, "r");
+  FILE *f = platform_file_open(path, "r");
   if (!f) {
     return NULL;
   }
