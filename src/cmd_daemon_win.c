@@ -1,7 +1,9 @@
 #include "cli_internal.h"
+#include "cmd_daemon_win.h"
 #include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 
 static int run_schtasks(const char *args) {
@@ -34,6 +36,57 @@ static int run_schtasks(const char *args) {
   return (int)exit_code;
 }
 
+static int append_text(char *buffer, size_t buffer_size, size_t *offset, const char *text) {
+  int written;
+
+  if (!buffer || !offset || !text)
+    return -1;
+
+  if (*offset >= buffer_size)
+    return -1;
+
+  written = snprintf(buffer + *offset, buffer_size - *offset, "%s", text);
+  if (written < 0 || (size_t)written >= buffer_size - *offset)
+    return -1;
+
+  *offset += (size_t)written;
+  return 0;
+}
+
+int build_windows_task_action(const char *exe_path, char *buffer, size_t buffer_size) {
+  size_t offset = 0;
+
+  if (!exe_path || !buffer || buffer_size == 0) {
+    return -1;
+  }
+
+  buffer[0] = '\0';
+
+  if (append_text(buffer, buffer_size, &offset,
+                  "powershell.exe -NoProfile -WindowStyle Hidden -Command \\\"& '") != 0) {
+    return -1;
+  }
+
+  for (const char *p = exe_path; *p; p++) {
+    if (*p == '\'') {
+      if (append_text(buffer, buffer_size, &offset, "''") != 0) {
+        return -1;
+      }
+    } else {
+      char ch[2] = {*p, '\0'};
+      if (append_text(buffer, buffer_size, &offset, ch) != 0) {
+        return -1;
+      }
+    }
+  }
+
+  if (append_text(buffer, buffer_size, &offset, "' check\\\"") != 0) {
+    return -1;
+  }
+
+  return (int)offset;
+}
+
 static int daemon_install_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
@@ -45,9 +98,15 @@ static int daemon_install_handler(int argc, char **argv) {
     return 1;
   }
 
-  char args[PLATFORM_PATH_MAX * 2];
+  char task_action[DAEMON_TASK_ACTION_MAX];
+  if (build_windows_task_action(exe_path, task_action, sizeof(task_action)) < 0) {
+    fprintf(stderr, "Error: Failed to build scheduled task action\n");
+    return 1;
+  }
+
+  char args[PLATFORM_PATH_MAX * 3];
   snprintf(args, sizeof(args),
-           "/create /tn \"muslimtify\" /tr \"\\\"%s\\\" check\" /sc minute /mo 1 /f", exe_path);
+           "/create /tn \"muslimtify\" /tr \"%s\" /sc minute /mo 1 /f", task_action);
 
   int result = run_schtasks(args);
   if (result == 0) {

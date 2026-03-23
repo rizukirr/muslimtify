@@ -166,6 +166,16 @@ if(BUILD_TESTING)
     add_executable(test_string_util tests/test_string_util.c src/string_util.c)
     muslimtify_set_target_defaults(test_string_util)
     add_test(NAME string_util COMMAND test_string_util)
+
+    if(WIN32)
+        add_executable(test_cmd_daemon_win
+            tests/test_cmd_daemon_win.c
+            src/cmd_daemon_win.c
+            src/platform_win.c
+        )
+        muslimtify_set_target_defaults(test_cmd_daemon_win)
+        add_test(NAME cmd_daemon_win COMMAND test_cmd_daemon_win)
+    endif()
 endif()
 
 # ── Install ──────────────────────────────────────────────────────────────────

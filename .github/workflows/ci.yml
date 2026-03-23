@@ -19,7 +19,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          clang-format --dry-run --Werror src/*.c include/*.h
+          clang-format --dry-run --Werror src/*.c src/*.h include/*.h
           clang-format --dry-run --Werror tests/*.c
 
       - name: Configure (for clang-tidy compile commands)
@@ -68,5 +68,4 @@ jobs:
         run: cmake --build build --config Release
 
       - name: Test
-        working-directory: build
-        run: ctest --output-on-failure -C Release
+        run: ctest --test-dir build --output-on-failure -C Release
