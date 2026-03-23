@@ -20,13 +20,15 @@ const char *platform_home_dir(void) {
     return home_dir_buf;
 
   const char *home = getenv("HOME");
-  if (!home) {
-    struct passwd *pw = getpwuid(getuid());
-    if (pw)
-      home = pw->pw_dir;
-  }
-  if (home)
+  if (home && home[0] != '\0') {
     snprintf(home_dir_buf, sizeof(home_dir_buf), "%s", home);
+  } else {
+    struct passwd *pw = getpwuid(getuid());
+    if (pw && pw->pw_dir && pw->pw_dir[0] != '\0')
+      home = pw->pw_dir;
+    if (home)
+      snprintf(home_dir_buf, sizeof(home_dir_buf), "%s", home);
+  }
 
   return home_dir_buf;
 }
@@ -36,7 +38,7 @@ const char *platform_config_dir(void) {
     return config_dir_buf;
 
   const char *xdg = getenv("XDG_CONFIG_HOME");
-  if (xdg) {
+  if (xdg && xdg[0] != '\0') {
     snprintf(config_dir_buf, sizeof(config_dir_buf), "%s/muslimtify", xdg);
   } else {
     const char *home = platform_home_dir();
@@ -52,7 +54,7 @@ const char *platform_cache_dir(void) {
     return cache_dir_buf;
 
   const char *xdg = getenv("XDG_CACHE_HOME");
-  if (xdg) {
+  if (xdg && xdg[0] != '\0') {
     snprintf(cache_dir_buf, sizeof(cache_dir_buf), "%s/muslimtify", xdg);
   } else {
     const char *home = platform_home_dir();

@@ -23,18 +23,22 @@ extern "C" {
 
 /**
  * Returns the config directory path (e.g., ~/.config/muslimtify or %APPDATA%\muslimtify).
- * Creates the directory if it doesn't exist. Returns cached static buffer. No trailing separator.
+ *
+ * Creates the directory if it doesn't exist. Returns a cached static buffer. No trailing
+ * separator.
  */
 const char *platform_config_dir(void);
 
 /**
  * Returns the cache directory path (e.g., ~/.cache/muslimtify or %LOCALAPPDATA%\muslimtify).
- * Creates the directory if it doesn't exist. Returns cached static buffer. No trailing separator.
+ *
+ * Creates the directory if it doesn't exist. Returns a cached static buffer. No trailing
+ * separator.
  */
 const char *platform_cache_dir(void);
 
 /**
- * Returns the user's home directory. Returns cached static buffer. No trailing separator.
+ * Returns the user's home directory. Returns a cached static buffer. No trailing separator.
  */
 const char *platform_home_dir(void);
 

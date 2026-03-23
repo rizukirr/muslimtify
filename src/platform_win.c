@@ -16,8 +16,16 @@ const char *platform_home_dir(void) {
     return home_dir_buf;
 
   const char *home = getenv("USERPROFILE");
-  if (home)
+  if (home && home[0] != '\0') {
     snprintf(home_dir_buf, sizeof(home_dir_buf), "%s", home);
+  } else {
+    const char *home_drive = getenv("HOMEDRIVE");
+    const char *home_path = getenv("HOMEPATH");
+    if (home_drive && home_drive[0] != '\0' && home_path && home_path[0] != '\0') {
+      snprintf(home_dir_buf, sizeof(home_dir_buf), "%s%s", home_drive, home_path);
+      return home_dir_buf;
+    }
+  }
 
   return home_dir_buf;
 }
@@ -27,7 +35,7 @@ const char *platform_config_dir(void) {
     return config_dir_buf;
 
   const char *appdata = getenv("APPDATA");
-  if (appdata) {
+  if (appdata && appdata[0] != '\0') {
     snprintf(config_dir_buf, sizeof(config_dir_buf), "%s\\muslimtify", appdata);
   } else {
     const char *home = platform_home_dir();
@@ -43,7 +51,7 @@ const char *platform_cache_dir(void) {
     return cache_dir_buf;
 
   const char *localappdata = getenv("LOCALAPPDATA");
-  if (localappdata) {
+  if (localappdata && localappdata[0] != '\0') {
     snprintf(cache_dir_buf, sizeof(cache_dir_buf), "%s\\muslimtify", localappdata);
   } else {
     const char *home = platform_home_dir();

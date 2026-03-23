@@ -88,6 +88,7 @@ add_library(muslimtify_lib OBJECT
 muslimtify_set_target_defaults(muslimtify_lib)
 if(WIN32)
     target_include_directories(muslimtify_lib PRIVATE ${curl_SOURCE_DIR}/include)
+    target_compile_definitions(muslimtify_lib PRIVATE CURL_STATICLIB)
 else()
 target_include_directories(muslimtify_lib PRIVATE
         ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
@@ -141,6 +142,17 @@ if(BUILD_TESTING)
     endif()
 
     # Cross-platform tests (no POSIX dependencies)
+    add_executable(test_platform tests/test_platform.c)
+    muslimtify_set_target_defaults(test_platform)
+    if(WIN32)
+        target_link_libraries(test_platform
+            muslimtify_lib ole32 runtimeobject CURL::libcurl)
+    else()
+        target_link_libraries(test_platform
+            muslimtify_lib ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+    endif()
+    add_test(NAME platform COMMAND test_platform)
+
     add_executable(test_prayertimes tests/test_prayertimes.c)
     muslimtify_set_target_defaults(test_prayertimes)
     if(NOT WIN32)
