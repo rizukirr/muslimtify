@@ -49,7 +49,7 @@ static const char *get_icon_path(void) {
     }
   }
 
-  // Check each path (counted loop — NULL entries are skipped, not sentinels)
+  // Check each path (counted loop â€” NULL entries are skipped, not sentinels)
   int path_count = (int)(sizeof(possible_paths) / sizeof(possible_paths[0]));
   for (int i = 0; i < path_count; i++) {
     if (possible_paths[i] == NULL)
@@ -66,7 +66,7 @@ static const char *get_icon_path(void) {
         if (getcwd(cwd, sizeof(cwd)) != NULL) {
           int n = snprintf(icon_path, sizeof(icon_path), "%s/%s", cwd, possible_paths[i]);
           if (n < 0 || (size_t)n >= sizeof(icon_path))
-            icon_path[0] = '\0'; // truncated — skip this path
+            icon_path[0] = '\0'; // truncated â€” skip this path
         } else {
           strncpy(icon_path, possible_paths[i], sizeof(icon_path) - 1);
           icon_path[sizeof(icon_path) - 1] = '\0';

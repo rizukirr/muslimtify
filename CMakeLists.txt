@@ -89,7 +89,7 @@ muslimtify_set_target_defaults(muslimtify_lib)
 if(WIN32)
     target_include_directories(muslimtify_lib PRIVATE ${curl_SOURCE_DIR}/include)
 else()
-target_include_directories(muslimtify_lib PRIVATE
+    target_include_directories(muslimtify_lib PRIVATE
         ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
 endif()
 
@@ -144,14 +144,14 @@ if(BUILD_TESTING)
     add_executable(test_prayertimes tests/test_prayertimes.c)
     muslimtify_set_target_defaults(test_prayertimes)
     if(NOT WIN32)
-      target_link_libraries(test_prayertimes m)
+        target_link_libraries(test_prayertimes m)
     endif()
     add_test(NAME prayertimes COMMAND test_prayertimes)
 
     add_executable(test_json tests/test_json.c)
     muslimtify_set_target_defaults(test_json)
     if(NOT WIN32)
-      target_link_libraries(test_json m)
+        target_link_libraries(test_json m)
     endif()
     add_test(NAME json COMMAND test_json)
 
