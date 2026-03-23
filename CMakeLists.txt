@@ -79,6 +79,7 @@ add_library(muslimtify_lib OBJECT
     src/config.c
     src/cache.c
     src/location.c
+    src/string_util.c
     src/prayer_checker.c
     $<IF:$<BOOL:${WIN32}>,src/notification_win.c,src/notification.c>
     src/display.c
@@ -88,7 +89,7 @@ muslimtify_set_target_defaults(muslimtify_lib)
 if(WIN32)
     target_include_directories(muslimtify_lib PRIVATE ${curl_SOURCE_DIR}/include)
 else()
-    target_include_directories(muslimtify_lib PRIVATE
+target_include_directories(muslimtify_lib PRIVATE
         ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
 endif()
 
@@ -153,6 +154,10 @@ if(BUILD_TESTING)
       target_link_libraries(test_json m)
     endif()
     add_test(NAME json COMMAND test_json)
+
+    add_executable(test_string_util tests/test_string_util.c src/string_util.c)
+    muslimtify_set_target_defaults(test_string_util)
+    add_test(NAME string_util COMMAND test_string_util)
 endif()
 
 # ── Install ──────────────────────────────────────────────────────────────────

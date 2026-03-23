@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 /* ── WinRT type declarations ──────────────────────────────────────────────── */
 
@@ -288,36 +289,54 @@ static wchar_t *xml_escape(const wchar_t *src) {
     return NULL;
   /* Worst case: every char becomes "&quot;" or "&apos;" (6x expansion) */
   size_t src_len = wcslen(src);
-  wchar_t *escaped = (wchar_t *)malloc((src_len * 6 + 1) * sizeof(wchar_t));
+  size_t max_len = src_len * 6 + 1;
+  wchar_t *escaped = (wchar_t *)malloc(max_len * sizeof(wchar_t));
   if (!escaped)
     return NULL;
   wchar_t *dst = escaped;
+  size_t remaining = max_len;
+
   for (size_t i = 0; i < src_len; i++) {
+    const wchar_t *repl = NULL;
+    size_t repl_len = 0;
     switch (src[i]) {
     case L'<':
-      wcscpy(dst, L"&lt;");
-      dst += 4;
+      repl = L"&lt;";
+      repl_len = 4;
       break;
     case L'>':
-      wcscpy(dst, L"&gt;");
-      dst += 4;
+      repl = L"&gt;";
+      repl_len = 4;
       break;
     case L'&':
-      wcscpy(dst, L"&amp;");
-      dst += 5;
+      repl = L"&amp;";
+      repl_len = 5;
       break;
     case L'"':
-      wcscpy(dst, L"&quot;");
-      dst += 6;
+      repl = L"&quot;";
+      repl_len = 6;
       break;
     case L'\'':
-      wcscpy(dst, L"&apos;");
-      dst += 6;
+      repl = L"&apos;";
+      repl_len = 6;
       break;
     default:
+      if (remaining <= 1) {
+        free(escaped);
+        return NULL;
+      }
       *dst++ = src[i];
-      break;
+      remaining--;
+      continue;
     }
+
+    if (remaining <= repl_len) {
+      free(escaped);
+      return NULL;
+    }
+    wmemcpy(dst, repl, repl_len);
+    dst += repl_len;
+    remaining -= repl_len;
   }
   *dst = L'\0';
   return escaped;

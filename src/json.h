@@ -71,6 +71,7 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 #ifdef JSON_IMPLEMENTATION
 
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -80,16 +81,18 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 
 // ARENA
 
-#if __STDC_VERSION__ >= 201112L
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #include <stdalign.h>
-#define ARENA_ALIGNOF(type) alignof(type)
+#define JSON_ALIGNOF(type) alignof(type)
+#elif defined(_MSC_VER)
+#define JSON_ALIGNOF(type) __alignof(type)
 #else
-#define ARENA_ALIGNOF(type) \
-  offsetof(                 \
-      struct {              \
-        char c;             \
-        type d;             \
-      },                    \
+#define JSON_ALIGNOF(type) \
+  offsetof(                \
+      struct {             \
+        char c;            \
+        type d;            \
+      },                   \
       d)
 #endif
 
@@ -108,21 +111,204 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 
 #define JSON_DEPTH_LIMIT 100
 
-typedef struct {
-  struct Region *next;
+typedef struct Region Region;
+struct Region {
+  Region *next;
   size_t cap;
   size_t index;
-  uint8_t data[];
-} Region;
+  uint8_t *data;
+};
 
-typedef struct {
+typedef struct JsonArena {
   Region *head;
   Region *current;
   size_t block_size;
 } JsonArena;
 
-static size_t json_alloc_align(uintptr_t ptr, size_t alignment) {
-  return (alignment - (ptr % alignment)) % alignment;
+typedef struct AlignProbe {
+  uintptr_t address;
+  size_t alignment;
+} AlignProbe;
+
+typedef struct JsonSlice {
+  const char *ptr;
+  size_t length;
+} JsonSlice;
+
+typedef struct JsonUtf8 {
+  unsigned char bytes[3];
+  size_t length;
+} JsonUtf8;
+
+static Region *json_region_create(size_t block_size) {
+  Region *region = (Region *)malloc(sizeof(Region) + block_size);
+  if (!region) {
+    fprintf(stderr, "Memory allocation fail, Buy more RAM LOL!\n");
+    return NULL;
+  }
+
+  region->next = NULL;
+  region->cap = block_size;
+  region->index = 0;
+  region->data = (uint8_t *)(region + 1);
+  return region;
+}
+
+static JsonSlice json_slice_make(const char *ptr, size_t length) {
+  JsonSlice slice;
+  slice.ptr = ptr;
+  slice.length = length;
+  return slice;
+}
+
+static JsonSlice json_slice_from_range(const char *start, const char *end) {
+  if (!start || !end || end < start) {
+    return json_slice_make(NULL, 0);
+  }
+  return json_slice_make(start, (size_t)(end - start));
+}
+
+static JsonSlice json_slice_from_cstr(const char *str) {
+  if (!str) {
+    return json_slice_make(NULL, 0);
+  }
+  return json_slice_make(str, strlen(str));
+}
+
+static int json_hex_digit_value(char c) {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  }
+  if (c >= 'a' && c <= 'f') {
+    return 10 + (c - 'a');
+  }
+  if (c >= 'A' && c <= 'F') {
+    return 10 + (c - 'A');
+  }
+  return -1;
+}
+
+static bool json_utf8_encode(uint32_t codepoint, JsonUtf8 *utf8) {
+  if (!utf8)
+    return false;
+
+  if (codepoint <= 0x7F) {
+    utf8->bytes[0] = (unsigned char)codepoint;
+    utf8->length = 1;
+    return true;
+  }
+
+  if (codepoint <= 0x7FF) {
+    utf8->bytes[0] = (unsigned char)(0xC0 | (codepoint >> 6));
+    utf8->bytes[1] = (unsigned char)(0x80 | (codepoint & 0x3F));
+    utf8->length = 2;
+    return true;
+  }
+
+  if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
+    return false;
+  }
+
+  utf8->bytes[0] = (unsigned char)(0xE0 | (codepoint >> 12));
+  utf8->bytes[1] = (unsigned char)(0x80 | ((codepoint >> 6) & 0x3F));
+  utf8->bytes[2] = (unsigned char)(0x80 | (codepoint & 0x3F));
+  utf8->length = 3;
+  return true;
+}
+
+static bool json_slice_equals(JsonSlice lhs, JsonSlice rhs) {
+  if (!lhs.ptr || !rhs.ptr) {
+    return false;
+  }
+
+  const char *lhs_cur = lhs.ptr;
+  const char *lhs_end = lhs.ptr + lhs.length;
+  const unsigned char *rhs_cur = (const unsigned char *)rhs.ptr;
+  const unsigned char *rhs_end = (const unsigned char *)(rhs.ptr + rhs.length);
+
+  while (lhs_cur < lhs_end && rhs_cur < rhs_end) {
+    JsonUtf8 to_compare;
+    to_compare.length = 1;
+
+    if (*lhs_cur == JSON_ESCAPE_CHAR) {
+      lhs_cur++;
+      if (lhs_cur >= lhs_end) {
+        return false;
+      }
+
+      char escape = *lhs_cur++;
+      switch (escape) {
+      case '"':
+        to_compare.bytes[0] = '"';
+        break;
+      case '\\':
+        to_compare.bytes[0] = '\\';
+        break;
+      case '/':
+        to_compare.bytes[0] = '/';
+        break;
+      case 'b':
+        to_compare.bytes[0] = '\b';
+        break;
+      case 'f':
+        to_compare.bytes[0] = '\f';
+        break;
+      case 'n':
+        to_compare.bytes[0] = '\n';
+        break;
+      case 'r':
+        to_compare.bytes[0] = '\r';
+        break;
+      case 't':
+        to_compare.bytes[0] = '\t';
+        break;
+      case 'u': {
+        if ((size_t)(lhs_end - lhs_cur) < 4) {
+          return false;
+        }
+
+        uint32_t value = 0;
+        for (int i = 0; i < 4; i++) {
+          int digit = json_hex_digit_value(*lhs_cur++);
+          if (digit < 0) {
+            return false;
+          }
+          value = (value << 4) | (uint32_t)digit;
+        }
+
+        if (!json_utf8_encode(value, &to_compare)) {
+          return false;
+        }
+        break;
+      }
+      default:
+        return false;
+      }
+    } else {
+      to_compare.bytes[0] = (unsigned char)*lhs_cur++;
+    }
+
+    for (size_t i = 0; i < to_compare.length; i++) {
+      if (rhs_cur >= rhs_end || *rhs_cur != to_compare.bytes[i]) {
+        return false;
+      }
+      rhs_cur++;
+    }
+  }
+
+  return lhs_cur == lhs_end && rhs_cur == rhs_end;
+}
+
+static size_t json_alloc_align(AlignProbe probe) {
+  return (probe.alignment - (probe.address % probe.alignment)) % probe.alignment;
+}
+
+static bool json_safe_add(size_t a, size_t b, size_t *result) {
+  if (b > SIZE_MAX - a) {
+    return false;
+  }
+  *result = a + b;
+  return true;
 }
 
 static JsonArena *json_alloc_init(void) {
@@ -152,40 +338,40 @@ static void *json_alloc(JsonArena *arena, size_t size, size_t alignment) {
 #endif
     return NULL;
 
+  size_t slack = (alignment > 1) ? (alignment - 1) : 0;
+  size_t size_with_slack = size;
+  if (slack > 0 && !json_safe_add(size, slack, &size_with_slack)) {
+    return NULL;
+  }
+
   if (!arena->current) {
-    size_t block_size = (size > arena->block_size) ? size : arena->block_size;
-    Region *region = malloc(sizeof(Region) + block_size);
-    if (region == NULL) {
-      fprintf(stderr, "Memory allocation fail, Buy more RAM LOL!\n");
+    size_t initial_cap =
+        (size_with_slack > arena->block_size) ? size_with_slack : arena->block_size;
+    Region *region = json_region_create(initial_cap);
+    if (!region) {
       return NULL;
     }
 
-    region->next = NULL;
-    region->cap = block_size;
-    region->index = 0;
     arena->head = arena->current = region;
   }
 
   uintptr_t current_ptr = (uintptr_t)(arena->current->data + arena->current->index);
-  size_t padding = json_alloc_align(current_ptr, alignment);
+  AlignProbe probe = {current_ptr, alignment};
+  size_t padding = json_alloc_align(probe);
 
   if (arena->current->index + padding + size > arena->current->cap) {
-    size_t next_cap = (size > arena->block_size) ? size : arena->block_size;
-    Region *next = malloc(sizeof(Region) + next_cap);
+    size_t next_cap = (size_with_slack > arena->block_size) ? size_with_slack : arena->block_size;
+    Region *next = json_region_create(next_cap);
     if (!next) {
-      fprintf(stderr, "Memory allocation fail, Buy more RAM LOL!\n");
       return NULL;
     }
 
-    next->next = NULL;
-    next->cap = next_cap;
-    next->index = 0;
-
-    arena->current->next = (struct Region *)next;
+    arena->current->next = next;
     arena->current = next;
 
     current_ptr = (uintptr_t)next->data;
-    padding = json_alloc_align(current_ptr, alignment);
+    probe.address = current_ptr;
+    padding = json_alloc_align(probe);
   }
 
   arena->current->index += padding;
@@ -200,7 +386,7 @@ static void json_alloc_free(JsonArena *arena) {
     return;
   Region *region = arena->head;
   while (region) {
-    Region *next = (Region *)region->next;
+    Region *next = region->next;
     free(region);
     region = next;
   }
@@ -264,9 +450,8 @@ static const char *find_matching_bracket(const char *start, char open_bracket) {
   return NULL;
 }
 
-static char *json_find_key(const char *JSON_RESTRICT key, size_t key_len,
-                           char *JSON_RESTRICT json) {
-  if (!key || !json) {
+static char *json_find_key(JsonSlice key, char *JSON_RESTRICT json) {
+  if (!key.ptr || !json) {
     fprintf(stderr, "Invalid arguments, expected key and raw json\n");
     return NULL;
   }
@@ -276,18 +461,17 @@ static char *json_find_key(const char *JSON_RESTRICT key, size_t key_len,
   bool in_string = false;
   bool escaped = false;
 
-  size_t target_len = key_len;
-
   while (*cursor) {
     char current_char = *cursor;
 
     if (in_string) {
-      if (escaped)
-        escaped = false; // this character is escaped, move on
-      else if (current_char == '\\')
-        escaped = true; // Next character will be escaped
-      else if (current_char == '"')
-        in_string = false; // end of string
+      if (escaped) {
+        escaped = false;
+      } else if (current_char == JSON_ESCAPE_CHAR) {
+        escaped = true;
+      } else if (current_char == JSON_STRING_QUOTE) {
+        in_string = false;
+      }
 
       cursor++;
       continue;
@@ -299,24 +483,27 @@ static char *json_find_key(const char *JSON_RESTRICT key, size_t key_len,
         const char *key_start = cursor + 1;
         const char *key_end = key_start;
 
-        // Find the closing quote
-        while (*key_end && *key_end != '"') {
-          if (*key_end == '\\')
-            key_end++; // Skip the escaped quote
-          key_end++;   // Skip the quote
+        while (*key_end) {
+          if (*key_end == JSON_ESCAPE_CHAR) {
+            key_end++;
+            if (!*key_end) {
+              break;
+            }
+          } else if (*key_end == JSON_STRING_QUOTE) {
+            break;
+          }
+          key_end++;
         }
 
-        if (!key_end)
-          continue;
+        if (*key_end != JSON_STRING_QUOTE) {
+          return NULL;
+        }
 
-        size_t found_len = key_end - key_start;
-
-        if (found_len == target_len && strncmp(key_start, key, found_len) == 0) {
-          // skip past the closing quote and find the colon
+        JsonSlice candidate = json_slice_from_range(key_start, key_end);
+        if (json_slice_equals(candidate, key)) {
           cursor = skip_whitespace(key_end + 1);
 
-          if (*cursor == ':') {
-            // skip past the colon and find the value
+          if (*cursor == JSON_KEY_VALUE_SEP) {
             cursor = skip_whitespace(cursor + 1);
             return (char *)cursor;
           }
@@ -370,7 +557,7 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
     size_t raw_len = scan - cursor;
 
     // Allocate raw_len + 1 (unescaped is always <= raw length)
-    char *result = json_alloc(arena, raw_len + 1, ARENA_ALIGNOF(char));
+    char *result = json_alloc(arena, raw_len + 1, JSON_ALIGNOF(char));
     if (!result)
       return NULL;
 
@@ -438,7 +625,7 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
       return NULL;
 
     value_len = value_end - start + 1; // Include closing bracket
-    char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
+    char *result = json_alloc(arena, value_len + 1, JSON_ALIGNOF(char));
     if (!result)
       return NULL;
     memcpy(result, start, value_len);
@@ -454,7 +641,7 @@ static char *json_extract_value(JsonArena *JSON_RESTRICT arena,
     }
 
     value_len = value_end - cursor;
-    char *result = json_alloc(arena, value_len + 1, ARENA_ALIGNOF(char));
+    char *result = json_alloc(arena, value_len + 1, JSON_ALIGNOF(char));
     if (!result)
       return NULL;
     memcpy(result, cursor, value_len);
@@ -470,7 +657,7 @@ JsonContext *json_begin(void) {
     return NULL;
   }
 
-  JsonContext *ctx = json_alloc(arena, sizeof(JsonContext), ARENA_ALIGNOF(JsonContext));
+  JsonContext *ctx = json_alloc(arena, sizeof(JsonContext), JSON_ALIGNOF(JsonContext));
   if (!ctx) {
     fprintf(stderr, "Cannot create JsonContext, please check your RAM usage\n");
     json_alloc_free(arena);
@@ -496,8 +683,8 @@ static inline char *get_obj(JsonArena *JSON_RESTRICT arena, char *JSON_RESTRICT 
     return NULL;
   }
 
-  size_t keylen = strlen(key);
-  char *value = json_find_key(key, keylen, json);
+  JsonSlice key_slice = json_slice_from_cstr(key);
+  char *value = json_find_key(key_slice, json);
   if (!value) {
     return NULL;
   }

@@ -164,6 +164,25 @@ static void test_escaped_tab(void) {
   json_end(ctx);
 }
 
+static void test_escaped_keys(void) {
+  printf("test_escaped_keys\n");
+  JsonContext *ctx = json_begin();
+  char json[] = "{\"line\\nname\": \"line value\", \"quote\\\"key\": \"quote value\", "
+                "\"unicod\\u00E9\": \"unicode value\"}";
+
+  char *line = get_value(ctx, "line\nname", json);
+  check_str(line, "line value", "newline key");
+
+  char *quote = get_value(ctx, "quote\"key", json);
+  check_str(quote, "quote value", "quote key");
+
+  const char unicode_key[] = "unicodé";
+  char *unicode_val = get_value(ctx, unicode_key, json);
+  check_str(unicode_val, "unicode value", "unicode key");
+
+  json_end(ctx);
+}
+
 static void test_unicode_passthrough(void) {
   printf("test_unicode_passthrough\n");
   JsonContext *ctx = json_begin();
@@ -217,6 +236,27 @@ static void test_json_end_null(void) {
   printf("  PASS: json_end(NULL) does not crash\n");
 }
 
+static void test_arena_large_alignment(void) {
+  printf("test_arena_large_alignment\n");
+  JsonArena *arena = json_alloc_init();
+  size_t size = ARENA_BLOCK_SIZE + 256;
+  size_t alignment = JSON_ALIGNOF(double) * 2;
+
+  void *ptr = json_alloc(arena, size, alignment);
+  check_not_null(ptr, "large aligned allocation");
+
+  total++;
+  size_t required_cap = size + alignment - 1;
+  if (arena && arena->current && arena->current->cap >= required_cap) {
+    printf("  PASS: arena capacity respected for large allocation\n");
+  } else {
+    printf("  FAIL: arena capacity overflowed for large allocation\n");
+    failures++;
+  }
+
+  json_alloc_free(arena);
+}
+
 /* ── Main ─────────────────────────────────────────────────────────────────── */
 
 int main(void) {
@@ -240,10 +280,13 @@ int main(void) {
   test_escaped_backslash();
   test_escaped_newline();
   test_escaped_tab();
+  test_escaped_keys();
   test_unicode_passthrough();
 
   test_key_inside_value();
   test_multiple_get_value();
+
+  test_arena_large_alignment();
 
   printf("\n%d/%d tests passed\n", total - failures, total);
   return failures > 0 ? 1 : 0;

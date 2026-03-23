@@ -1,5 +1,6 @@
 #include "location.h"
 #include "json.h"
+#include "string_util.h"
 #include <curl/curl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -38,6 +39,15 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
   buf->data[buf->size] = '\0';
 
   return realsize;
+}
+
+static bool location_trunc_logged = false;
+
+static void location_log_trunc(const char *field) {
+  if (!location_trunc_logged) {
+    fprintf(stderr, "location: truncated field %s\n", field ? field : "(unknown)");
+    location_trunc_logged = true;
+  }
 }
 
 // Parse timezone string like "Asia/Jakarta" to get UTC offset
@@ -141,23 +151,26 @@ int location_fetch(Config *cfg) {
   // Parse timezone
   char *tz_str = get_value(ctx, "timezone", response.data);
   if (tz_str) {
-    strncpy(cfg->timezone, tz_str, sizeof(cfg->timezone) - 1);
-    cfg->timezone[sizeof(cfg->timezone) - 1] = '\0';
+    if (!copy_string(cfg->timezone, sizeof(cfg->timezone), tz_str)) {
+      location_log_trunc("timezone");
+    }
     cfg->timezone_offset = parse_timezone_offset(tz_str);
   }
 
   // Parse city
   char *city_str = get_value(ctx, "city", response.data);
   if (city_str) {
-    strncpy(cfg->city, city_str, sizeof(cfg->city) - 1);
-    cfg->city[sizeof(cfg->city) - 1] = '\0';
+    if (!copy_string(cfg->city, sizeof(cfg->city), city_str)) {
+      location_log_trunc("city");
+    }
   }
 
   // Parse country
   char *country_str = get_value(ctx, "country", response.data);
   if (country_str) {
-    strncpy(cfg->country, country_str, sizeof(cfg->country) - 1);
-    cfg->country[sizeof(cfg->country) - 1] = '\0';
+    if (!copy_string(cfg->country, sizeof(cfg->country), country_str)) {
+      location_log_trunc("country");
+    }
   }
 
   json_end(ctx);

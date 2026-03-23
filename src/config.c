@@ -2,11 +2,21 @@
 #include "config.h"
 #include "json.h"
 #include "platform.h"
+#include "string_util.h"
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static bool config_trunc_logged = false;
+
+static void log_truncation(const char *key) {
+  if (!config_trunc_logged) {
+    fprintf(stderr, "config: value '%s' truncated\n", key);
+    config_trunc_logged = true;
+  }
+}
 
 const char *config_get_path(void) {
   static char config_path[PLATFORM_PATH_MAX] = {0};
@@ -36,7 +46,9 @@ Config config_default(void) {
 
   // Location defaults
   cfg.auto_detect = true;
-  strcpy(cfg.timezone, "UTC");
+  if (!copy_string(cfg.timezone, sizeof(cfg.timezone), "UTC")) {
+    log_truncation("timezone");
+  }
   cfg.timezone_offset = 0.0;
 
   // Prayer defaults with reminders [30, 15, 5]
@@ -70,13 +82,21 @@ Config config_default(void) {
 
   // Notification defaults
   cfg.notification_timeout = 5000;
-  strcpy(cfg.notification_urgency, "critical");
+  if (!copy_string(cfg.notification_urgency, sizeof(cfg.notification_urgency), "critical")) {
+    log_truncation("notification_urgency");
+  }
   cfg.notification_sound = true;
-  strcpy(cfg.notification_icon, "muslimtify");
+  if (!copy_string(cfg.notification_icon, sizeof(cfg.notification_icon), "muslimtify")) {
+    log_truncation("notification_icon");
+  }
 
   // Calculation defaults
-  strcpy(cfg.calculation_method, "kemenag");
-  strcpy(cfg.madhab, "shafi");
+  if (!copy_string(cfg.calculation_method, sizeof(cfg.calculation_method), "kemenag")) {
+    log_truncation("calculation_method");
+  }
+  if (!copy_string(cfg.madhab, sizeof(cfg.madhab), "shafi")) {
+    log_truncation("madhab");
+  }
 
   return cfg;
 }
@@ -196,18 +216,27 @@ int config_save(const Config *cfg) {
 
   FILE *f = fopen(tmp_path, "w");
   if (!f) {
-    fprintf(stderr, "Error: Cannot write config file: %s\n", strerror(errno));
+    int err = errno;
+    char errbuf[128];
+    errno_string(err, errbuf, sizeof(errbuf));
+    fprintf(stderr, "Error: Cannot write config file: %s\n", errbuf);
     return -1;
   }
 
   if (write_json_file(f, cfg) != 0 || fflush(f) != 0 || fclose(f) != 0) {
-    fprintf(stderr, "Error: Failed to write config file: %s\n", strerror(errno));
+    int err = errno;
+    char errbuf[128];
+    errno_string(err, errbuf, sizeof(errbuf));
+    fprintf(stderr, "Error: Failed to write config file: %s\n", errbuf);
     remove(tmp_path);
     return -1;
   }
 
   if (platform_atomic_rename(tmp_path, path) != 0) {
-    fprintf(stderr, "Error: Failed to save config file: %s\n", strerror(errno));
+    int err = errno;
+    char errbuf[128];
+    errno_string(err, errbuf, sizeof(errbuf));
+    fprintf(stderr, "Error: Failed to save config file: %s\n", errbuf);
     remove(tmp_path);
     return -1;
   }
@@ -318,20 +347,23 @@ int config_load(Config *cfg) {
     if (lon_str)
       cfg->longitude = strtod(lon_str, NULL);
     if (tz_str) {
-      strncpy(cfg->timezone, tz_str, sizeof(cfg->timezone) - 1);
-      cfg->timezone[sizeof(cfg->timezone) - 1] = '\0';
+      if (!copy_string(cfg->timezone, sizeof(cfg->timezone), tz_str)) {
+        log_truncation("timezone");
+      }
     }
     if (tz_offset_str)
       cfg->timezone_offset = strtod(tz_offset_str, NULL);
     if (auto_detect_str)
       cfg->auto_detect = strcmp(auto_detect_str, "true") == 0;
     if (city_str) {
-      strncpy(cfg->city, city_str, sizeof(cfg->city) - 1);
-      cfg->city[sizeof(cfg->city) - 1] = '\0';
+      if (!copy_string(cfg->city, sizeof(cfg->city), city_str)) {
+        log_truncation("city");
+      }
     }
     if (country_str) {
-      strncpy(cfg->country, country_str, sizeof(cfg->country) - 1);
-      cfg->country[sizeof(cfg->country) - 1] = '\0';
+      if (!copy_string(cfg->country, sizeof(cfg->country), country_str)) {
+        log_truncation("country");
+      }
     }
   }
 
@@ -378,14 +410,16 @@ int config_load(Config *cfg) {
     if (timeout_str)
       cfg->notification_timeout = (int)strtol(timeout_str, NULL, 10);
     if (urgency_str) {
-      strncpy(cfg->notification_urgency, urgency_str, sizeof(cfg->notification_urgency) - 1);
-      cfg->notification_urgency[sizeof(cfg->notification_urgency) - 1] = '\0';
+      if (!copy_string(cfg->notification_urgency, sizeof(cfg->notification_urgency), urgency_str)) {
+        log_truncation("notification_urgency");
+      }
     }
     if (sound_str)
       cfg->notification_sound = strcmp(sound_str, "true") == 0;
     if (icon_str) {
-      strncpy(cfg->notification_icon, icon_str, sizeof(cfg->notification_icon) - 1);
-      cfg->notification_icon[sizeof(cfg->notification_icon) - 1] = '\0';
+      if (!copy_string(cfg->notification_icon, sizeof(cfg->notification_icon), icon_str)) {
+        log_truncation("notification_icon");
+      }
     }
   }
 
@@ -396,12 +430,14 @@ int config_load(Config *cfg) {
     char *madhab_str = get_value(ctx, "madhab", calculation);
 
     if (method_str) {
-      strncpy(cfg->calculation_method, method_str, sizeof(cfg->calculation_method) - 1);
-      cfg->calculation_method[sizeof(cfg->calculation_method) - 1] = '\0';
+      if (!copy_string(cfg->calculation_method, sizeof(cfg->calculation_method), method_str)) {
+        log_truncation("calculation_method");
+      }
     }
     if (madhab_str) {
-      strncpy(cfg->madhab, madhab_str, sizeof(cfg->madhab) - 1);
-      cfg->madhab[sizeof(cfg->madhab) - 1] = '\0';
+      if (!copy_string(cfg->madhab, sizeof(cfg->madhab), madhab_str)) {
+        log_truncation("madhab");
+      }
     }
   }
 
@@ -447,10 +483,10 @@ PrayerConfig *config_get_prayer(Config *cfg, const char *prayer_name) {
 
   // Convert to lowercase for comparison
   char name_lower[32];
-  strncpy(name_lower, prayer_name, sizeof(name_lower) - 1);
-  name_lower[sizeof(name_lower) - 1] = '\0';
+  copy_string(name_lower, sizeof(name_lower), prayer_name);
   for (int i = 0; name_lower[i]; i++) {
-    name_lower[i] = tolower(name_lower[i]);
+    int tmp = tolower((unsigned char)name_lower[i]);
+    name_lower[i] = (char)tmp;
   }
 
   if (strcmp(name_lower, "fajr") == 0)
@@ -471,35 +507,60 @@ PrayerConfig *config_get_prayer(Config *cfg, const char *prayer_name) {
   return NULL;
 }
 
+typedef struct {
+  int *reminders;
+  int max;
+  int count;
+} ReminderParseCtx;
+
+static bool reminder_token_cb(const char *token, void *user) {
+  ReminderParseCtx *ctx = user;
+  if (!token || !ctx) {
+    return false;
+  }
+
+  while (*token && isspace((unsigned char)*token)) {
+    token++;
+  }
+
+  if (*token == '\0') {
+    return true;
+  }
+
+  char *end = NULL;
+  long value = strtol(token, &end, 10);
+  if (end == token || value <= 0 || value > 1440) {
+    return true;
+  }
+
+  if (ctx->count >= ctx->max) {
+    return false;
+  }
+
+  ctx->reminders[ctx->count++] = (int)value;
+  return true;
+}
+
 int config_parse_reminders(const char *reminder_str, int *reminders, int max_reminders) {
   if (!reminder_str || !reminders)
     return -1;
+
+  if (max_reminders <= 0)
+    return 0;
 
   if (strcmp(reminder_str, "none") == 0 || strcmp(reminder_str, "clear") == 0) {
     return 0;
   }
 
   char buffer[256];
-  strncpy(buffer, reminder_str, sizeof(buffer) - 1);
-  buffer[sizeof(buffer) - 1] = '\0';
-
-  int count = 0;
-  char *token = strtok(buffer, ",");
-
-  while (token && count < max_reminders) {
-    // Trim whitespace
-    while (*token == ' ')
-      token++;
-
-    int value = (int)strtol(token, NULL, 10);
-    if (value > 0 && value <= 1440) {
-      reminders[count++] = value;
-    }
-
-    token = strtok(NULL, ",");
+  ReminderParseCtx ctx = {reminders, max_reminders, 0};
+  int parse_result =
+      parse_tokens(reminder_str, buffer, sizeof(buffer), ", ", reminder_token_cb, &ctx);
+  if (parse_result == -1) {
+    return -1;
   }
 
-  return count;
+  return ctx.count;
 }
 
 void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bufsize) {
@@ -509,17 +570,25 @@ void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bu
   buffer[0] = '\0';
 
   if (prayer->reminder_count == 0) {
-    strncpy(buffer, "none", bufsize - 1);
+    if (!copy_string(buffer, bufsize, "none")) {
+      log_truncation("reminders");
+    }
     return;
   }
 
   char temp[16];
   for (int i = 0; i < prayer->reminder_count; i++) {
     snprintf(temp, sizeof(temp), "%d", prayer->reminders[i]);
-    strncat(buffer, temp, bufsize - strlen(buffer) - 1);
+    if (!append_string(buffer, bufsize, temp)) {
+      log_truncation("reminders");
+      break;
+    }
 
     if (i < prayer->reminder_count - 1) {
-      strncat(buffer, ",", bufsize - strlen(buffer) - 1);
+      if (!append_string(buffer, bufsize, ",")) {
+        log_truncation("reminders");
+        break;
+      }
     }
   }
 }

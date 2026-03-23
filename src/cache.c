@@ -7,7 +7,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "string_util.h"
+
 static char cache_path_buf[PLATFORM_PATH_MAX] = {0};
+static bool cache_trunc_logged = false;
+
+static void cache_log_trunc(const char *field) {
+  if (!cache_trunc_logged) {
+    fprintf(stderr, "cache: truncated field %s\n", field ? field : "(unknown)");
+    cache_trunc_logged = true;
+  }
+}
 
 const char *cache_get_path(void) {
   if (cache_path_buf[0] != '\0') {
@@ -83,7 +93,9 @@ int cache_load(PrayerCache *cache) {
     free(content);
     return -1;
   }
-  strncpy(cache->date, date_str, sizeof(cache->date) - 1);
+  if (!copy_string(cache->date, sizeof(cache->date), date_str)) {
+    cache_log_trunc("date");
+  }
 
   char *triggers = get_value(ctx, "triggers", content);
   if (!triggers || triggers[0] != '[') {
@@ -130,7 +142,9 @@ int cache_load(PrayerCache *cache) {
 
     char *prayer = get_value(ctx, "prayer", obj_start);
     if (prayer) {
-      strncpy(t->prayer, prayer, sizeof(t->prayer) - 1);
+      if (!copy_string(t->prayer, sizeof(t->prayer), prayer)) {
+        cache_log_trunc("prayer");
+      }
     }
 
     char *minute_str = get_value(ctx, "minute", obj_start);
@@ -221,7 +235,9 @@ int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct Pra
     return 0;
 
   memset(cache, 0, sizeof(*cache));
-  strncpy(cache->date, date_str, sizeof(cache->date) - 1);
+  if (!copy_string(cache->date, sizeof(cache->date), date_str)) {
+    cache_log_trunc("date");
+  }
 
   PrayerType prayer_types[] = {PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA, PRAYER_DHUHR,
                                PRAYER_ASR,  PRAYER_MAGHRIB, PRAYER_ISHA};
@@ -239,7 +255,9 @@ int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct Pra
     // Add exact prayer time
     if (prayer_min >= current_minute && cache->trigger_count < MAX_TRIGGERS) {
       CacheTrigger *t = &cache->triggers[cache->trigger_count];
-      strncpy(t->prayer, name, sizeof(t->prayer) - 1);
+      if (!copy_string(t->prayer, sizeof(t->prayer), name)) {
+        cache_log_trunc("prayer");
+      }
       t->minute = prayer_min;
       t->minutes_before = 0;
       t->prayer_time = pt;
@@ -254,7 +272,9 @@ int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct Pra
 
       if (reminder_min >= current_minute && cache->trigger_count < MAX_TRIGGERS) {
         CacheTrigger *t = &cache->triggers[cache->trigger_count];
-        strncpy(t->prayer, name, sizeof(t->prayer) - 1);
+        if (!copy_string(t->prayer, sizeof(t->prayer), name)) {
+          cache_log_trunc("prayer");
+        }
         t->minute = reminder_min;
         t->minutes_before = pcfg->reminders[j];
         t->prayer_time = pt;

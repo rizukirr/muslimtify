@@ -5,13 +5,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(_MSC_VER)
+#define PARSE_TIME(h, m, str) sscanf_s((str), "%d:%d", &(h), &(m))
+#else
+#define PARSE_TIME(h, m, str) sscanf((str), "%d:%d", &(h), &(m))
+#endif
+
 static int failures = 0;
 static int total = 0;
 
 // Convert "HH:MM" string to total minutes
 static int time_to_minutes(const char *hhmm) {
   int h, m;
-  sscanf(hhmm, "%d:%d", &h, &m);
+  PARSE_TIME(h, m, hhmm);
   return h * 60 + m;
 }
 

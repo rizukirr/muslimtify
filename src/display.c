@@ -25,18 +25,18 @@ static bool use_colors(void) {
 
 #define C(code) (use_colors() ? (code) : "")
 
-// Unicode box-drawing characters
-#define BOX_TL "┌" // Top-left
-#define BOX_TR "┐" // Top-right
-#define BOX_BL "└" // Bottom-left
-#define BOX_BR "┘" // Bottom-right
-#define BOX_H "─"  // Horizontal
-#define BOX_V "│"  // Vertical
-#define BOX_VR "├" // Vertical-right
-#define BOX_VL "┤" // Vertical-left
-#define BOX_VH "┼" // Cross
-#define BOX_HU "┴" // Horizontal-up
-#define BOX_HD "┬" // Horizontal-down
+// ASCII box-drawing fallback (portable across all Windows code pages)
+#define BOX_TL "+" // Top-left
+#define BOX_TR "+" // Top-right
+#define BOX_BL "+" // Bottom-left
+#define BOX_BR "+" // Bottom-right
+#define BOX_H "-"  // Horizontal
+#define BOX_V "|"  // Vertical
+#define BOX_VR "+" // Vertical-right
+#define BOX_VL "+" // Vertical-left
+#define BOX_VH "+" // Cross
+#define BOX_HU "+" // Horizontal-up
+#define BOX_HD "+" // Horizontal-down
 
 static void print_horizontal_line(char pos) {
   const char *left, *mid, *right, *horiz;
@@ -166,10 +166,9 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
       printf("%s%s %-10s %s %-8s %s Disabled %s %-21s %s%s\n", C(COL_DIM), BOX_V, prayer_names[i],
              BOX_V, time_str, BOX_V, BOX_V, "-", BOX_V, C(COL_RESET));
     } else if (is_next) {
-      // Next prayer: bold+yellow name, yellow time, ▶ indicator
-      // "▶" is 1 display char replacing the leading space
+      // Next prayer: bold+yellow name, yellow time, > indicator
       printf("%s%s%s%-10s%s %s %s%-8s%s %s %sEnabled %s %s %-21s %s\n", BOX_V,
-             C(COL_BOLD COL_YELLOW), use_colors() ? "▶" : " ", prayer_names[i], C(COL_RESET), BOX_V,
+             C(COL_BOLD COL_YELLOW), use_colors() ? ">" : " ", prayer_names[i], C(COL_RESET), BOX_V,
              C(COL_YELLOW), time_str, C(COL_RESET), BOX_V, C(COL_GREEN), C(COL_RESET), BOX_V,
              reminders, BOX_V);
     } else {
