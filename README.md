@@ -397,6 +397,8 @@ vim ~/.config/systemd/user/muslimtify.service
    ./test_notification.sh
    ```
 
+   On Windows, run `.\test_notification.ps1` to test toast delivery only; it does not verify muslimtify backend correctness.
+
 ### Location not detected
 
 ```bash

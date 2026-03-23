@@ -8,6 +8,7 @@ All notable changes to Muslimtify will be documented in this file.
 
 ### Changed
 - Clarified Windows daemon behavior in the README without changing the `muslimtify daemon [install|uninstall|status]` CLI surface
+- Documented the Windows developer toast test script: `.\test_notification.ps1`
 
 ---
 
