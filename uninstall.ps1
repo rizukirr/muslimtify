@@ -10,6 +10,7 @@ $CacheDir = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'muslimtify' } 
 $TrustedAppData = [Environment]::GetFolderPath('ApplicationData')
 $TrustedLocalAppData = [Environment]::GetFolderPath('LocalApplicationData')
 $ExpectedInstallPrefix = if ($TrustedLocalAppData) { Join-Path (Join-Path $TrustedLocalAppData 'Programs') 'Muslimtify' } else { $null }
+$ExpectedInstallBinDir = if ($ExpectedInstallPrefix) { Join-Path $ExpectedInstallPrefix 'bin' } else { $null }
 $ExpectedConfigDir = if ($TrustedAppData) { Join-Path $TrustedAppData 'muslimtify' } else { $null }
 $ExpectedCacheDir = if ($TrustedLocalAppData) { Join-Path $TrustedLocalAppData 'muslimtify' } else { $null }
 $TaskName = 'muslimtify'
@@ -39,6 +40,24 @@ function Normalize-Path {
   return [System.IO.Path]::GetFullPath($Path).TrimEnd('\')
 }
 
+function Get-ComparablePath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
+
+  $ExpandedPath = [Environment]::ExpandEnvironmentVariables($Path).Trim().Trim('"')
+  if (-not $ExpandedPath) {
+    return $null
+  }
+
+  try {
+    return (Resolve-Path -LiteralPath $ExpandedPath -ErrorAction Stop).Path.TrimEnd('\')
+  } catch {
+    return [System.IO.Path]::GetFullPath($ExpandedPath).TrimEnd('\')
+  }
+}
+
 function Test-ExpectedTarget {
   param(
     [Parameter(Mandatory = $true)]
@@ -52,6 +71,93 @@ function Test-ExpectedTarget {
   }
 
   return (Normalize-Path $ActualPath) -ieq (Normalize-Path $ExpectedPath)
+}
+
+function Remove-MuslimtifyFromUserPath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$TargetPath
+  )
+
+  $CleanupPath = if ($TargetPath) { $TargetPath } else { '%LOCALAPPDATA%\Programs\Muslimtify\bin' }
+
+  if (-not $TargetPath) {
+    Write-Host "PATH cleanup failed; remove this path manually from your user PATH: $CleanupPath"
+    $Summary.Add("user PATH: manual cleanup required ($CleanupPath)")
+    return
+  }
+
+  $UserEnvironmentKey = $null
+  try {
+    $UserEnvironmentKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+    if (-not $UserEnvironmentKey) {
+      throw 'User environment registry key is unavailable.'
+    }
+
+    $CurrentPath = $UserEnvironmentKey.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    if ($null -eq $CurrentPath -or $CurrentPath -eq '') {
+      Write-Host 'Muslimtify PATH entry already absent'
+      $Summary.Add("user PATH: already absent ($TargetPath)")
+      return
+    }
+
+    $TargetComparablePath = Get-ComparablePath $TargetPath
+    $Entries = @($CurrentPath.Split(';'))
+    $KeptEntries = New-Object System.Collections.Generic.List[string]
+    $RemovedCount = 0
+
+    foreach ($Entry in $Entries) {
+      if ($Entry -eq '') {
+        $KeptEntries.Add($Entry)
+        continue
+      }
+
+      try {
+        $EntryComparablePath = Get-ComparablePath $Entry
+        if ($EntryComparablePath -and ($EntryComparablePath -ieq $TargetComparablePath)) {
+          $RemovedCount++
+          continue
+        }
+      } catch {
+      }
+
+      $KeptEntries.Add($Entry)
+    }
+
+    if ($RemovedCount -eq 0) {
+      Write-Host 'Muslimtify PATH entry already absent'
+      $Summary.Add("user PATH: already absent ($TargetPath)")
+      return
+    }
+
+    $NewPath = [string]::Join(';', $KeptEntries)
+    if ($NewPath) {
+      $ValueKind = [Microsoft.Win32.RegistryValueKind]::String
+      try {
+        $ValueKind = $UserEnvironmentKey.GetValueKind('Path')
+      } catch {
+      }
+
+      $UserEnvironmentKey.SetValue('Path', $NewPath, $ValueKind)
+    } else {
+      $UserEnvironmentKey.DeleteValue('Path', $false)
+    }
+
+    if ($RemovedCount -eq 1) {
+      Write-Host 'Removed Muslimtify PATH entry'
+      $Summary.Add("user PATH: removed ($TargetPath)")
+    } else {
+      Write-Host "Removed $RemovedCount Muslimtify PATH entries"
+      $Summary.Add("user PATH: removed $RemovedCount entries ($TargetPath)")
+    }
+  } catch {
+    Write-Host "PATH cleanup failed; remove this path manually from your user PATH: $CleanupPath"
+    $Summary.Add("user PATH: manual cleanup required ($CleanupPath)")
+  } finally {
+    if ($UserEnvironmentKey) {
+      $UserEnvironmentKey.Close()
+    }
+  }
 }
 
 function Mark-Failure {
@@ -205,7 +311,9 @@ if ($HadErrors) {
   exit 1
 }
 
+Write-Target 'PATH target' $ExpectedInstallBinDir
 Remove-ScheduledTask $TaskName $MuslimtifyExe
+Remove-MuslimtifyFromUserPath $ExpectedInstallBinDir
 Remove-PathIfPresent 'install prefix' $InstallPrefix 'install prefix removed' 'install prefix missing'
 Remove-PathIfPresent 'config directory' $ConfigDir 'config directory removed' 'config directory missing'
 Remove-PathIfPresent 'cache directory' $CacheDir 'cache directory removed' 'cache directory missing'
