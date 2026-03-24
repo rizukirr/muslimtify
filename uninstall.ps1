@@ -8,6 +8,7 @@ $MuslimtifyExe = if ($InstallBinDir) { Join-Path $InstallBinDir 'muslimtify.exe'
 $ConfigDir = if ($env:APPDATA) { Join-Path $env:APPDATA 'muslimtify' } else { $null }
 $CacheDir = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'muslimtify' } else { $null }
 $TaskName = 'muslimtify'
+$Summary = New-Object System.Collections.Generic.List[string]
 
 function Write-Target {
   param(
@@ -27,11 +28,16 @@ function Remove-PathIfPresent {
   param(
     [Parameter(Mandatory = $true)]
     [string]$Label,
-    [string]$Path
+    [string]$Path,
+    [Parameter(Mandatory = $true)]
+    [string]$RemovedMessage,
+    [Parameter(Mandatory = $true)]
+    [string]$SkippedMessage
   )
 
   if (-not $Path) {
     Write-Host "Skipped ${Label}: unavailable"
+    $Summary.Add("${Label}: skipped ($SkippedMessage)")
     return
   }
 
@@ -39,11 +45,14 @@ function Remove-PathIfPresent {
     try {
       Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
       Write-Host "Removed $Label"
+      $Summary.Add("${Label}: removed ($RemovedMessage)")
     } catch {
       Write-Host "Failed to remove ${Label}: $($_.Exception.Message)"
+      $Summary.Add("${Label}: skipped (failed to remove)")
     }
   } else {
     Write-Host "Skipped ${Label}: missing"
+    $Summary.Add("${Label}: skipped ($SkippedMessage)")
   }
 }
 
@@ -76,19 +85,27 @@ if ($MuslimtifyExe -and (Test-Path -LiteralPath $MuslimtifyExe)) {
     & $MuslimtifyExe daemon uninstall *> $null
     if ($LASTEXITCODE -eq 0) {
       Write-Host 'Scheduled task removed'
+      $Summary.Add("scheduled task '$TaskName': removed")
     } else {
       Write-Host "Scheduled task uninstall failed (exit code $LASTEXITCODE)"
+      $Summary.Add("scheduled task '$TaskName': skipped (uninstall failed)")
     }
   } catch {
     Write-Host "Scheduled task uninstall failed: $($_.Exception.Message)"
+    $Summary.Add("scheduled task '$TaskName': skipped (uninstall failed)")
   }
 } else {
   Write-Host 'Skipped scheduled task uninstall: binary missing'
+  $Summary.Add("scheduled task '$TaskName': skipped (binary missing)")
 }
 
-Remove-PathIfPresent 'install prefix' $InstallPrefix
-Remove-PathIfPresent 'config directory' $ConfigDir
-Remove-PathIfPresent 'cache directory' $CacheDir
+Remove-PathIfPresent 'install prefix' $InstallPrefix 'install prefix removed' 'install prefix missing'
+Remove-PathIfPresent 'config directory' $ConfigDir 'config directory removed' 'config directory missing'
+Remove-PathIfPresent 'cache directory' $CacheDir 'cache directory removed' 'cache directory missing'
 
 Write-Host ''
+Write-Host 'Summary:'
+foreach ($Item in $Summary) {
+  Write-Host "  $Item"
+}
 Write-Host 'Uninstall complete'
