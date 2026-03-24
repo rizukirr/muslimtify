@@ -28,8 +28,22 @@ function Update-UserPath {
     )
 
     $NormalizedPath = $Path.Trim().Trim('"')
+    if ([string]::IsNullOrWhiteSpace($NormalizedPath)) {
+      return $null
+    }
+
+    $NormalizedPath = [Environment]::ExpandEnvironmentVariables($NormalizedPath)
+    $NormalizedPath = $NormalizedPath.Trim().Trim('"').Replace('/', '\')
+
+    if ([System.IO.Path]::IsPathRooted($NormalizedPath)) {
+      try {
+        $NormalizedPath = [System.IO.Path]::GetFullPath($NormalizedPath)
+      } catch {
+      }
+    }
+
     $PathRoot = [System.IO.Path]::GetPathRoot($NormalizedPath)
-    while ($NormalizedPath.Length -gt $PathRoot.Length -and (
+    while ($PathRoot -and $NormalizedPath.Length -gt $PathRoot.Length -and (
       $NormalizedPath.EndsWith([System.IO.Path]::DirectorySeparatorChar.ToString()) -or
       $NormalizedPath.EndsWith([System.IO.Path]::AltDirectorySeparatorChar.ToString())
     )) {
@@ -39,30 +53,50 @@ function Update-UserPath {
     return $NormalizedPath
   }
 
-  $CurrentUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
   $NormalizedPathToAdd = Normalize-PathEntry -Path $PathToAdd
-
-  if ([string]::IsNullOrWhiteSpace($CurrentUserPath)) {
-    try {
-      [Environment]::SetEnvironmentVariable('Path', $PathToAdd, 'User')
-      return 'added'
-    } catch {
-      throw "Failed to update the user PATH: $($_.Exception.Message)"
-    }
+  if ($null -eq $NormalizedPathToAdd) {
+    throw 'The PATH entry to add was empty after normalization.'
   }
 
-  $PathEntries = $CurrentUserPath.Split(';') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-  foreach ($PathEntry in $PathEntries) {
-    if ((Normalize-PathEntry -Path $PathEntry).Equals($NormalizedPathToAdd, [System.StringComparison]::OrdinalIgnoreCase)) {
-      return 'present'
+  function Test-PathEntryPresent {
+    param(
+      [string]$CurrentUserPath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($CurrentUserPath)) {
+      return $false
     }
+
+    $PathEntries = $CurrentUserPath.Split(';') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    foreach ($PathEntry in $PathEntries) {
+      $NormalizedEntry = Normalize-PathEntry -Path $PathEntry
+      if ($null -ne $NormalizedEntry -and $NormalizedEntry.Equals($NormalizedPathToAdd, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $true
+      }
+    }
+
+    return $false
   }
 
-  $UpdatedUserPath = $CurrentUserPath.TrimEnd(';')
-  if ($UpdatedUserPath.Length -gt 0) {
-    $UpdatedUserPath = "$UpdatedUserPath;$PathToAdd"
-  } else {
+  $CurrentUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  if (Test-PathEntryPresent -CurrentUserPath $CurrentUserPath) {
+    return 'present'
+  }
+
+  $LatestUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  if (Test-PathEntryPresent -CurrentUserPath $LatestUserPath) {
+    return 'present'
+  }
+
+  if ([string]::IsNullOrWhiteSpace($LatestUserPath)) {
     $UpdatedUserPath = $PathToAdd
+  } else {
+    $UpdatedUserPath = $LatestUserPath.TrimEnd(';', ' ')
+    if ($UpdatedUserPath.Length -gt 0) {
+      $UpdatedUserPath = "$UpdatedUserPath;$PathToAdd"
+    } else {
+      $UpdatedUserPath = $PathToAdd
+    }
   }
 
   try {
@@ -129,14 +163,20 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $PathUpdateStatus = 'unknown'
+$PathUpdateFailed = $false
 try {
   $PathUpdateStatus = Update-UserPath -PathToAdd $InstallBinDir
 } catch {
   $PathUpdateStatus = $_.Exception.Message
+  $PathUpdateFailed = $true
 }
 
 Write-Host ''
-Write-Host 'Installation complete'
+if ($PathUpdateFailed) {
+  Write-Host 'Installation completed with PATH update failure'
+} else {
+  Write-Host 'Installation complete'
+}
 Write-Host "Installed binary: $MuslimtifyExe"
 Write-Host "Installed helper: $ServiceExe"
 Write-Host "Config directory: $ConfigDir"
@@ -154,3 +194,7 @@ Write-Host 'Next commands'
 Write-Host "  $MuslimtifyExe help"
 Write-Host "  $MuslimtifyExe location auto"
 Write-Host "  $MuslimtifyExe daemon status"
+
+if ($PathUpdateFailed) {
+  exit 1
+}
