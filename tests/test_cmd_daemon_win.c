@@ -19,23 +19,23 @@ static void report_result(const char *label, bool pass) {
   }
 }
 
-static void test_hidden_task_action_builder(void) {
+static void test_service_task_action_builder(void) {
   char task_action[DAEMON_TASK_ACTION_MAX];
-  int written = build_windows_task_action("C:\\Program Files\\Muslimtify\\muslimtify.exe",
+  int written = build_windows_task_action("C:\\Program Files\\Muslimtify",
                                           task_action, sizeof(task_action));
 
   report_result("builder returns success", written > 0);
-  report_result("task action uses hidden powershell",
-                strstr(task_action, "powershell.exe -NoProfile -WindowStyle Hidden") != NULL);
-  report_result("task action invokes muslimtify check",
-                strstr(task_action, "muslimtify.exe' check\\\"") != NULL);
-  report_result("task action preserves spaced path",
-                strstr(task_action, "'C:\\Program Files\\Muslimtify\\muslimtify.exe'") != NULL);
+  report_result("task action schedules helper directly",
+                strcmp(task_action, "C:\\Program Files\\Muslimtify\\muslimtify-service.exe") == 0);
+  report_result("task action does not use powershell",
+                strstr(task_action, "powershell.exe") == NULL);
+  report_result("task action does not append check",
+                strstr(task_action, " check") == NULL);
 }
 
 int main(void) {
-  printf("test_hidden_task_action_builder\n");
-  test_hidden_task_action_builder();
+  printf("test_service_task_action_builder\n");
+  test_service_task_action_builder();
 
   if (failures == 0) {
     printf("All %d tests passed.\n", total);

@@ -36,71 +36,44 @@ static int run_schtasks(const char *args) {
   return (int)exit_code;
 }
 
-static int append_text(char *buffer, size_t buffer_size, size_t *offset, const char *text) {
+static int build_windows_helper_path(const char *exe_dir, char *buffer, size_t buffer_size) {
   int written;
 
-  if (!buffer || !offset || !text)
+  if (!exe_dir || !buffer || buffer_size == 0 || exe_dir[0] == '\0') {
     return -1;
+  }
 
-  if (*offset >= buffer_size)
+  written = snprintf(buffer, buffer_size, "%s%c%s", exe_dir, PLATFORM_PATH_SEP,
+                     "muslimtify-service.exe");
+  if (written < 0 || (size_t)written >= buffer_size) {
     return -1;
+  }
 
-  written = snprintf(buffer + *offset, buffer_size - *offset, "%s", text);
-  if (written < 0 || (size_t)written >= buffer_size - *offset)
-    return -1;
-
-  *offset += (size_t)written;
-  return 0;
+  return written;
 }
 
-int build_windows_task_action(const char *exe_path, char *buffer, size_t buffer_size) {
-  size_t offset = 0;
-
-  if (!exe_path || !buffer || buffer_size == 0) {
-    return -1;
-  }
-
-  buffer[0] = '\0';
-
-  if (append_text(buffer, buffer_size, &offset,
-                  "powershell.exe -NoProfile -WindowStyle Hidden -Command \\\"& '") != 0) {
-    return -1;
-  }
-
-  for (const char *p = exe_path; *p; p++) {
-    if (*p == '\'') {
-      if (append_text(buffer, buffer_size, &offset, "''") != 0) {
-        return -1;
-      }
-    } else {
-      char ch[2] = {*p, '\0'};
-      if (append_text(buffer, buffer_size, &offset, ch) != 0) {
-        return -1;
-      }
-    }
-  }
-
-  if (append_text(buffer, buffer_size, &offset, "' check\\\"") != 0) {
-    return -1;
-  }
-
-  return (int)offset;
+int build_windows_task_action(const char *exe_dir, char *buffer, size_t buffer_size) {
+  return build_windows_helper_path(exe_dir, buffer, buffer_size);
 }
 
 static int daemon_install_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  const char *exe_path = platform_exe_path();
-  if (!exe_path || exe_path[0] == '\0' || !platform_file_exists(exe_path)) {
-    fprintf(stderr, "Error: Cannot find muslimtify.exe at '%s'\n",
-            exe_path ? exe_path : "(unknown)");
+  const char *exe_dir = platform_exe_dir();
+  if (!exe_dir || exe_dir[0] == '\0') {
+    fprintf(stderr, "Error: Cannot determine the executable directory\n");
     return 1;
   }
 
   char task_action[DAEMON_TASK_ACTION_MAX];
-  if (build_windows_task_action(exe_path, task_action, sizeof(task_action)) < 0) {
+  if (build_windows_task_action(exe_dir, task_action, sizeof(task_action)) < 0) {
     fprintf(stderr, "Error: Failed to build scheduled task action\n");
+    return 1;
+  }
+
+  if (!platform_file_exists(task_action)) {
+    fprintf(stderr, "Error: Cannot find muslimtify-service.exe at '%s'\n", task_action);
     return 1;
   }
 
