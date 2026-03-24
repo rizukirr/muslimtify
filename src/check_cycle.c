@@ -18,7 +18,7 @@ int run_check_cycle(void) {
     return 1;
   }
 
-  if (ensure_location(&cfg) != 0) {
+  if (location_prepare(&cfg) != 0) {
     return 1;
   }
 

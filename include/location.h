@@ -8,13 +8,23 @@ extern "C" {
 #endif
 
 /**
- * Fetch location information from ipinfo.io and update config
- * Returns: 0 on success, -1 on failure
+ * Fetch location information from ipinfo.io and update config.
+ * Returns: 0 on success, -1 on failure.
  */
 int location_fetch(Config *cfg);
 
 /**
- * Ensure location data exists, auto-detecting and persisting when needed.
+ * Quiet helper that ensures location data exists.
+ * Returns: 0 when no location work was needed,
+ *          1 when auto-detect ran and persisted successfully,
+ *         -1 on failure.
+ * This function does not print user-facing status lines.
+ */
+int location_prepare(Config *cfg);
+
+/**
+ * CLI-facing wrapper around location preparation.
+ * Preserves interactive status output when auto-detect runs.
  */
 int ensure_location(Config *cfg);
 

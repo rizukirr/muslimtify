@@ -2,8 +2,8 @@
 #include "config.h"
 #include "display.h"
 #include "location.h"
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 
 int handle_show(int argc, char **argv) {
