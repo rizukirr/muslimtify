@@ -1,32 +1,9 @@
 #include "cli.h"
 #include "cli_internal.h"
-#include "config.h"
-#include "location.h"
 #include "version.h"
-#include <math.h>
 #include <stdio.h>
 
-// ── shared helper ───────────────────────────────────────────────────────────
-
-int ensure_location(Config *cfg) {
-  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
-    printf("Detecting location...\n");
-    if (location_fetch(cfg) != 0) {
-      fprintf(stderr, "Error: Failed to detect location\n");
-      return -1;
-    }
-    printf("✓ Location detected: ");
-    if (cfg->city[0] != '\0') {
-      printf("%s, %s\n", cfg->city, cfg->country);
-    } else {
-      printf("%.4f, %.4f\n", cfg->latitude, cfg->longitude);
-    }
-    config_save(cfg);
-  }
-  return 0;
-}
-
-// ── top-level dispatch table ────────────────────────────────────────────────
+// â”€â”€ top-level dispatch table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 static const CommandEntry top_commands[] = {
     {"show", handle_show},       {"check", handle_check},       {"next", handle_next},
@@ -37,7 +14,7 @@ static const CommandEntry top_commands[] = {
     {"-h", handle_help},
 };
 
-// ── version / help ──────────────────────────────────────────────────────────
+// â”€â”€ version / help â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 int handle_version(int argc, char **argv) {
   (void)argc;
@@ -60,7 +37,7 @@ int handle_help(int argc, char **argv) {
   return 0;
 }
 
-// ── public API ──────────────────────────────────────────────────────────────
+// â”€â”€ public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void cli_print_help(void) {
   printf("Muslimtify - Prayer Time Notification Daemon\n\n");

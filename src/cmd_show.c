@@ -1,8 +1,8 @@
 #include "check_cycle.h"
-#include "cache.h"
-#include "cli_internal.h"
+#include "config.h"
 #include "display.h"
-#include "notification.h"
+#include "location.h"
+#include <string.h>
 #include <stdio.h>
 #include <time.h>
 

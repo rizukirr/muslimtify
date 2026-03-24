@@ -1,9 +1,12 @@
 #include "check_cycle.h"
 
+#include "config.h"
 #include "cache.h"
-#include "display.h"
+#include "location.h"
 #include "notification.h"
+#include "prayertimes.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -15,7 +18,8 @@ int run_check_cycle(void) {
     return 1;
   }
 
-  if (ensure_location(&cfg) != 0) {
+  if (location_prepare(&cfg) != 0) {
+    fprintf(stderr, "Error: Failed to detect location\n");
     return 1;
   }
 

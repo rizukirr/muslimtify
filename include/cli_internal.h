@@ -4,8 +4,6 @@
 #include "config.h"
 #include <string.h>
 
-// ── dispatch table types ────────────────────────────────────────────────────
-
 typedef int (*HandlerFn)(int argc, char **argv);
 
 typedef struct {
@@ -23,12 +21,6 @@ static inline const CommandEntry *dispatch_lookup(const CommandEntry *table, int
 }
 
 #define DISPATCH_N(table) ((int)(sizeof(table) / sizeof((table)[0])))
-
-// ── shared helpers ──────────────────────────────────────────────────────────
-
-int ensure_location(Config *cfg);
-
-// ── command handlers (one per file) ─────────────────────────────────────────
 
 int handle_show(int argc, char **argv);
 int handle_check(int argc, char **argv);

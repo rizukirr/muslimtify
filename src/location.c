@@ -1,6 +1,7 @@
 #include "location.h"
 #include "json.h"
 #include "string_util.h"
+#include <math.h>
 #include <curl/curl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -181,6 +182,64 @@ int location_fetch(Config *cfg) {
 
 int location_auto_detect(Config *cfg) {
   return location_fetch(cfg);
+}
+
+int location_prepare(Config *cfg) {
+  if (!cfg)
+    return -1;
+
+  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
+    if (location_fetch(cfg) != 0) {
+      return -1;
+    }
+
+    if (config_save(cfg) != 0) {
+      fprintf(stderr, "Error: Failed to save config\n");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+int ensure_location(Config *cfg) {
+  if (!cfg)
+    return -1;
+
+  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
+    printf("Detecting location...\n");
+    if (location_prepare(cfg) != 0) {
+      fprintf(stderr, "Error: Failed to detect location\n");
+      return -1;
+    }
+
+    printf("✓ Location detected: ");
+    if (cfg->city[0] != '\0') {
+      printf("%s, %s\n", cfg->city, cfg->country);
+    } else {
+      printf("%.4f, %.4f\n", cfg->latitude, cfg->longitude);
+    }
+
+    return 0;
+  }
+
+  int prepare_result = location_prepare(cfg);
+  if (prepare_result < 0) {
+    fprintf(stderr, "Error: Failed to detect location\n");
+    return -1;
+  }
+
+  if (prepare_result == 1) {
+    printf("Detecting location...\n");
+    printf("✓ Location detected: ");
+    if (cfg->city[0] != '\0') {
+      printf("%s, %s\n", cfg->city, cfg->country);
+    } else {
+      printf("%.4f, %.4f\n", cfg->latitude, cfg->longitude);
+    }
+  }
+
+  return 0;
 }
 
 void location_cleanup(void) {
