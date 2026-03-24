@@ -1,3 +1,7 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "platform.h"
 
 #include <stdbool.h>
@@ -59,8 +63,8 @@ static void test_platform_time_helpers(void) {
 
   int first_tty = platform_isatty(stdout);
   int second_tty = platform_isatty(stdout);
-  report_result("platform_isatty(stdout) is stable", first_tty == second_tty &&
-                                                       (first_tty == 0 || first_tty == 1));
+  report_result("platform_isatty(stdout) is stable",
+                first_tty == second_tty && (first_tty == 0 || first_tty == 1));
 }
 
 static void test_platform_boundary(void) {
@@ -118,8 +122,7 @@ static void test_windows_file_operations(void) {
   }
 
   wchar_t root_w[PLATFORM_PATH_MAX];
-  if (swprintf(root_w, PLATFORM_PATH_MAX, L"%lsmuslimtify_\x00E9_platform_env",
-               temp_base) < 0) {
+  if (swprintf(root_w, PLATFORM_PATH_MAX, L"%lsmuslimtify_\x00E9_platform_env", temp_base) < 0) {
     report_result("build UTF-8 root", false);
     return;
   }
@@ -151,15 +154,14 @@ static void test_windows_file_operations(void) {
   char expected_config[PLATFORM_PATH_MAX];
   char expected_cache[PLATFORM_PATH_MAX];
   char expected_home[PLATFORM_PATH_MAX];
-  report_result("config path UTF-8 conversion", wide_to_utf8(expected_config_w, expected_config,
-                                                             sizeof(expected_config)));
-  report_result("cache path UTF-8 conversion", wide_to_utf8(expected_cache_w, expected_cache,
-                                                            sizeof(expected_cache)));
+  report_result("config path UTF-8 conversion",
+                wide_to_utf8(expected_config_w, expected_config, sizeof(expected_config)));
+  report_result("cache path UTF-8 conversion",
+                wide_to_utf8(expected_cache_w, expected_cache, sizeof(expected_cache)));
   report_result("home path UTF-8 conversion",
                 wide_to_utf8(home_w, expected_home, sizeof(expected_home)));
 
-  report_result("platform_home_dir() UTF-8 path",
-                strcmp(platform_home_dir(), expected_home) == 0);
+  report_result("platform_home_dir() UTF-8 path", strcmp(platform_home_dir(), expected_home) == 0);
   report_result("platform_config_dir() UTF-8 path",
                 strcmp(platform_config_dir(), expected_config) == 0);
   report_result("platform_cache_dir() UTF-8 path",
@@ -209,8 +211,7 @@ static void test_windows_file_operations(void) {
   }
 
   report_result("platform_file_exists()", platform_file_exists(source) == 1);
-  report_result("platform_atomic_rename()",
-                platform_atomic_rename(source, renamed) == 0);
+  report_result("platform_atomic_rename()", platform_atomic_rename(source, renamed) == 0);
   report_result("renamed file exists", platform_file_exists(renamed) == 1);
   report_result("platform_file_delete()", platform_file_delete(renamed) == 0);
   report_result("deleted file missing", platform_file_exists(renamed) == 0);

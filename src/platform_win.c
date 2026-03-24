@@ -14,6 +14,42 @@ static char home_dir_buf[PLATFORM_PATH_MAX] = {0};
 static char exe_path_buf[PLATFORM_PATH_MAX] = {0};
 static char exe_dir_buf[PLATFORM_PATH_MAX] = {0};
 
+static bool is_path_sep(wchar_t ch) {
+  return ch == L'\\' || ch == L'/';
+}
+
+static bool is_drive_root_prefix(const wchar_t *path, const wchar_t *sep) {
+  return sep == path + 2 &&
+         ((path[0] >= L'A' && path[0] <= L'Z') || (path[0] >= L'a' && path[0] <= L'z')) &&
+         path[1] == L':';
+}
+
+static bool is_unc_root_prefix(const wchar_t *path, const wchar_t *sep) {
+  int components = 0;
+  bool in_component = false;
+
+  if (!is_path_sep(path[0]) || !is_path_sep(path[1])) {
+    return false;
+  }
+
+  for (const wchar_t *cursor = path + 2; cursor < sep; cursor++) {
+    if (is_path_sep(*cursor)) {
+      if (in_component) {
+        components++;
+        in_component = false;
+      }
+    } else {
+      in_component = true;
+    }
+  }
+
+  if (in_component) {
+    components++;
+  }
+
+  return components < 2;
+}
+
 static wchar_t *utf8_to_wide(const char *text) {
   int len = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
   if (len <= 0)
@@ -91,8 +127,8 @@ const char *platform_config_dir(void) {
     return config_dir_buf;
 
   if (get_env_wide(L"APPDATA", wide_env, sizeof(wide_env) / sizeof(wide_env[0]))) {
-    if (swprintf(wide_dir, sizeof(wide_dir) / sizeof(wide_dir[0]), L"%ls\\muslimtify",
-                 wide_env) > 0) {
+    if (swprintf(wide_dir, sizeof(wide_dir) / sizeof(wide_dir[0]), L"%ls\\muslimtify", wide_env) >
+        0) {
       if (!wide_to_utf8(wide_dir, config_dir_buf, sizeof(config_dir_buf))) {
         config_dir_buf[0] = '\0';
       }
@@ -118,8 +154,8 @@ const char *platform_cache_dir(void) {
     return cache_dir_buf;
 
   if (get_env_wide(L"LOCALAPPDATA", wide_env, sizeof(wide_env) / sizeof(wide_env[0]))) {
-    if (swprintf(wide_dir, sizeof(wide_dir) / sizeof(wide_dir[0]), L"%ls\\muslimtify",
-                 wide_env) > 0) {
+    if (swprintf(wide_dir, sizeof(wide_dir) / sizeof(wide_dir[0]), L"%ls\\muslimtify", wide_env) >
+        0) {
       if (!wide_to_utf8(wide_dir, cache_dir_buf, sizeof(cache_dir_buf))) {
         cache_dir_buf[0] = '\0';
       }
@@ -181,7 +217,11 @@ int platform_mkdir_p(const char *path) {
     return -1;
 
   for (wchar_t *p = wide_path + 1; *p; p++) {
-    if (*p == L'\\' || *p == L'/') {
+    if (is_path_sep(*p)) {
+      if (is_drive_root_prefix(wide_path, p) || is_unc_root_prefix(wide_path, p)) {
+        continue;
+      }
+
       wchar_t saved = *p;
       *p = L'\0';
       if (CreateDirectoryW(wide_path, NULL) == 0) {
