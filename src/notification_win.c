@@ -490,11 +490,6 @@ static void send_notification(const char *title, const char *message, const char
   if (!title || !message)
     return;
 
-  {
-    wchar_t icon_path[WINDOWS_PATH_MAX];
-    (void)resolve_toast_icon_path(icon_path, sizeof(icon_path) / sizeof(icon_path[0]));
-  }
-
   /* Convert and escape strings */
   wchar_t *wtitle_raw = utf8_to_utf16(title);
   wchar_t *wmsg_raw = utf8_to_utf16(message);
