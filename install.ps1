@@ -15,6 +15,98 @@ function Invoke-CMake {
   }
 }
 
+function Update-UserPath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$PathToAdd
+  )
+
+  function Normalize-PathEntry {
+    param(
+      [Parameter(Mandatory = $true)]
+      [string]$Path
+    )
+
+    $NormalizedPath = $Path.Trim().Trim('"')
+    if ([string]::IsNullOrWhiteSpace($NormalizedPath)) {
+      return $null
+    }
+
+    $NormalizedPath = [Environment]::ExpandEnvironmentVariables($NormalizedPath)
+    $NormalizedPath = $NormalizedPath.Trim().Trim('"').Replace('/', '\')
+
+    if ([System.IO.Path]::IsPathRooted($NormalizedPath)) {
+      try {
+        $NormalizedPath = [System.IO.Path]::GetFullPath($NormalizedPath)
+      } catch {
+      }
+    }
+
+    $PathRoot = [System.IO.Path]::GetPathRoot($NormalizedPath)
+    while ($PathRoot -and $NormalizedPath.Length -gt $PathRoot.Length -and (
+      $NormalizedPath.EndsWith([System.IO.Path]::DirectorySeparatorChar.ToString()) -or
+      $NormalizedPath.EndsWith([System.IO.Path]::AltDirectorySeparatorChar.ToString())
+    )) {
+      $NormalizedPath = $NormalizedPath.Substring(0, $NormalizedPath.Length - 1)
+    }
+
+    return $NormalizedPath
+  }
+
+  $NormalizedPathToAdd = Normalize-PathEntry -Path $PathToAdd
+  if ($null -eq $NormalizedPathToAdd) {
+    throw 'The PATH entry to add was empty after normalization.'
+  }
+
+  function Test-PathEntryPresent {
+    param(
+      [string]$CurrentUserPath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($CurrentUserPath)) {
+      return $false
+    }
+
+    $PathEntries = $CurrentUserPath.Split(';') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    foreach ($PathEntry in $PathEntries) {
+      $NormalizedEntry = Normalize-PathEntry -Path $PathEntry
+      if ($null -ne $NormalizedEntry -and $NormalizedEntry.Equals($NormalizedPathToAdd, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $true
+      }
+    }
+
+    return $false
+  }
+
+  $CurrentUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  if (Test-PathEntryPresent -CurrentUserPath $CurrentUserPath) {
+    return 'present'
+  }
+
+  $LatestUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  if (Test-PathEntryPresent -CurrentUserPath $LatestUserPath) {
+    return 'present'
+  }
+
+  if ([string]::IsNullOrWhiteSpace($LatestUserPath)) {
+    $UpdatedUserPath = $PathToAdd
+  } else {
+    $UpdatedUserPath = $LatestUserPath.TrimEnd(';', ' ')
+    if ($UpdatedUserPath.Length -gt 0) {
+      $UpdatedUserPath = "$UpdatedUserPath;$PathToAdd"
+    } else {
+      $UpdatedUserPath = $PathToAdd
+    }
+  }
+
+  try {
+    [Environment]::SetEnvironmentVariable('Path', $UpdatedUserPath, 'User')
+    return 'added'
+  } catch {
+    throw "Failed to update the user PATH: $($_.Exception.Message)"
+  }
+}
+
 if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
   throw 'CMake was not found in PATH.'
 }
@@ -70,14 +162,39 @@ if ($LASTEXITCODE -ne 0) {
   throw "muslimtify.exe daemon install failed (exit code $LASTEXITCODE)."
 }
 
+$PathUpdateStatus = 'unknown'
+$PathUpdateFailed = $false
+try {
+  $PathUpdateStatus = Update-UserPath -PathToAdd $InstallBinDir
+} catch {
+  $PathUpdateStatus = $_.Exception.Message
+  $PathUpdateFailed = $true
+}
+
 Write-Host ''
-Write-Host 'Installation complete'
+if ($PathUpdateFailed) {
+  Write-Host 'Installation completed with PATH update failure'
+} else {
+  Write-Host 'Installation complete'
+}
 Write-Host "Installed binary: $MuslimtifyExe"
 Write-Host "Installed helper: $ServiceExe"
 Write-Host "Config directory: $ConfigDir"
 Write-Host "Cache directory: $CacheDir"
+if ($PathUpdateStatus -eq 'added') {
+  Write-Host "User PATH updated: added $InstallBinDir"
+} elseif ($PathUpdateStatus -eq 'present') {
+  Write-Host "User PATH updated: $InstallBinDir was already present"
+} else {
+  Write-Host "User PATH update failed: $PathUpdateStatus"
+}
+Write-Host 'Restart PowerShell or open a new terminal before running muslimtify.'
 Write-Host ''
 Write-Host 'Next commands'
 Write-Host "  $MuslimtifyExe help"
 Write-Host "  $MuslimtifyExe location auto"
 Write-Host "  $MuslimtifyExe daemon status"
+
+if ($PathUpdateFailed) {
+  exit 1
+}

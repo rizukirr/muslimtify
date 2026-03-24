@@ -10,7 +10,7 @@ $CacheDir = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'muslimtify' } 
 $TrustedAppData = [Environment]::GetFolderPath('ApplicationData')
 $TrustedLocalAppData = [Environment]::GetFolderPath('LocalApplicationData')
 $ExpectedInstallPrefix = if ($TrustedLocalAppData) { Join-Path (Join-Path $TrustedLocalAppData 'Programs') 'Muslimtify' } else { $null }
-$ExpectedInstallBinDir = if ($ExpectedInstallPrefix) { Join-Path $ExpectedInstallPrefix 'bin' } else { $null }
+$ExpectedInstallBinDir = if ($ExpectedInstallPrefix) { Join-Path $ExpectedInstallPrefix 'bin' } else { '%LOCALAPPDATA%\Programs\Muslimtify\bin' }
 $ExpectedConfigDir = if ($TrustedAppData) { Join-Path $TrustedAppData 'muslimtify' } else { $null }
 $ExpectedCacheDir = if ($TrustedLocalAppData) { Join-Path $TrustedLocalAppData 'muslimtify' } else { $null }
 $TaskName = 'muslimtify'
@@ -76,14 +76,14 @@ function Test-ExpectedTarget {
 function Remove-MuslimtifyFromUserPath {
   param(
     [Parameter(Mandatory = $true)]
-    [string]$TargetPath
+    [string]$TargetPath,
+    [Parameter(Mandatory = $true)]
+    [string]$ManualCleanupPath
   )
 
-  $CleanupPath = if ($TargetPath) { $TargetPath } else { '%LOCALAPPDATA%\Programs\Muslimtify\bin' }
-
   if (-not $TargetPath) {
-    Write-Host "PATH cleanup failed; remove this path manually from your user PATH: $CleanupPath"
-    $Summary.Add("user PATH: manual cleanup required ($CleanupPath)")
+    Write-Host "PATH cleanup failed; remove this path manually from your user PATH: $ManualCleanupPath"
+    $Summary.Add("user PATH: manual cleanup required ($ManualCleanupPath)")
     return
   }
 
@@ -96,8 +96,8 @@ function Remove-MuslimtifyFromUserPath {
 
     $CurrentPath = $UserEnvironmentKey.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
     if ($null -eq $CurrentPath -or $CurrentPath -eq '') {
-      Write-Host 'Muslimtify PATH entry already absent'
-      $Summary.Add("user PATH: already absent ($TargetPath)")
+      Write-Host 'PATH entry already absent'
+      $Summary.Add("user PATH: already absent ($ManualCleanupPath)")
       return
     }
 
@@ -112,21 +112,18 @@ function Remove-MuslimtifyFromUserPath {
         continue
       }
 
-      try {
-        $EntryComparablePath = Get-ComparablePath $Entry
-        if ($EntryComparablePath -and ($EntryComparablePath -ieq $TargetComparablePath)) {
-          $RemovedCount++
-          continue
-        }
-      } catch {
+      $EntryComparablePath = Get-ComparablePath $Entry
+      if ($EntryComparablePath -and ($EntryComparablePath -ieq $TargetComparablePath)) {
+        $RemovedCount++
+        continue
       }
 
       $KeptEntries.Add($Entry)
     }
 
     if ($RemovedCount -eq 0) {
-      Write-Host 'Muslimtify PATH entry already absent'
-      $Summary.Add("user PATH: already absent ($TargetPath)")
+      Write-Host 'PATH entry already absent'
+      $Summary.Add("user PATH: already absent ($ManualCleanupPath)")
       return
     }
 
@@ -143,16 +140,15 @@ function Remove-MuslimtifyFromUserPath {
       $UserEnvironmentKey.DeleteValue('Path', $false)
     }
 
+    Write-Host 'PATH entry removed'
     if ($RemovedCount -eq 1) {
-      Write-Host 'Removed Muslimtify PATH entry'
-      $Summary.Add("user PATH: removed ($TargetPath)")
+      $Summary.Add("user PATH: removed ($ManualCleanupPath)")
     } else {
-      Write-Host "Removed $RemovedCount Muslimtify PATH entries"
-      $Summary.Add("user PATH: removed $RemovedCount entries ($TargetPath)")
+      $Summary.Add("user PATH: removed $RemovedCount entries ($ManualCleanupPath)")
     }
   } catch {
-    Write-Host "PATH cleanup failed; remove this path manually from your user PATH: $CleanupPath"
-    $Summary.Add("user PATH: manual cleanup required ($CleanupPath)")
+    Write-Host "PATH cleanup failed; remove this path manually from your user PATH: $ManualCleanupPath"
+    $Summary.Add("user PATH: manual cleanup required ($ManualCleanupPath)")
   } finally {
     if ($UserEnvironmentKey) {
       $UserEnvironmentKey.Close()
@@ -313,7 +309,7 @@ if ($HadErrors) {
 
 Write-Target 'PATH target' $ExpectedInstallBinDir
 Remove-ScheduledTask $TaskName $MuslimtifyExe
-Remove-MuslimtifyFromUserPath $ExpectedInstallBinDir
+Remove-MuslimtifyFromUserPath $ExpectedInstallBinDir $ExpectedInstallBinDir
 Remove-PathIfPresent 'install prefix' $InstallPrefix 'install prefix removed' 'install prefix missing'
 Remove-PathIfPresent 'config directory' $ConfigDir 'config directory removed' 'config directory missing'
 Remove-PathIfPresent 'cache directory' $CacheDir 'cache directory removed' 'cache directory missing'
