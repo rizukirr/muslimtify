@@ -497,8 +497,8 @@ static void send_toast_xml(const wchar_t *xml) {
   toast->lpVtbl->Release(toast);
 }
 
-/* Build toast XML from title/message with optional scenario attribute */
-static void send_notification(const char *title, const char *message, const char *scenario) {
+/* Build toast XML from title/message with optional reminder scenario and icon */
+static void send_notification(const char *title, const char *message, BOOL use_reminder_scenario) {
   if (!g_state.initialized)
     return;
   if (!title || !message)
@@ -517,31 +517,60 @@ static void send_notification(const char *title, const char *message, const char
     return;
   }
 
+  wchar_t icon_path[WINDOWS_PATH_MAX];
+  wchar_t *wicon = NULL;
+  if (resolve_toast_icon_path(icon_path, sizeof(icon_path) / sizeof(icon_path[0]))) {
+    wicon = xml_escape(icon_path);
+  }
+
   /* Build toast XML */
   wchar_t xml[1024];
-  if (scenario) {
-    wchar_t *wscenario = utf8_to_utf16(scenario);
-    _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                 L"<toast scenario=\"%ls\" duration=\"short\">"
-                 L"<visual><binding template=\"ToastGeneric\">"
-                 L"<text>%ls</text>"
-                 L"<text>%ls</text>"
-                 L"</binding></visual>"
-                 L"</toast>",
-                 wscenario, wtitle, wmsg);
-    free(wscenario);
+  if (use_reminder_scenario) {
+    if (wicon) {
+      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
+                   L"<toast scenario=\"reminder\" duration=\"short\">"
+                   L"<visual><binding template=\"ToastGeneric\">"
+                   L"<image placement=\"appLogoOverride\" src=\"%ls\"/>"
+                   L"<text>%ls</text>"
+                   L"<text>%ls</text>"
+                   L"</binding></visual>"
+                   L"</toast>",
+                   wicon, wtitle, wmsg);
+    } else {
+      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
+                   L"<toast scenario=\"reminder\" duration=\"short\">"
+                   L"<visual><binding template=\"ToastGeneric\">"
+                   L"<text>%ls</text>"
+                   L"<text>%ls</text>"
+                   L"</binding></visual>"
+                   L"</toast>",
+                   wtitle, wmsg);
+    }
   } else {
-    _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                 L"<toast duration=\"short\">"
-                 L"<visual><binding template=\"ToastGeneric\">"
-                 L"<text>%ls</text>"
-                 L"<text>%ls</text>"
-                 L"</binding></visual>"
-                 L"</toast>",
-                 wtitle, wmsg);
+    if (wicon) {
+      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
+                   L"<toast duration=\"short\">"
+                   L"<visual><binding template=\"ToastGeneric\">"
+                   L"<image placement=\"appLogoOverride\" src=\"%ls\"/>"
+                   L"<text>%ls</text>"
+                   L"<text>%ls</text>"
+                   L"</binding></visual>"
+                   L"</toast>",
+                   wicon, wtitle, wmsg);
+    } else {
+      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
+                   L"<toast duration=\"short\">"
+                   L"<visual><binding template=\"ToastGeneric\">"
+                   L"<text>%ls</text>"
+                   L"<text>%ls</text>"
+                   L"</binding></visual>"
+                   L"</toast>",
+                   wtitle, wmsg);
+    }
   }
   free(wtitle);
   free(wmsg);
+  free(wicon);
 
   send_toast_xml(xml);
 }
@@ -613,7 +642,7 @@ fail:
 }
 
 void notify_send(const char *title, const char *message) {
-  send_notification(title, message, NULL);
+  send_notification(title, message, FALSE);
 }
 
 void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
@@ -631,13 +660,10 @@ void notify_prayer(const char *prayer_name, const char *time_str, int minutes_be
                 prayer_name, minutes_before, time_str);
   }
 
-  /* Map urgency: critical -> scenario="reminder", normal/low -> default toast */
-  const char *scenario = NULL;
-  if (!urgency_str || strcmp(urgency_str, "critical") == 0) {
-    scenario = "reminder";
-  }
+  (void)urgency_str;
 
-  send_notification(title, message, scenario);
+  /* Exact prayer notifications keep the reminder scenario; reminders stay normal. */
+  send_notification(title, message, minutes_before == 0);
 }
 
 void notify_cleanup(void) {
