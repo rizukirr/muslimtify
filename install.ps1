@@ -21,7 +21,26 @@ function Update-UserPath {
     [string]$PathToAdd
   )
 
+  function Normalize-PathEntry {
+    param(
+      [Parameter(Mandatory = $true)]
+      [string]$Path
+    )
+
+    $NormalizedPath = $Path.Trim().Trim('"')
+    $PathRoot = [System.IO.Path]::GetPathRoot($NormalizedPath)
+    while ($NormalizedPath.Length -gt $PathRoot.Length -and (
+      $NormalizedPath.EndsWith([System.IO.Path]::DirectorySeparatorChar.ToString()) -or
+      $NormalizedPath.EndsWith([System.IO.Path]::AltDirectorySeparatorChar.ToString())
+    )) {
+      $NormalizedPath = $NormalizedPath.Substring(0, $NormalizedPath.Length - 1)
+    }
+
+    return $NormalizedPath
+  }
+
   $CurrentUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  $NormalizedPathToAdd = Normalize-PathEntry -Path $PathToAdd
 
   if ([string]::IsNullOrWhiteSpace($CurrentUserPath)) {
     try {
@@ -34,7 +53,7 @@ function Update-UserPath {
 
   $PathEntries = $CurrentUserPath.Split(';') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
   foreach ($PathEntry in $PathEntries) {
-    if ($PathEntry.Equals($PathToAdd, [System.StringComparison]::OrdinalIgnoreCase)) {
+    if ((Normalize-PathEntry -Path $PathEntry).Equals($NormalizedPathToAdd, [System.StringComparison]::OrdinalIgnoreCase)) {
       return 'present'
     }
   }
