@@ -12,7 +12,7 @@ is Kemenag (Indonesian Ministry of Religious Affairs).
 
 | Linux | Windows |
 | --- | --- |
-| ![Linux Screenshot](images/linux-exampl.png) | ![Windows Screenshot](images/windows-example.png) |
+| ![Linux Screenshot](images/linux-example.png) | ![Windows Screenshot](images/windows-example.png) |
 
 
 ## Installation
