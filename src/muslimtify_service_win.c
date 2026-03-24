@@ -11,7 +11,9 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd_line, 
   (void)cmd_line;
   (void)show_cmd;
 
-  curl_global_init(CURL_GLOBAL_DEFAULT);
+  if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK) {
+    return 1;
+  }
 
   int result = run_check_cycle();
 
