@@ -26,11 +26,15 @@ static void test_service_task_action_builder(void) {
 
   report_result("builder returns success", written > 0);
   report_result("task action schedules helper directly",
-                strcmp(task_action, "C:\\Program Files\\Muslimtify\\muslimtify-service.exe") == 0);
+                strcmp(task_action,
+                       "\"C:\\Program Files\\Muslimtify\\muslimtify-service.exe\"") == 0);
   report_result("task action does not use powershell",
                 strstr(task_action, "powershell.exe") == NULL);
   report_result("task action does not append check",
                 strstr(task_action, " check") == NULL);
+  report_result("task action preserves quoted executable path",
+                task_action[0] == '"' &&
+                    strstr(task_action, "\\muslimtify-service.exe\"") != NULL);
 }
 
 int main(void) {

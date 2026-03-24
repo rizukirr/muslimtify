@@ -4,26 +4,70 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 #include <windows.h>
 
-static int run_schtasks(const char *args) {
-  char cmd[PLATFORM_PATH_MAX * 2];
-  snprintf(cmd, sizeof(cmd), "schtasks.exe %s", args);
+static wchar_t *utf8_to_wide(const char *text) {
+  int len;
+  wchar_t *wide;
 
-  STARTUPINFOA si;
+  if (!text)
+    return NULL;
+
+  len = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
+  if (len <= 0)
+    return NULL;
+
+  wide = (wchar_t *)malloc((size_t)len * sizeof(wchar_t));
+  if (!wide)
+    return NULL;
+
+  if (MultiByteToWideChar(CP_UTF8, 0, text, -1, wide, len) <= 0) {
+    free(wide);
+    return NULL;
+  }
+
+  return wide;
+}
+
+static int run_schtasks(const char *args) {
+  wchar_t *wide_args;
+  wchar_t *cmd;
+  size_t cmd_len;
+
+  STARTUPINFOW si;
   PROCESS_INFORMATION pi;
+  DWORD err;
+  int result = -1;
+
+  wide_args = utf8_to_wide(args);
+  if (!wide_args) {
+    fprintf(stderr, "Error: Failed to prepare schtasks arguments\n");
+    return -1;
+  }
+
+  cmd_len = wcslen(L"schtasks.exe ") + wcslen(wide_args) + 1;
+  cmd = (wchar_t *)malloc(cmd_len * sizeof(wchar_t));
+  if (!cmd) {
+    free(wide_args);
+    fprintf(stderr, "Error: Out of memory while preparing schtasks command\n");
+    return -1;
+  }
+
+  swprintf(cmd, cmd_len, L"schtasks.exe %ls", wide_args);
+
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
 
-  if (!CreateProcessA(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-    DWORD err = GetLastError();
+  if (!CreateProcessW(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    err = GetLastError();
     if (err == ERROR_ACCESS_DENIED) {
       fprintf(stderr, "Error: Access denied. Try running as administrator.\n");
     } else {
       fprintf(stderr, "Error: Failed to run schtasks (error %lu)\n", err);
     }
-    return -1;
+    goto cleanup;
   }
 
   WaitForSingleObject(pi.hProcess, INFINITE);
@@ -32,8 +76,12 @@ static int run_schtasks(const char *args) {
   GetExitCodeProcess(pi.hProcess, &exit_code);
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
+  result = (int)exit_code;
 
-  return (int)exit_code;
+cleanup:
+  free(cmd);
+  free(wide_args);
+  return result;
 }
 
 static int build_windows_helper_path(const char *exe_dir, char *buffer, size_t buffer_size) {
@@ -53,7 +101,22 @@ static int build_windows_helper_path(const char *exe_dir, char *buffer, size_t b
 }
 
 int build_windows_task_action(const char *exe_dir, char *buffer, size_t buffer_size) {
-  return build_windows_helper_path(exe_dir, buffer, buffer_size);
+  int written;
+
+  if (build_windows_helper_path(exe_dir, buffer, buffer_size) < 0) {
+    return -1;
+  }
+
+  written = (int)strlen(buffer);
+  if ((size_t)written + 3 > buffer_size) {
+    return -1;
+  }
+
+  memmove(buffer + 1, buffer, (size_t)written + 1);
+  buffer[0] = '"';
+  buffer[written + 1] = '"';
+  buffer[written + 2] = '\0';
+  return written + 2;
 }
 
 static int daemon_install_handler(int argc, char **argv) {
@@ -67,19 +130,25 @@ static int daemon_install_handler(int argc, char **argv) {
   }
 
   char task_action[DAEMON_TASK_ACTION_MAX];
+  char helper_path[DAEMON_TASK_ACTION_MAX];
   if (build_windows_task_action(exe_dir, task_action, sizeof(task_action)) < 0) {
     fprintf(stderr, "Error: Failed to build scheduled task action\n");
     return 1;
   }
 
-  if (!platform_file_exists(task_action)) {
-    fprintf(stderr, "Error: Cannot find muslimtify-service.exe at '%s'\n", task_action);
+  if (build_windows_helper_path(exe_dir, helper_path, sizeof(helper_path)) < 0) {
+    fprintf(stderr, "Error: Failed to resolve helper executable path\n");
+    return 1;
+  }
+
+  if (!platform_file_exists(helper_path)) {
+    fprintf(stderr, "Error: Cannot find muslimtify-service.exe at '%s'\n", helper_path);
     return 1;
   }
 
   char args[PLATFORM_PATH_MAX * 3];
-  snprintf(args, sizeof(args),
-           "/create /tn \"muslimtify\" /tr \"%s\" /sc minute /mo 1 /f", task_action);
+  snprintf(args, sizeof(args), "/create /tn \"muslimtify\" /tr %s /sc minute /mo 1 /f",
+           task_action);
 
   int result = run_schtasks(args);
   if (result == 0) {
