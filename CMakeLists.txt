@@ -190,3 +190,10 @@ install(FILES assets/muslimtify.png
 
 install(FILES systemd/muslimtify.service systemd/muslimtify.timer
     DESTINATION lib/systemd/user/)
+
+if(WIN32)
+    add_executable(muslimtify-service WIN32 src/muslimtify_service_win.c)
+    muslimtify_set_target_defaults(muslimtify-service)
+    target_link_libraries(muslimtify-service
+        muslimtify_lib ole32 runtimeobject CURL::libcurl)
+endif()
