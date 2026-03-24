@@ -1,7 +1,5 @@
 # Muslimtify
 
-![Muslimtify Banner](images/banner.png)
-
 Muslimtify is a cross-platform prayer time notification tool for Linux and
 Windows. It calculates prayer times locally, stores configuration in your user
 profile, and runs periodic background checks so notifications appear when a
@@ -10,6 +8,12 @@ prayer time or reminder matches.
 Prayer time calculation is powered by
 [libmuslim](https://github.com/rizukirr/libmuslim). The current default method
 is Kemenag (Indonesian Ministry of Religious Affairs).
+
+
+| Linux | Windows |
+| --- | --- |
+| ![Linux Screenshot](images/linux-exampl.png) | ![Windows Screenshot](images/windows-example.png) |
+
 
 ## Installation
 
