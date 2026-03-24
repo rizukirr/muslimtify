@@ -1,13 +1,10 @@
 # Muslimtify
 
-Muslimtify is a cross-platform prayer time notification tool for Linux and
-Windows. It calculates prayer times locally, stores configuration in your user
-profile, and runs periodic background checks so notifications appear when a
-prayer time or reminder matches.
+Muslimtify helps you stay consistent with your daily prayers by providing accurate prayer times and timely notifications directly on your desktop. Designed for Linux and Windows, it runs quietly in the background, automatically calculating prayer schedules and notifying you in 30 minutes, 15 minutes 5 minutes (or your custom time reminder) before adzan and when it's time to pray. All calculations are performed locally, so you don’t need to rely on internet connectivity or external services.
 
-Prayer time calculation is powered by
-[libmuslim](https://github.com/rizukirr/libmuslim). The current default method
-is Kemenag (Indonesian Ministry of Religious Affairs).
+Currently, Muslimtify uses the Kemenag (Indonesian Ministry of Religious Affairs) method for prayer time calculation, with more methods planned in future updates. With persistent configuration and minimal setup, Muslimtify integrates seamlessly into your daily routine without interrupting your workflow.
+
+> Prayer time calculations are powered by [libmuslim](https://github.com/rizukirr/libmuslim), a portable library extracted from this project to enable a more flexible and reusable ecosystem for Muslim developers. Currently only support the Kemenag (Indonesian Ministry of Religious Affairs) method, with additional calculation methods to be introduced in future releases on [libmuslim](https://github.com/rizukirr/libmuslim).
 
 
 | Linux | Windows |
