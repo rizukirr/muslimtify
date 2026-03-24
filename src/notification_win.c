@@ -432,6 +432,91 @@ static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
   return FALSE;
 }
 
+static BOOL append_wide_segment(wchar_t **buffer, size_t *len, size_t *cap,
+                                const wchar_t *segment) {
+  size_t add_len;
+  size_t required;
+  size_t new_cap;
+  wchar_t *tmp;
+
+  if (!buffer || !len || !cap || !segment)
+    return FALSE;
+
+  add_len = wcslen(segment);
+  required = *len + add_len + 1;
+  if (required > *cap) {
+    new_cap = (*cap == 0) ? 256 : *cap;
+    while (new_cap < required) {
+      size_t next_cap = new_cap * 2;
+      if (next_cap <= new_cap)
+        return FALSE;
+      new_cap = next_cap;
+    }
+
+    tmp = (wchar_t *)realloc(*buffer, new_cap * sizeof(wchar_t));
+    if (!tmp)
+      return FALSE;
+    *buffer = tmp;
+    *cap = new_cap;
+  }
+
+  wmemcpy(*buffer + *len, segment, add_len);
+  *len += add_len;
+  (*buffer)[*len] = L'\0';
+  return TRUE;
+}
+
+static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
+                                BOOL use_reminder_scenario) {
+  wchar_t *xml = NULL;
+  size_t xml_len = 0;
+  size_t xml_cap = 0;
+
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                           use_reminder_scenario ? L"<toast scenario=\"reminder\" duration=\"short\">"
+                                                 : L"<toast duration=\"short\">")) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                           L"<visual><binding template=\"ToastGeneric\">")) {
+    goto fail;
+  }
+  if (wicon) {
+    if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                             L"<image placement=\"appLogoOverride\" src=\"")) {
+      goto fail;
+    }
+    if (!append_wide_segment(&xml, &xml_len, &xml_cap, wicon)) {
+      goto fail;
+    }
+    if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"\"/>")) {
+      goto fail;
+    }
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"<text>")) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, wtitle)) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"</text><text>")) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, wmsg)) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                           L"</text></binding></visual></toast>")) {
+    goto fail;
+  }
+
+  return xml;
+
+fail:
+  free(xml);
+  return NULL;
+}
+
 static HRESULT make_hstring_ref(const WCHAR *str, HSTRING_HEADER *header, HSTRING *hstr) {
   return WindowsCreateStringReference(str, (UINT32)wcslen(str), header, hstr);
 }
@@ -524,55 +609,16 @@ static void send_notification(const char *title, const char *message, BOOL use_r
   }
 
   /* Build toast XML */
-  wchar_t xml[1024];
-  if (use_reminder_scenario) {
-    if (wicon) {
-      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                   L"<toast scenario=\"reminder\" duration=\"short\">"
-                   L"<visual><binding template=\"ToastGeneric\">"
-                   L"<image placement=\"appLogoOverride\" src=\"%ls\"/>"
-                   L"<text>%ls</text>"
-                   L"<text>%ls</text>"
-                   L"</binding></visual>"
-                   L"</toast>",
-                   wicon, wtitle, wmsg);
-    } else {
-      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                   L"<toast scenario=\"reminder\" duration=\"short\">"
-                   L"<visual><binding template=\"ToastGeneric\">"
-                   L"<text>%ls</text>"
-                   L"<text>%ls</text>"
-                   L"</binding></visual>"
-                   L"</toast>",
-                   wtitle, wmsg);
-    }
-  } else {
-    if (wicon) {
-      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                   L"<toast duration=\"short\">"
-                   L"<visual><binding template=\"ToastGeneric\">"
-                   L"<image placement=\"appLogoOverride\" src=\"%ls\"/>"
-                   L"<text>%ls</text>"
-                   L"<text>%ls</text>"
-                   L"</binding></visual>"
-                   L"</toast>",
-                   wicon, wtitle, wmsg);
-    } else {
-      _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                   L"<toast duration=\"short\">"
-                   L"<visual><binding template=\"ToastGeneric\">"
-                   L"<text>%ls</text>"
-                   L"<text>%ls</text>"
-                   L"</binding></visual>"
-                   L"</toast>",
-                   wtitle, wmsg);
-    }
-  }
+  wchar_t *xml = build_toast_xml(wtitle, wmsg, wicon, use_reminder_scenario);
   free(wtitle);
   free(wmsg);
   free(wicon);
 
+  if (!xml)
+    return;
+
   send_toast_xml(xml);
+  free(xml);
 }
 
 /* ── API implementation ───────────────────────────────────────────────────── */
@@ -645,6 +691,14 @@ void notify_send(const char *title, const char *message) {
   send_notification(title, message, FALSE);
 }
 
+static BOOL should_use_reminder_scenario(int minutes_before, const char *urgency_str) {
+  if (minutes_before > 0)
+    return FALSE;
+  if (!urgency_str || strcmp(urgency_str, "critical") == 0)
+    return TRUE;
+  return FALSE;
+}
+
 void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
                    const char *urgency_str) {
   char title[128];
@@ -660,10 +714,8 @@ void notify_prayer(const char *prayer_name, const char *time_str, int minutes_be
                 prayer_name, minutes_before, time_str);
   }
 
-  (void)urgency_str;
-
   /* Exact prayer notifications keep the reminder scenario; reminders stay normal. */
-  send_notification(title, message, minutes_before == 0);
+  send_notification(title, message, should_use_reminder_scenario(minutes_before, urgency_str));
 }
 
 void notify_cleanup(void) {
