@@ -10,6 +10,7 @@ All notable changes to Muslimtify will be documented in this file.
 - Windows packaging now ships the internal `muslimtify-service.exe` helper alongside `muslimtify`, and Windows daemon install registers a Task Scheduler job that runs it without flashing a console window
 - Clarified Windows daemon behavior in the README without changing the `muslimtify daemon [install|uninstall|status]` CLI surface
 - Documented the Windows developer toast test script: `.\test_notification.ps1`
+- Added a Windows user-level source installer: `.\install.ps1`, which builds `Release`, installs to `%LOCALAPPDATA%\Programs\Muslimtify`, and registers the installed helper-based daemon flow
 
 ---
 
