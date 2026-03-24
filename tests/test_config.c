@@ -229,8 +229,7 @@ static void test_path_resolution(void) {
   printf("  path resolution...\n");
   const char *path = config_get_path();
 
-  check_bool("config path starts in tmpdir",
-             strncmp(path, tmpdir, strlen(tmpdir)) == 0);
+  check_bool("config path starts in tmpdir", strncmp(path, tmpdir, strlen(tmpdir)) == 0);
   check_bool("config path includes muslimtify dir",
              strstr(path, "/muslimtify/config.json") != NULL);
 }

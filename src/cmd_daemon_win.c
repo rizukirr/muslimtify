@@ -1,5 +1,5 @@
-#include "cli_internal.h"
 #include "cmd_daemon_win.h"
+#include "cli_internal.h"
 #include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,8 +91,8 @@ static int build_windows_helper_path(const char *exe_dir, char *buffer, size_t b
     return -1;
   }
 
-  written = snprintf(buffer, buffer_size, "%s%c%s", exe_dir, PLATFORM_PATH_SEP,
-                     "muslimtify-service.exe");
+  written =
+      snprintf(buffer, buffer_size, "%s%c%s", exe_dir, PLATFORM_PATH_SEP, "muslimtify-service.exe");
   if (written < 0 || (size_t)written >= buffer_size) {
     return -1;
   }

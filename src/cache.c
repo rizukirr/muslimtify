@@ -221,6 +221,7 @@ void cache_invalidate(void) {
 
 void cache_reset_path(void) {
   cache_path_buf[0] = '\0';
+  platform_reset_cached_paths();
 }
 
 static int compare_triggers(const void *a, const void *b) {

@@ -146,8 +146,7 @@ static void test_save_load_roundtrip(void) {
   }
   setenv("XDG_CACHE_HOME", tmpdir, 1);
   cache_reset_path();
-  check_bool("cache path starts in tmpdir",
-             strncmp(cache_get_path(), tmpdir, strlen(tmpdir)) == 0);
+  check_bool("cache path starts in tmpdir", strncmp(cache_get_path(), tmpdir, strlen(tmpdir)) == 0);
   check_bool("cache path includes muslimtify dir",
              strstr(cache_get_path(), "/muslimtify/next_prayer.json") != NULL);
 

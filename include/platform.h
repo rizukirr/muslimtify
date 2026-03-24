@@ -53,6 +53,11 @@ const char *platform_exe_path(void);
 const char *platform_exe_dir(void);
 
 /**
+ * Reset cached platform paths so subsequent calls re-read environment-derived directories.
+ */
+void platform_reset_cached_paths(void);
+
+/**
  * Recursively create directories (like mkdir -p). Returns 0 on success, -1 on failure.
  */
 int platform_mkdir_p(const char *path);

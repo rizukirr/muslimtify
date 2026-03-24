@@ -21,20 +21,18 @@ static void report_result(const char *label, bool pass) {
 
 static void test_service_task_action_builder(void) {
   char task_action[DAEMON_TASK_ACTION_MAX];
-  int written = build_windows_task_action("C:\\Program Files\\Muslimtify",
-                                          task_action, sizeof(task_action));
+  int written =
+      build_windows_task_action("C:\\Program Files\\Muslimtify", task_action, sizeof(task_action));
 
   report_result("builder returns success", written > 0);
   report_result("task action schedules helper directly",
-                strcmp(task_action,
-                       "\"C:\\Program Files\\Muslimtify\\muslimtify-service.exe\"") == 0);
+                strcmp(task_action, "\"C:\\Program Files\\Muslimtify\\muslimtify-service.exe\"") ==
+                    0);
   report_result("task action does not use powershell",
                 strstr(task_action, "powershell.exe") == NULL);
-  report_result("task action does not append check",
-                strstr(task_action, " check") == NULL);
+  report_result("task action does not append check", strstr(task_action, " check") == NULL);
   report_result("task action preserves quoted executable path",
-                task_action[0] == '"' &&
-                    strstr(task_action, "\\muslimtify-service.exe\"") != NULL);
+                task_action[0] == '"' && strstr(task_action, "\\muslimtify-service.exe\"") != NULL);
 }
 
 int main(void) {

@@ -523,8 +523,9 @@ static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, cons
   size_t xml_cap = 0;
 
   if (!append_wide_segment(&xml, &xml_len, &xml_cap,
-                           use_reminder_scenario ? L"<toast scenario=\"reminder\" duration=\"short\">"
-                                                 : L"<toast duration=\"short\">")) {
+                           use_reminder_scenario
+                               ? L"<toast scenario=\"reminder\" duration=\"short\">"
+                               : L"<toast duration=\"short\">")) {
     goto fail;
   }
   if (!append_wide_segment(&xml, &xml_len, &xml_cap,
@@ -555,8 +556,7 @@ static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, cons
   if (!append_wide_segment(&xml, &xml_len, &xml_cap, wmsg)) {
     goto fail;
   }
-  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
-                           L"</text></binding></visual></toast>")) {
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"</text></binding></visual></toast>")) {
     goto fail;
   }
 

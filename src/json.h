@@ -84,8 +84,6 @@ char *get_value(JsonContext *JSON_RESTRICT ctx, const char *JSON_RESTRICT key,
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #include <stdalign.h>
 #define JSON_ALIGNOF(type) alignof(type)
-#elif defined(_MSC_VER)
-#define JSON_ALIGNOF(type) __alignof(type)
 #else
 #define JSON_ALIGNOF(type) \
   offsetof(                \
