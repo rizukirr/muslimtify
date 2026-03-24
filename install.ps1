@@ -15,6 +15,45 @@ function Invoke-CMake {
   }
 }
 
+function Update-UserPath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$PathToAdd
+  )
+
+  $CurrentUserPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+
+  if ([string]::IsNullOrWhiteSpace($CurrentUserPath)) {
+    try {
+      [Environment]::SetEnvironmentVariable('Path', $PathToAdd, 'User')
+      return 'added'
+    } catch {
+      throw "Failed to update the user PATH: $($_.Exception.Message)"
+    }
+  }
+
+  $PathEntries = $CurrentUserPath.Split(';') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+  foreach ($PathEntry in $PathEntries) {
+    if ($PathEntry.Equals($PathToAdd, [System.StringComparison]::OrdinalIgnoreCase)) {
+      return 'present'
+    }
+  }
+
+  $UpdatedUserPath = $CurrentUserPath.TrimEnd(';')
+  if ($UpdatedUserPath.Length -gt 0) {
+    $UpdatedUserPath = "$UpdatedUserPath;$PathToAdd"
+  } else {
+    $UpdatedUserPath = $PathToAdd
+  }
+
+  try {
+    [Environment]::SetEnvironmentVariable('Path', $UpdatedUserPath, 'User')
+    return 'added'
+  } catch {
+    throw "Failed to update the user PATH: $($_.Exception.Message)"
+  }
+}
+
 if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) {
   throw 'CMake was not found in PATH.'
 }
@@ -70,12 +109,27 @@ if ($LASTEXITCODE -ne 0) {
   throw "muslimtify.exe daemon install failed (exit code $LASTEXITCODE)."
 }
 
+$PathUpdateStatus = 'unknown'
+try {
+  $PathUpdateStatus = Update-UserPath -PathToAdd $InstallBinDir
+} catch {
+  $PathUpdateStatus = $_.Exception.Message
+}
+
 Write-Host ''
 Write-Host 'Installation complete'
 Write-Host "Installed binary: $MuslimtifyExe"
 Write-Host "Installed helper: $ServiceExe"
 Write-Host "Config directory: $ConfigDir"
 Write-Host "Cache directory: $CacheDir"
+if ($PathUpdateStatus -eq 'added') {
+  Write-Host "User PATH updated: added $InstallBinDir"
+} elseif ($PathUpdateStatus -eq 'present') {
+  Write-Host "User PATH updated: $InstallBinDir was already present"
+} else {
+  Write-Host "User PATH update failed: $PathUpdateStatus"
+}
+Write-Host 'Restart PowerShell or open a new terminal before running muslimtify.'
 Write-Host ''
 Write-Host 'Next commands'
 Write-Host "  $MuslimtifyExe help"
