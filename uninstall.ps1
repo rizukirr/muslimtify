@@ -56,6 +56,28 @@ function Remove-PathIfPresent {
   }
 }
 
+function Remove-ScheduledTaskDirect {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Name
+  )
+
+  Write-Host 'Removing scheduled task'
+  try {
+    & schtasks.exe /delete /tn $Name /f *> $null
+    if ($LASTEXITCODE -eq 0) {
+      Write-Host 'Scheduled task removed'
+      $Summary.Add("scheduled task '$Name': removed")
+    } else {
+      Write-Host "Scheduled task removal failed (exit code $LASTEXITCODE)"
+      $Summary.Add("scheduled task '$Name': skipped (removal failed)")
+    }
+  } catch {
+    Write-Host "Scheduled task removal failed: $($_.Exception.Message)"
+    $Summary.Add("scheduled task '$Name': skipped (removal failed)")
+  }
+}
+
 Write-Host 'Muslimtify uninstaller'
 Write-Host "Task: $TaskName"
 Write-Target 'Install prefix' $InstallPrefix
@@ -95,8 +117,8 @@ if ($MuslimtifyExe -and (Test-Path -LiteralPath $MuslimtifyExe)) {
     $Summary.Add("scheduled task '$TaskName': skipped (uninstall failed)")
   }
 } else {
-  Write-Host 'Skipped scheduled task uninstall: binary missing'
-  $Summary.Add("scheduled task '$TaskName': skipped (binary missing)")
+  Write-Host 'Binary missing; removing scheduled task directly'
+  Remove-ScheduledTaskDirect $TaskName
 }
 
 Remove-PathIfPresent 'install prefix' $InstallPrefix 'install prefix removed' 'install prefix missing'
