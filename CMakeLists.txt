@@ -28,6 +28,8 @@ include(GNUInstallDirs)
 
 if(WIN32)
     include(FetchContent)
+    set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+    set(CURL_ENABLE_EXPORT_TARGET OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(curl
         URL https://github.com/curl/curl/releases/download/curl-8_11_1/curl-8.11.1.tar.xz
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
@@ -206,4 +208,35 @@ if(WIN32)
     target_link_libraries(muslimtify-service
         muslimtify_lib ole32 runtimeobject CURL::libcurl)
     install(TARGETS muslimtify-service DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+    install(CODE [[
+        file(GET_RUNTIME_DEPENDENCIES
+            RESOLVED_DEPENDENCIES_VAR muslimtify_resolved_deps
+            UNRESOLVED_DEPENDENCIES_VAR muslimtify_unresolved_deps
+            EXECUTABLES
+                "$<TARGET_FILE:muslimtify>"
+                "$<TARGET_FILE:muslimtify-service>"
+            PRE_EXCLUDE_REGEXES
+                "api-ms-win-.*"
+                "AzureAttestManager\\.dll"
+                "AzureAttestNormal\\.dll"
+                "HvsiFileTrust\\.dll"
+                "PdmUtilities\\.dll"
+                "ext-ms-.*"
+            POST_EXCLUDE_REGEXES
+                ".*[\\\\/][Ww][Ii][Nn][Dd][Oo][Ww][Ss][\\\\/][Ss][Yy][Ss][Tt][Ee][Mm]32[\\\\/].*"
+                ".*[\\\\/][Ww][Ii][Nn][Dd][Oo][Ww][Ss][\\\\/][Ss][Yy][Ss][Ww][Oo][Ww]64[\\\\/].*"
+        )
+
+        if(muslimtify_unresolved_deps)
+            message(STATUS "Ignoring unresolved runtime dependencies: ${muslimtify_unresolved_deps}")
+        endif()
+
+        foreach(muslimtify_dep IN LISTS muslimtify_resolved_deps)
+            file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+                TYPE SHARED_LIBRARY
+                FILES "${muslimtify_dep}"
+                FOLLOW_SYMLINK_CHAIN)
+        endforeach()
+    ]])
 endif()
