@@ -198,4 +198,4 @@ for details.
 
 - Bugs and feature requests: GitHub Issues
 - Questions and discussion: GitHub Discussions
-- Support development: [Ko-fi](https://ko-fi.com/rizukirr)
+- Orbuy me a ☕ [Ko-fi](https://ko-fi.com/rizukirr)
