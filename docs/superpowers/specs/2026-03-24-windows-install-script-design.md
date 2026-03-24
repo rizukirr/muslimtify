@@ -63,6 +63,20 @@ The script relies on current CMake install rules to place:
 The script should not manually duplicate the CMake install logic unless required for a small Windows
 specific gap.
 
+### Runtime data locations
+
+The installer should document the Windows runtime paths separately from the install prefix:
+
+- installed binaries:
+  - `%LOCALAPPDATA%\Programs\Muslimtify\bin`
+- config directory:
+  - `%APPDATA%\muslimtify`
+- cache directory:
+  - `%LOCALAPPDATA%\muslimtify`
+
+The script should not try to relocate config or cache into the install prefix. Those paths remain
+owned by the existing platform layer and are created on first run when needed.
+
 ### Post-install daemon registration
 
 After installation, the script should run:
@@ -82,6 +96,8 @@ The script should print:
 - build directory
 - install completion message
 - installed binary path
+- config path
+- cache path
 - short follow-up commands, such as:
   - `muslimtify.exe help`
   - `muslimtify.exe location auto`
