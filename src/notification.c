@@ -36,22 +36,19 @@ static const char *get_icon_path(void) {
   }
 
   // Try different icon locations in order of preference
-  const char *possible_paths[] = {
-    "/usr/local/share/icons/hicolor/128x128/apps/muslimtify.png",
-    "/usr/share/icons/hicolor/128x128/apps/muslimtify.png",
-    NULL,
-    NULL,
-    "assets/muslimtify.png",
-    "../assets/muslimtify.png",
-    NULL
-  };
+  const char *possible_paths[] = {"/usr/local/share/icons/hicolor/128x128/apps/muslimtify.png",
+                                  "/usr/share/icons/hicolor/128x128/apps/muslimtify.png",
+                                  NULL,
+                                  NULL,
+                                  "assets/muslimtify.png",
+                                  "../assets/muslimtify.png",
+                                  NULL};
 
   // Try XDG_DATA_HOME
   char xdg_path[PLATFORM_PATH_MAX];
   const char *xdg_data = getenv("XDG_DATA_HOME");
-  if (xdg_data != NULL &&
-      build_path(xdg_path, sizeof(xdg_path), xdg_data,
-                 "icons/hicolor/128x128/apps/muslimtify.png") == 0) {
+  if (xdg_data != NULL && build_path(xdg_path, sizeof(xdg_path), xdg_data,
+                                     "icons/hicolor/128x128/apps/muslimtify.png") == 0) {
     possible_paths[2] = xdg_path;
   }
 

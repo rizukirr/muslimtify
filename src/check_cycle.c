@@ -1,7 +1,7 @@
 #include "check_cycle.h"
 
-#include "config.h"
 #include "cache.h"
+#include "config.h"
 #include "location.h"
 #include "notification.h"
 #include "prayertimes.h"

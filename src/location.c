@@ -1,8 +1,8 @@
 #include "location.h"
 #include "json.h"
 #include "string_util.h"
-#include <math.h>
 #include <curl/curl.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

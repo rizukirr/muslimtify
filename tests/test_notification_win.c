@@ -13,10 +13,9 @@ static int total = 0;
 static int failures = 0;
 
 BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
-                                                        size_t buffer_size);
+                                                       size_t buffer_size);
 wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, const wchar_t *wtitle,
-                                                    const wchar_t *wmsg,
-                                                    BOOL use_reminder_scenario);
+                                                   const wchar_t *wmsg, BOOL use_reminder_scenario);
 
 static void report_result(const char *label, bool pass) {
   total++;
@@ -89,8 +88,7 @@ static bool create_empty_file(const wchar_t *path) {
   if (!ensure_parent_dirs(canonical))
     return false;
 
-  file = CreateFileW(canonical, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
-                     NULL);
+  file = CreateFileW(canonical, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   if (file == INVALID_HANDLE_VALUE)
     return false;
 
@@ -159,9 +157,8 @@ static void test_installed_layout_resolution_preference(void) {
 
   resolved[0] = L'\0';
   report_result("resolver returns success",
-                notification_win_resolve_toast_icon_path_for_test(exe_dir, resolved,
-                                                                  sizeof(resolved) /
-                                                                      sizeof(resolved[0])));
+                notification_win_resolve_toast_icon_path_for_test(
+                    exe_dir, resolved, sizeof(resolved) / sizeof(resolved[0])));
   report_result("resolver prefers installed icon path", wide_equals(resolved, preferred_path));
 }
 
@@ -197,9 +194,8 @@ static void test_development_layout_resolution_preference(void) {
 
   resolved[0] = L'\0';
   report_result("resolver returns success",
-                notification_win_resolve_toast_icon_path_for_test(exe_dir, resolved,
-                                                                  sizeof(resolved) /
-                                                                      sizeof(resolved[0])));
+                notification_win_resolve_toast_icon_path_for_test(
+                    exe_dir, resolved, sizeof(resolved) / sizeof(resolved[0])));
   report_result("resolver prefers development icon path", wide_equals(resolved, preferred_path));
 }
 
@@ -214,8 +210,7 @@ static void test_no_icon_fallback_behavior(void) {
     report_result("create base dir", false);
     return;
   }
-  if (!join_path(root_dir, L"build\\bin\\Release", exe_dir,
-                 sizeof(exe_dir) / sizeof(exe_dir[0]))) {
+  if (!join_path(root_dir, L"build\\bin\\Release", exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0]))) {
     report_result("build executable dir", false);
     return;
   }
