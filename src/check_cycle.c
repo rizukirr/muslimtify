@@ -19,6 +19,7 @@ int run_check_cycle(void) {
   }
 
   if (location_prepare(&cfg) != 0) {
+    fprintf(stderr, "Error: Failed to detect location\n");
     return 1;
   }
 

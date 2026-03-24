@@ -197,14 +197,32 @@ int location_prepare(Config *cfg) {
       fprintf(stderr, "Error: Failed to save config\n");
       return -1;
     }
-
-    return 1;
   }
 
   return 0;
 }
 
 int ensure_location(Config *cfg) {
+  if (!cfg)
+    return -1;
+
+  if (cfg->auto_detect && (fabs(cfg->latitude) < 1e-6 && fabs(cfg->longitude) < 1e-6)) {
+    printf("Detecting location...\n");
+    if (location_prepare(cfg) != 0) {
+      fprintf(stderr, "Error: Failed to detect location\n");
+      return -1;
+    }
+
+    printf("✓ Location detected: ");
+    if (cfg->city[0] != '\0') {
+      printf("%s, %s\n", cfg->city, cfg->country);
+    } else {
+      printf("%.4f, %.4f\n", cfg->latitude, cfg->longitude);
+    }
+
+    return 0;
+  }
+
   int prepare_result = location_prepare(cfg);
   if (prepare_result < 0) {
     fprintf(stderr, "Error: Failed to detect location\n");

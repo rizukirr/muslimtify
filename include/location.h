@@ -15,9 +15,7 @@ int location_fetch(Config *cfg);
 
 /**
  * Quiet helper that ensures location data exists.
- * Returns: 0 when no location work was needed,
- *          1 when auto-detect ran and persisted successfully,
- *         -1 on failure.
+ * Returns: 0 on success, -1 on failure.
  * This function does not print user-facing status lines.
  */
 int location_prepare(Config *cfg);
