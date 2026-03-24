@@ -1,10 +1,12 @@
 #include "check_cycle.h"
 
+#include "config.h"
 #include "cache.h"
-#include "cli_internal.h"
-#include "display.h"
+#include "location.h"
 #include "notification.h"
+#include "prayertimes.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>

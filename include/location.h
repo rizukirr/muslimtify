@@ -14,6 +14,11 @@ extern "C" {
 int location_fetch(Config *cfg);
 
 /**
+ * Ensure location data exists, auto-detecting and persisting when needed.
+ */
+int ensure_location(Config *cfg);
+
+/**
  * Alias for location_fetch (for clarity)
  */
 int location_auto_detect(Config *cfg);
