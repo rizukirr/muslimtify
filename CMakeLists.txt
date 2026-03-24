@@ -71,6 +71,7 @@ endfunction()
 add_library(muslimtify_lib OBJECT
     src/cli.c
     src/cmd_show.c
+    src/check_cycle.c
     src/cmd_next.c
     src/cmd_config.c
     src/cmd_location.c
