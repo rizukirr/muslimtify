@@ -196,4 +196,5 @@ if(WIN32)
     muslimtify_set_target_defaults(muslimtify-service)
     target_link_libraries(muslimtify-service
         muslimtify_lib ole32 runtimeobject CURL::libcurl)
+    install(TARGETS muslimtify-service DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()

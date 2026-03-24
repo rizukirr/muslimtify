@@ -194,8 +194,9 @@ muslimtify daemon status     # Show timer state and next trigger time
 ```
 
 On Windows, the same `muslimtify daemon` commands manage a Task Scheduler job
-named `muslimtify` instead of systemd. `install` creates the job that runs
-`muslimtify check` every minute, `status` queries it, and `uninstall` removes
+named `muslimtify` instead of systemd. `install` creates the job that runs the
+bundled `muslimtify-service.exe` helper every minute, so prayer checks happen
+without flashing a console window. `status` queries it, and `uninstall` removes
 it. Some systems may require Administrator privileges for those operations.
 
 ### Other Commands
