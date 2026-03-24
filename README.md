@@ -73,6 +73,8 @@ cd muslimtify
 muslimtify daemon install
 ```
 
+To remove the Windows install later, run `.\uninstall.ps1`.
+
 If you prefer building manually first:
 
 ```powershell

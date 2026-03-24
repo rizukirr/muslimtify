@@ -11,6 +11,7 @@ All notable changes to Muslimtify will be documented in this file.
 - Clarified Windows daemon behavior in the README without changing the `muslimtify daemon [install|uninstall|status]` CLI surface
 - Documented the Windows developer toast test script: `.\test_notification.ps1`
 - Added a Windows user-level source installer: `.\install.ps1`, which builds `Release`, installs to `%LOCALAPPDATA%\Programs\Muslimtify`, and registers the installed helper-based daemon flow
+- Added a Windows user-level uninstaller: `.\uninstall.ps1`, which removes the installed files and user data after confirmation
 
 ---
 
