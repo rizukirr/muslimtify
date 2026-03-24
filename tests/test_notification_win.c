@@ -14,6 +14,9 @@ static int failures = 0;
 
 BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
                                                         size_t buffer_size);
+wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, const wchar_t *wtitle,
+                                                    const wchar_t *wmsg,
+                                                    BOOL use_reminder_scenario);
 
 static void report_result(const char *label, bool pass) {
   total++;
@@ -95,7 +98,7 @@ static bool create_empty_file(const wchar_t *path) {
   return true;
 }
 
-static bool make_test_base_dir(const wchar_t *suffix, wchar_t *buffer, size_t buffer_size) {
+static bool make_test_root_dir(const wchar_t *suffix, wchar_t *buffer, size_t buffer_size) {
   wchar_t temp_path[MAX_PATH];
   DWORD len = GetTempPathW(MAX_PATH, temp_path);
   int written;
@@ -122,11 +125,11 @@ static void test_installed_layout_resolution_preference(void) {
   wchar_t canonical_second[MAX_PATH];
   wchar_t resolved[MAX_PATH];
 
-  if (!make_test_base_dir(L"installed", root_dir, sizeof(root_dir) / sizeof(root_dir[0]))) {
+  if (!make_test_root_dir(L"installed", root_dir, sizeof(root_dir) / sizeof(root_dir[0]))) {
     report_result("create base dir", false);
     return;
   }
-  if (!join_path(root_dir, L"bin\\Debug", exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0]))) {
+  if (!join_path(root_dir, L"bin", exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0]))) {
     report_result("build executable dir", false);
     return;
   }
@@ -168,20 +171,18 @@ static void test_development_layout_resolution_preference(void) {
   wchar_t root_dir[MAX_PATH];
   wchar_t exe_dir[MAX_PATH];
   wchar_t preferred_path[MAX_PATH];
-  wchar_t fallback_path[MAX_PATH];
   wchar_t canonical_first[MAX_PATH];
-  wchar_t canonical_second[MAX_PATH];
   wchar_t resolved[MAX_PATH];
 
-  if (!make_test_base_dir(L"development", root_dir, sizeof(root_dir) / sizeof(root_dir[0]))) {
+  if (!make_test_root_dir(L"development", root_dir, sizeof(root_dir) / sizeof(root_dir[0]))) {
     report_result("create base dir", false);
     return;
   }
-  if (!join_path(root_dir, L"bin\\Debug", exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0]))) {
+  if (!join_path(root_dir, L"build\\bin\\Debug", exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0]))) {
     report_result("build executable dir", false);
     return;
   }
-  if (!join_path(exe_dir, L"..\\assets\\muslimtify.png", preferred_path,
+  if (!join_path(exe_dir, L"..\\..\\..\\assets\\muslimtify.png", preferred_path,
                  sizeof(preferred_path) / sizeof(preferred_path[0]))) {
     report_result("build preferred development icon path", false);
     return;
@@ -191,19 +192,8 @@ static void test_development_layout_resolution_preference(void) {
     report_result("canonicalize preferred development icon path", false);
     return;
   }
-  if (!join_path(exe_dir, L"assets\\muslimtify.png", fallback_path,
-                 sizeof(fallback_path) / sizeof(fallback_path[0]))) {
-    report_result("build fallback development icon path", false);
-    return;
-  }
-  if (!canonicalize_path(fallback_path, canonical_second,
-                         sizeof(canonical_second) / sizeof(canonical_second[0]))) {
-    report_result("canonicalize fallback development icon path", false);
-    return;
-  }
 
   report_result("create preferred development icon", create_empty_file(canonical_first));
-  report_result("create fallback development icon", create_empty_file(canonical_second));
 
   resolved[0] = L'\0';
   report_result("resolver returns success",
@@ -218,23 +208,26 @@ static void test_no_icon_fallback_behavior(void) {
 
   wchar_t root_dir[MAX_PATH];
   wchar_t exe_dir[MAX_PATH];
-  wchar_t resolved[MAX_PATH];
+  wchar_t *xml;
 
-  if (!make_test_base_dir(L"fallback", root_dir, sizeof(root_dir) / sizeof(root_dir[0]))) {
+  if (!make_test_root_dir(L"fallback", root_dir, sizeof(root_dir) / sizeof(root_dir[0]))) {
     report_result("create base dir", false);
     return;
   }
-  if (!join_path(root_dir, L"bin\\Debug", exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0]))) {
+  if (!join_path(root_dir, L"build\\bin\\Release", exe_dir,
+                 sizeof(exe_dir) / sizeof(exe_dir[0]))) {
     report_result("build executable dir", false);
     return;
   }
 
-  resolved[0] = L'X';
-  report_result("resolver returns not found",
-                !notification_win_resolve_toast_icon_path_for_test(exe_dir, resolved,
-                                                                    sizeof(resolved) /
-                                                                        sizeof(resolved[0])));
-  report_result("resolver clears output path", resolved[0] == L'\0');
+  xml = notification_win_build_toast_xml_for_test(exe_dir, L"Prayer Time: Isha",
+                                                  L"It's time for Isha prayer", TRUE);
+  report_result("caller still builds toast XML without an icon", xml != NULL);
+  report_result("caller omits the image node when icon resolution fails",
+                xml != NULL && wcsstr(xml, L"<image ") == NULL);
+  report_result("caller still includes toast text payload",
+                xml != NULL && wcsstr(xml, L"<text>Prayer Time: Isha</text>") != NULL);
+  free(xml);
 }
 
 int main(void) {

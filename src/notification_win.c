@@ -397,6 +397,12 @@ static BOOL resolve_toast_icon_path_from_base(const wchar_t *base_dir, wchar_t *
       L"..\\share\\pixmaps\\muslimtify.png",
       L"..\\assets\\muslimtify.png",
       L"assets\\muslimtify.png",
+      L"..\\..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
+      L"..\\..\\share\\pixmaps\\muslimtify.png",
+      L"..\\..\\assets\\muslimtify.png",
+      L"..\\..\\..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
+      L"..\\..\\..\\share\\pixmaps\\muslimtify.png",
+      L"..\\..\\..\\assets\\muslimtify.png",
   };
   wchar_t candidate_path[WINDOWS_PATH_MAX];
   size_t i;
@@ -433,10 +439,46 @@ static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
   return resolve_toast_icon_path_from_base(base_dir, buffer, buffer_size);
 }
 
+static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
+                                BOOL use_reminder_scenario);
+
 #ifdef MUSLIMTIFY_NOTIFICATION_WIN_TEST
 BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
                                                        size_t buffer_size) {
   return resolve_toast_icon_path_from_base(base_dir, buffer, buffer_size);
+}
+
+wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, const wchar_t *wtitle,
+                                                   const wchar_t *wmsg,
+                                                   BOOL use_reminder_scenario) {
+  wchar_t icon_path[WINDOWS_PATH_MAX];
+  wchar_t *wicon = NULL;
+  wchar_t *escaped_title = NULL;
+  wchar_t *escaped_message = NULL;
+  wchar_t *xml = NULL;
+
+  if (!wtitle || !wmsg)
+    return NULL;
+
+  escaped_title = xml_escape(wtitle);
+  escaped_message = xml_escape(wmsg);
+  if (!escaped_title || !escaped_message)
+    goto fail;
+
+  if (base_dir && resolve_toast_icon_path_from_base(base_dir, icon_path,
+                                                    sizeof(icon_path) / sizeof(icon_path[0]))) {
+    wicon = xml_escape(icon_path);
+    if (!wicon)
+      goto fail;
+  }
+
+  xml = build_toast_xml(escaped_title, escaped_message, wicon, use_reminder_scenario);
+
+fail:
+  free(escaped_title);
+  free(escaped_message);
+  free(wicon);
+  return xml;
 }
 #endif
 
