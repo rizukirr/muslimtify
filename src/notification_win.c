@@ -267,6 +267,8 @@ typedef struct {
 
 static NotifyState g_state = {0};
 
+#define WINDOWS_PATH_MAX 32768
+
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
 /* Convert UTF-8 string to UTF-16. Caller must free() the result. */
@@ -343,6 +345,79 @@ static wchar_t *xml_escape(const wchar_t *src) {
 }
 
 /* Create HSTRING from static wide string (no allocation — reference only) */
+static BOOL wide_file_exists(const wchar_t *path) {
+  DWORD attrs;
+
+  if (!path || path[0] == L'\0')
+    return FALSE;
+
+  attrs = GetFileAttributesW(path);
+  return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+}
+
+static BOOL get_executable_dir(wchar_t *buffer, size_t buffer_size) {
+  wchar_t exe_path[WINDOWS_PATH_MAX];
+  DWORD len;
+  int written;
+  wchar_t *last_sep;
+
+  if (!buffer || buffer_size == 0)
+    return FALSE;
+
+  len = GetModuleFileNameW(NULL, exe_path, WINDOWS_PATH_MAX);
+  if (len == 0 || len >= WINDOWS_PATH_MAX)
+    return FALSE;
+
+  last_sep = wcsrchr(exe_path, L'\\');
+  if (!last_sep)
+    last_sep = wcsrchr(exe_path, L'/');
+  if (!last_sep)
+    return FALSE;
+
+  *last_sep = L'\0';
+  written = swprintf(buffer, buffer_size, L"%ls", exe_path);
+  return written > 0 && (size_t)written < buffer_size;
+}
+
+static BOOL build_executable_relative_path(const wchar_t *relative, wchar_t *buffer,
+                                           size_t buffer_size) {
+  wchar_t exe_dir[WINDOWS_PATH_MAX];
+  int written;
+
+  if (!relative || !buffer || buffer_size == 0)
+    return FALSE;
+
+  if (!get_executable_dir(exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0])))
+    return FALSE;
+
+  written = swprintf(buffer, buffer_size, L"%ls\\%ls", exe_dir, relative);
+  return written > 0 && (size_t)written < buffer_size;
+}
+
+static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
+  static const wchar_t *const candidates[] = {
+      L"..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
+      L"..\\share\\pixmaps\\muslimtify.png",
+      L"..\\assets\\muslimtify.png",
+      L"assets\\muslimtify.png",
+  };
+  size_t i;
+
+  if (!buffer || buffer_size == 0)
+    return FALSE;
+
+  buffer[0] = L'\0';
+  for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+    if (!build_executable_relative_path(candidates[i], buffer, buffer_size))
+      continue;
+    if (wide_file_exists(buffer))
+      return TRUE;
+  }
+
+  buffer[0] = L'\0';
+  return FALSE;
+}
+
 static HRESULT make_hstring_ref(const WCHAR *str, HSTRING_HEADER *header, HSTRING *hstr) {
   return WindowsCreateStringReference(str, (UINT32)wcslen(str), header, hstr);
 }
@@ -414,6 +489,11 @@ static void send_notification(const char *title, const char *message, const char
     return;
   if (!title || !message)
     return;
+
+  {
+    wchar_t icon_path[WINDOWS_PATH_MAX];
+    (void)resolve_toast_icon_path(icon_path, sizeof(icon_path) / sizeof(icon_path[0]));
+  }
 
   /* Convert and escape strings */
   wchar_t *wtitle_raw = utf8_to_utf16(title);
