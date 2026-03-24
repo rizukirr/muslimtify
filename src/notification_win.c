@@ -390,29 +390,21 @@ static BOOL build_executable_relative_path(const wchar_t *base_dir, const wchar_
   return written > 0 && (size_t)written < buffer_size;
 }
 
-static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
+static BOOL resolve_toast_icon_path_from_base(const wchar_t *base_dir, wchar_t *buffer,
+                                              size_t buffer_size) {
   static const wchar_t *const candidates[] = {
       L"..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
       L"..\\share\\pixmaps\\muslimtify.png",
       L"..\\assets\\muslimtify.png",
       L"assets\\muslimtify.png",
-      L"..\\..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
-      L"..\\..\\share\\pixmaps\\muslimtify.png",
-      L"..\\..\\assets\\muslimtify.png",
-      L"..\\..\\..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
-      L"..\\..\\..\\share\\pixmaps\\muslimtify.png",
-      L"..\\..\\..\\assets\\muslimtify.png",
   };
-  wchar_t base_dir[WINDOWS_PATH_MAX];
   wchar_t candidate_path[WINDOWS_PATH_MAX];
   size_t i;
 
-  if (!buffer || buffer_size == 0)
+  if (!base_dir || base_dir[0] == L'\0' || !buffer || buffer_size == 0)
     return FALSE;
 
   buffer[0] = L'\0';
-  if (!get_executable_dir(base_dir, sizeof(base_dir) / sizeof(base_dir[0])))
-    return FALSE;
 
   for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
     if (!build_executable_relative_path(base_dir, candidates[i], candidate_path,
@@ -431,6 +423,22 @@ static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
     buffer[0] = L'\0';
   return FALSE;
 }
+
+static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
+  wchar_t base_dir[WINDOWS_PATH_MAX];
+
+  if (!get_executable_dir(base_dir, sizeof(base_dir) / sizeof(base_dir[0])))
+    return FALSE;
+
+  return resolve_toast_icon_path_from_base(base_dir, buffer, buffer_size);
+}
+
+#ifdef MUSLIMTIFY_NOTIFICATION_WIN_TEST
+BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
+                                                       size_t buffer_size) {
+  return resolve_toast_icon_path_from_base(base_dir, buffer, buffer_size);
+}
+#endif
 
 static BOOL append_wide_segment(wchar_t **buffer, size_t *len, size_t *cap,
                                 const wchar_t *segment) {
