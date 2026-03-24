@@ -104,16 +104,23 @@ function Remove-ScheduledTaskDirect {
 
   Write-Host 'Removing scheduled task'
   try {
-    & schtasks.exe /delete /tn $Name /f *> $null
+    $TaskOutput = & schtasks.exe /delete /tn $Name /f 2>&1
     if ($LASTEXITCODE -eq 0) {
       Write-Host 'Scheduled task removed'
       $Summary.Add("scheduled task '$Name': removed")
       return $true
-    } else {
-      Mark-Failure "Scheduled task removal failed (exit code $LASTEXITCODE)"
-      $Summary.Add("scheduled task '$Name': skipped (removal failed)")
-      return $false
+    } elseif ($LASTEXITCODE -eq 1) {
+      $TaskOutputText = ($TaskOutput | Out-String).Trim()
+      if ($TaskOutputText -match 'cannot find the file specified|cannot find the task specified|not found') {
+        Write-Host 'Scheduled task already missing'
+        $Summary.Add("scheduled task '$Name': skipped (already missing)")
+        return $true
+      }
     }
+
+    Mark-Failure "Scheduled task removal failed (exit code $LASTEXITCODE)"
+    $Summary.Add("scheduled task '$Name': skipped (removal failed)")
+    return $false
   } catch {
     Mark-Failure "Scheduled task removal failed: $($_.Exception.Message)"
     $Summary.Add("scheduled task '$Name': skipped (removal failed)")
