@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "notification.h"
 #include "platform.h"
 #include <libnotify/notify.h>
