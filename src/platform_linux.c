@@ -101,6 +101,14 @@ const char *platform_exe_dir(void) {
   return exe_dir_buf;
 }
 
+void platform_reset_cached_paths(void) {
+  config_dir_buf[0] = '\0';
+  cache_dir_buf[0] = '\0';
+  home_dir_buf[0] = '\0';
+  exe_path_buf[0] = '\0';
+  exe_dir_buf[0] = '\0';
+}
+
 int platform_mkdir_p(const char *path) {
   char tmp[PLATFORM_PATH_MAX];
   snprintf(tmp, sizeof(tmp), "%s", path);
