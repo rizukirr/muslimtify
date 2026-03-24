@@ -176,6 +176,15 @@ if(BUILD_TESTING)
         )
         muslimtify_set_target_defaults(test_cmd_daemon_win)
         add_test(NAME cmd_daemon_win COMMAND test_cmd_daemon_win)
+
+        add_executable(test_notification_win
+            tests/test_notification_win.c
+            src/notification_win.c
+        )
+        muslimtify_set_target_defaults(test_notification_win)
+        target_compile_definitions(test_notification_win PRIVATE MUSLIMTIFY_NOTIFICATION_WIN_TEST)
+        target_link_libraries(test_notification_win ole32 runtimeobject)
+        add_test(NAME notification_win COMMAND test_notification_win)
     endif()
 endif()
 

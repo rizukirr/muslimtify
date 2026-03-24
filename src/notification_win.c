@@ -267,6 +267,8 @@ typedef struct {
 
 static NotifyState g_state = {0};
 
+#define WINDOWS_PATH_MAX 32768
+
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 
 /* Convert UTF-8 string to UTF-16. Caller must free() the result. */
@@ -343,6 +345,228 @@ static wchar_t *xml_escape(const wchar_t *src) {
 }
 
 /* Create HSTRING from static wide string (no allocation — reference only) */
+static BOOL wide_file_exists(const wchar_t *path) {
+  DWORD attrs;
+
+  if (!path || path[0] == L'\0')
+    return FALSE;
+
+  attrs = GetFileAttributesW(path);
+  return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+}
+
+static BOOL get_executable_dir(wchar_t *buffer, size_t buffer_size) {
+  wchar_t exe_path[WINDOWS_PATH_MAX];
+  DWORD len;
+  int written;
+  wchar_t *last_sep;
+
+  if (!buffer || buffer_size == 0)
+    return FALSE;
+
+  len = GetModuleFileNameW(NULL, exe_path, WINDOWS_PATH_MAX);
+  if (len == 0 || len >= WINDOWS_PATH_MAX)
+    return FALSE;
+
+  last_sep = wcsrchr(exe_path, L'\\');
+  if (!last_sep)
+    last_sep = wcsrchr(exe_path, L'/');
+  if (!last_sep)
+    return FALSE;
+
+  *last_sep = L'\0';
+  written = swprintf(buffer, buffer_size, L"%ls", exe_path);
+  return written > 0 && (size_t)written < buffer_size;
+}
+
+static BOOL build_executable_relative_path(const wchar_t *base_dir, const wchar_t *relative,
+                                           wchar_t *buffer, size_t buffer_size) {
+  int written;
+
+  if (!base_dir || !relative || !buffer || buffer_size == 0 || base_dir[0] == L'\0')
+    return FALSE;
+
+  written = swprintf(buffer, buffer_size, L"%ls\\%ls", base_dir, relative);
+  return written > 0 && (size_t)written < buffer_size;
+}
+
+static BOOL resolve_toast_icon_path_from_base(const wchar_t *base_dir, wchar_t *buffer,
+                                              size_t buffer_size) {
+  static const wchar_t *const candidates[] = {
+      L"..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
+      L"..\\share\\pixmaps\\muslimtify.png",
+      L"..\\assets\\muslimtify.png",
+      L"assets\\muslimtify.png",
+      L"..\\..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
+      L"..\\..\\share\\pixmaps\\muslimtify.png",
+      L"..\\..\\assets\\muslimtify.png",
+      L"..\\..\\..\\share\\icons\\hicolor\\128x128\\apps\\muslimtify.png",
+      L"..\\..\\..\\share\\pixmaps\\muslimtify.png",
+      L"..\\..\\..\\assets\\muslimtify.png",
+  };
+  wchar_t candidate_path[WINDOWS_PATH_MAX];
+  size_t i;
+
+  if (!base_dir || base_dir[0] == L'\0' || !buffer || buffer_size == 0)
+    return FALSE;
+
+  buffer[0] = L'\0';
+
+  for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+    if (!build_executable_relative_path(base_dir, candidates[i], candidate_path,
+                                        sizeof(candidate_path) / sizeof(candidate_path[0]))) {
+      continue;
+    }
+    if (wide_file_exists(candidate_path)) {
+      if (swprintf(buffer, buffer_size, L"%ls", candidate_path) > 0)
+        return TRUE;
+      buffer[0] = L'\0';
+      return FALSE;
+    }
+  }
+
+  if (buffer_size > 0)
+    buffer[0] = L'\0';
+  return FALSE;
+}
+
+static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
+  wchar_t base_dir[WINDOWS_PATH_MAX];
+
+  if (!get_executable_dir(base_dir, sizeof(base_dir) / sizeof(base_dir[0])))
+    return FALSE;
+
+  return resolve_toast_icon_path_from_base(base_dir, buffer, buffer_size);
+}
+
+static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
+                                BOOL use_reminder_scenario);
+
+#ifdef MUSLIMTIFY_NOTIFICATION_WIN_TEST
+BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
+                                                       size_t buffer_size) {
+  return resolve_toast_icon_path_from_base(base_dir, buffer, buffer_size);
+}
+
+wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, const wchar_t *wtitle,
+                                                   const wchar_t *wmsg,
+                                                   BOOL use_reminder_scenario) {
+  wchar_t icon_path[WINDOWS_PATH_MAX];
+  wchar_t *wicon = NULL;
+  wchar_t *escaped_title = NULL;
+  wchar_t *escaped_message = NULL;
+  wchar_t *xml = NULL;
+
+  if (!wtitle || !wmsg)
+    return NULL;
+
+  escaped_title = xml_escape(wtitle);
+  escaped_message = xml_escape(wmsg);
+  if (!escaped_title || !escaped_message)
+    goto fail;
+
+  if (base_dir && resolve_toast_icon_path_from_base(base_dir, icon_path,
+                                                    sizeof(icon_path) / sizeof(icon_path[0]))) {
+    wicon = xml_escape(icon_path);
+    if (!wicon)
+      goto fail;
+  }
+
+  xml = build_toast_xml(escaped_title, escaped_message, wicon, use_reminder_scenario);
+
+fail:
+  free(escaped_title);
+  free(escaped_message);
+  free(wicon);
+  return xml;
+}
+#endif
+
+static BOOL append_wide_segment(wchar_t **buffer, size_t *len, size_t *cap,
+                                const wchar_t *segment) {
+  size_t add_len;
+  size_t required;
+  size_t new_cap;
+  wchar_t *tmp;
+
+  if (!buffer || !len || !cap || !segment)
+    return FALSE;
+
+  add_len = wcslen(segment);
+  required = *len + add_len + 1;
+  if (required > *cap) {
+    new_cap = (*cap == 0) ? 256 : *cap;
+    while (new_cap < required) {
+      size_t next_cap = new_cap * 2;
+      if (next_cap <= new_cap)
+        return FALSE;
+      new_cap = next_cap;
+    }
+
+    tmp = (wchar_t *)realloc(*buffer, new_cap * sizeof(wchar_t));
+    if (!tmp)
+      return FALSE;
+    *buffer = tmp;
+    *cap = new_cap;
+  }
+
+  wmemcpy(*buffer + *len, segment, add_len);
+  *len += add_len;
+  (*buffer)[*len] = L'\0';
+  return TRUE;
+}
+
+static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
+                                BOOL use_reminder_scenario) {
+  wchar_t *xml = NULL;
+  size_t xml_len = 0;
+  size_t xml_cap = 0;
+
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                           use_reminder_scenario ? L"<toast scenario=\"reminder\" duration=\"short\">"
+                                                 : L"<toast duration=\"short\">")) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                           L"<visual><binding template=\"ToastGeneric\">")) {
+    goto fail;
+  }
+  if (wicon) {
+    if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                             L"<image placement=\"appLogoOverride\" src=\"")) {
+      goto fail;
+    }
+    if (!append_wide_segment(&xml, &xml_len, &xml_cap, wicon)) {
+      goto fail;
+    }
+    if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"\"/>")) {
+      goto fail;
+    }
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"<text>")) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, wtitle)) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"</text><text>")) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, wmsg)) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
+                           L"</text></binding></visual></toast>")) {
+    goto fail;
+  }
+
+  return xml;
+
+fail:
+  free(xml);
+  return NULL;
+}
+
 static HRESULT make_hstring_ref(const WCHAR *str, HSTRING_HEADER *header, HSTRING *hstr) {
   return WindowsCreateStringReference(str, (UINT32)wcslen(str), header, hstr);
 }
@@ -408,8 +632,8 @@ static void send_toast_xml(const wchar_t *xml) {
   toast->lpVtbl->Release(toast);
 }
 
-/* Build toast XML from title/message with optional scenario attribute */
-static void send_notification(const char *title, const char *message, const char *scenario) {
+/* Build toast XML from title/message with optional reminder scenario and icon */
+static void send_notification(const char *title, const char *message, BOOL use_reminder_scenario) {
   if (!g_state.initialized)
     return;
   if (!title || !message)
@@ -428,33 +652,23 @@ static void send_notification(const char *title, const char *message, const char
     return;
   }
 
-  /* Build toast XML */
-  wchar_t xml[1024];
-  if (scenario) {
-    wchar_t *wscenario = utf8_to_utf16(scenario);
-    _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                 L"<toast scenario=\"%ls\" duration=\"short\">"
-                 L"<visual><binding template=\"ToastGeneric\">"
-                 L"<text>%ls</text>"
-                 L"<text>%ls</text>"
-                 L"</binding></visual>"
-                 L"</toast>",
-                 wscenario, wtitle, wmsg);
-    free(wscenario);
-  } else {
-    _snwprintf_s(xml, sizeof(xml) / sizeof(xml[0]), _TRUNCATE,
-                 L"<toast duration=\"short\">"
-                 L"<visual><binding template=\"ToastGeneric\">"
-                 L"<text>%ls</text>"
-                 L"<text>%ls</text>"
-                 L"</binding></visual>"
-                 L"</toast>",
-                 wtitle, wmsg);
+  wchar_t icon_path[WINDOWS_PATH_MAX];
+  wchar_t *wicon = NULL;
+  if (resolve_toast_icon_path(icon_path, sizeof(icon_path) / sizeof(icon_path[0]))) {
+    wicon = xml_escape(icon_path);
   }
+
+  /* Build toast XML */
+  wchar_t *xml = build_toast_xml(wtitle, wmsg, wicon, use_reminder_scenario);
   free(wtitle);
   free(wmsg);
+  free(wicon);
+
+  if (!xml)
+    return;
 
   send_toast_xml(xml);
+  free(xml);
 }
 
 /* ── API implementation ───────────────────────────────────────────────────── */
@@ -524,7 +738,15 @@ fail:
 }
 
 void notify_send(const char *title, const char *message) {
-  send_notification(title, message, NULL);
+  send_notification(title, message, FALSE);
+}
+
+static BOOL should_use_reminder_scenario(int minutes_before, const char *urgency_str) {
+  if (minutes_before > 0)
+    return FALSE;
+  if (!urgency_str || strcmp(urgency_str, "critical") == 0)
+    return TRUE;
+  return FALSE;
 }
 
 void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
@@ -542,13 +764,8 @@ void notify_prayer(const char *prayer_name, const char *time_str, int minutes_be
                 prayer_name, minutes_before, time_str);
   }
 
-  /* Map urgency: critical -> scenario="reminder", normal/low -> default toast */
-  const char *scenario = NULL;
-  if (!urgency_str || strcmp(urgency_str, "critical") == 0) {
-    scenario = "reminder";
-  }
-
-  send_notification(title, message, scenario);
+  /* Exact prayer notifications keep the reminder scenario; reminders stay normal. */
+  send_notification(title, message, should_use_reminder_scenario(minutes_before, urgency_str));
 }
 
 void notify_cleanup(void) {
