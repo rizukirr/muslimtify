@@ -379,19 +379,48 @@ static BOOL get_executable_dir(wchar_t *buffer, size_t buffer_size) {
   return written > 0 && (size_t)written < buffer_size;
 }
 
-static BOOL build_executable_relative_path(const wchar_t *relative, wchar_t *buffer,
-                                           size_t buffer_size) {
-  wchar_t exe_dir[WINDOWS_PATH_MAX];
+static BOOL build_executable_relative_path(const wchar_t *base_dir, const wchar_t *relative,
+                                           wchar_t *buffer, size_t buffer_size) {
   int written;
 
-  if (!relative || !buffer || buffer_size == 0)
+  if (!base_dir || !relative || !buffer || buffer_size == 0 || base_dir[0] == L'\0')
     return FALSE;
 
-  if (!get_executable_dir(exe_dir, sizeof(exe_dir) / sizeof(exe_dir[0])))
-    return FALSE;
-
-  written = swprintf(buffer, buffer_size, L"%ls\\%ls", exe_dir, relative);
+  written = swprintf(buffer, buffer_size, L"%ls\\%ls", base_dir, relative);
   return written > 0 && (size_t)written < buffer_size;
+}
+
+static BOOL trim_to_parent_dir(wchar_t *path) {
+  wchar_t *last_sep;
+  size_t len;
+
+  if (!path || path[0] == L'\0')
+    return FALSE;
+
+  len = wcslen(path);
+  while (len > 0 && (path[len - 1] == L'\\' || path[len - 1] == L'/')) {
+    path[len - 1] = L'\0';
+    len--;
+  }
+  if (len == 0)
+    return FALSE;
+
+  if (len == 3 && path[1] == L':' && path[2] == L'\\')
+    return FALSE;
+
+  last_sep = wcsrchr(path, L'\\');
+  if (!last_sep)
+    last_sep = wcsrchr(path, L'/');
+  if (!last_sep)
+    return FALSE;
+
+  if (last_sep == path + 2 && path[1] == L':') {
+    path[3] = L'\0';
+    return FALSE;
+  }
+
+  *last_sep = L'\0';
+  return TRUE;
 }
 
 static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
@@ -401,20 +430,35 @@ static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
       L"..\\assets\\muslimtify.png",
       L"assets\\muslimtify.png",
   };
+  wchar_t base_dir[WINDOWS_PATH_MAX];
+  wchar_t candidate_path[WINDOWS_PATH_MAX];
   size_t i;
 
   if (!buffer || buffer_size == 0)
     return FALSE;
 
   buffer[0] = L'\0';
-  for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
-    if (!build_executable_relative_path(candidates[i], buffer, buffer_size))
-      continue;
-    if (wide_file_exists(buffer))
-      return TRUE;
-  }
+  if (!get_executable_dir(base_dir, sizeof(base_dir) / sizeof(base_dir[0])))
+    return FALSE;
 
-  buffer[0] = L'\0';
+  do {
+    for (i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+      if (!build_executable_relative_path(base_dir, candidates[i], candidate_path,
+                                          sizeof(candidate_path) / sizeof(candidate_path[0]))) {
+        continue;
+      }
+      if (wide_file_exists(candidate_path)) {
+        if (swprintf(buffer, buffer_size, L"%ls", candidate_path) > 0)
+          return TRUE;
+        buffer[0] = L'\0';
+        return FALSE;
+      }
+    }
+  } while (trim_to_parent_dir(base_dir));
+
+  if (buffer_size > 0) {
+    buffer[0] = L'\0';
+  }
   return FALSE;
 }
 
