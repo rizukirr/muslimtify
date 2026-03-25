@@ -32,6 +32,7 @@ int handle_disable(int argc, char **argv);
 int handle_list(int argc, char **argv);
 int handle_reminder(int argc, char **argv);
 int handle_daemon(int argc, char **argv);
+int handle_notification(int argc, char **argv);
 int handle_version(int argc, char **argv);
 int handle_help(int argc, char **argv);
 

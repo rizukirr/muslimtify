@@ -162,6 +162,85 @@ if ($LASTEXITCODE -ne 0) {
   throw "muslimtify.exe daemon install failed (exit code $LASTEXITCODE)."
 }
 
+Write-Host 'Creating Start Menu shortcut for toast notifications'
+$StartMenuDir = Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs'
+$ShortcutPath = Join-Path $StartMenuDir 'Muslimtify.lnk'
+
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+[ComImport]
+[Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IPropertyStore {
+    int GetCount(out uint cProps);
+    int GetAt(uint iProp, out PropertyKey pkey);
+    int GetValue(ref PropertyKey key, out PropVariant pv);
+    int SetValue(ref PropertyKey key, ref PropVariant pv);
+    int Commit();
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+struct PropertyKey {
+    public Guid fmtid;
+    public uint pid;
+    public PropertyKey(Guid fmtid, uint pid) { this.fmtid = fmtid; this.pid = pid; }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+struct PropVariant {
+    [FieldOffset(0)] public ushort vt;
+    [FieldOffset(8)] public IntPtr pszVal;
+
+    public static PropVariant FromString(string val) {
+        var pv = new PropVariant();
+        pv.vt = 31; // VT_LPWSTR
+        pv.pszVal = Marshal.StringToCoTaskMemUni(val);
+        return pv;
+    }
+}
+
+public static class ShortcutHelper {
+    [DllImport("shell32.dll", PreserveSig = false)]
+    private static extern void SHGetPropertyStoreFromParsingName(
+        [MarshalAs(UnmanagedType.LPWStr)] string pszPath,
+        IntPtr pbc, int flags,
+        [MarshalAs(UnmanagedType.LPStruct)] Guid riid,
+        [MarshalAs(UnmanagedType.Interface)] out IPropertyStore ppv);
+
+    public static void SetAppUserModelId(string shortcutPath, string aumid) {
+        // PKEY_AppUserModel_ID = {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}, 5
+        var key = new PropertyKey(
+            new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), 5);
+        var iid = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+        IPropertyStore store;
+        // GPS_READWRITE = 2
+        SHGetPropertyStoreFromParsingName(shortcutPath, IntPtr.Zero, 2, iid, out store);
+        var pv = PropVariant.FromString(aumid);
+        store.SetValue(ref key, ref pv);
+        store.Commit();
+        Marshal.FinalReleaseComObject(store);
+    }
+}
+'@
+
+$WshShell = New-Object -ComObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut($ShortcutPath)
+$Shortcut.TargetPath = $MuslimtifyExe
+$Shortcut.Description = 'Prayer Time Notification Daemon'
+$IcoPath = Join-Path $InstallPrefix 'share\icons\muslimtify.ico'
+if (Test-Path $IcoPath) {
+  $Shortcut.IconLocation = "$IcoPath,0"
+}
+$Shortcut.Save()
+[System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($Shortcut) | Out-Null
+[System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($WshShell) | Out-Null
+
+[ShortcutHelper]::SetAppUserModelId($ShortcutPath, 'Muslimtify')
+Write-Host "Start Menu shortcut created: $ShortcutPath"
+
 $PathUpdateStatus = 'unknown'
 $PathUpdateFailed = $false
 try {
