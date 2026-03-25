@@ -254,8 +254,7 @@ ROAPI void WINAPI RoUninitialize(void);
 
 /* ── AUMID for unpackaged app ─────────────────────────────────────────────── */
 
-static const WCHAR MUSLIMTIFY_AUMID[] = L"{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}"
-                                        L"\\WindowsPowerShell\\v1.0\\powershell.exe";
+static const WCHAR MUSLIMTIFY_AUMID[] = L"Muslimtify";
 
 /* ── File-static state ────────────────────────────────────────────────────── */
 
@@ -440,7 +439,7 @@ static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
 }
 
 static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
-                                BOOL use_reminder_scenario);
+                                const char *urgency);
 
 #ifdef MUSLIMTIFY_NOTIFICATION_WIN_TEST
 BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
@@ -449,8 +448,7 @@ BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, 
 }
 
 wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, const wchar_t *wtitle,
-                                                   const wchar_t *wmsg,
-                                                   BOOL use_reminder_scenario) {
+                                                   const wchar_t *wmsg, const char *urgency) {
   wchar_t icon_path[WINDOWS_PATH_MAX];
   wchar_t *wicon = NULL;
   wchar_t *escaped_title = NULL;
@@ -472,7 +470,7 @@ wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, cons
       goto fail;
   }
 
-  xml = build_toast_xml(escaped_title, escaped_message, wicon, use_reminder_scenario);
+  xml = build_toast_xml(escaped_title, escaped_message, wicon, urgency);
 
 fail:
   free(escaped_title);
@@ -516,16 +514,21 @@ static BOOL append_wide_segment(wchar_t **buffer, size_t *len, size_t *cap,
   return TRUE;
 }
 
+static const wchar_t *urgency_to_toast_open(const char *urgency) {
+  if (urgency && strcmp(urgency, "critical") == 0)
+    return L"<toast scenario=\"urgent\" duration=\"long\">";
+  if (urgency && strcmp(urgency, "low") == 0)
+    return L"<toast scenario=\"reminder\" duration=\"long\">";
+  return L"<toast duration=\"long\">";
+}
+
 static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
-                                BOOL use_reminder_scenario) {
+                                const char *urgency) {
   wchar_t *xml = NULL;
   size_t xml_len = 0;
   size_t xml_cap = 0;
 
-  if (!append_wide_segment(&xml, &xml_len, &xml_cap,
-                           use_reminder_scenario
-                               ? L"<toast scenario=\"reminder\" duration=\"short\">"
-                               : L"<toast duration=\"short\">")) {
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, urgency_to_toast_open(urgency))) {
     goto fail;
   }
   if (!append_wide_segment(&xml, &xml_len, &xml_cap,
@@ -633,7 +636,7 @@ static void send_toast_xml(const wchar_t *xml) {
 }
 
 /* Build toast XML from title/message with optional reminder scenario and icon */
-static void send_notification(const char *title, const char *message, BOOL use_reminder_scenario) {
+static void send_notification(const char *title, const char *message, const char *urgency) {
   if (!g_state.initialized)
     return;
   if (!title || !message)
@@ -659,7 +662,7 @@ static void send_notification(const char *title, const char *message, BOOL use_r
   }
 
   /* Build toast XML */
-  wchar_t *xml = build_toast_xml(wtitle, wmsg, wicon, use_reminder_scenario);
+  wchar_t *xml = build_toast_xml(wtitle, wmsg, wicon, urgency);
   free(wtitle);
   free(wmsg);
   free(wicon);
@@ -738,15 +741,7 @@ fail:
 }
 
 void notify_send(const char *title, const char *message) {
-  send_notification(title, message, FALSE);
-}
-
-static BOOL should_use_reminder_scenario(int minutes_before, const char *urgency_str) {
-  if (minutes_before > 0)
-    return FALSE;
-  if (!urgency_str || strcmp(urgency_str, "critical") == 0)
-    return TRUE;
-  return FALSE;
+  send_notification(title, message, "normal");
 }
 
 void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
@@ -764,8 +759,7 @@ void notify_prayer(const char *prayer_name, const char *time_str, int minutes_be
                 prayer_name, minutes_before, time_str);
   }
 
-  /* Exact prayer notifications keep the reminder scenario; reminders stay normal. */
-  send_notification(title, message, should_use_reminder_scenario(minutes_before, urgency_str));
+  send_notification(title, message, urgency_str);
 }
 
 void notify_cleanup(void) {

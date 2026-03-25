@@ -309,6 +309,10 @@ if ($HadErrors) {
 
 Write-Target 'PATH target' $ExpectedInstallBinDir
 Remove-ScheduledTask $TaskName $MuslimtifyExe
+
+$ShortcutPath = Join-Path (Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs') 'Muslimtify.lnk'
+Remove-PathIfPresent 'Start Menu shortcut' $ShortcutPath 'shortcut removed' 'shortcut missing'
+
 Remove-MuslimtifyFromUserPath $ExpectedInstallBinDir $ExpectedInstallBinDir
 Remove-PathIfPresent 'install prefix' $InstallPrefix 'install prefix removed' 'install prefix missing'
 Remove-PathIfPresent 'config directory' $ConfigDir 'config directory removed' 'config directory missing'

@@ -4,37 +4,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Muslimtify is a minimalist prayer time notification daemon for Linux and Windows desktops, written in C99. It calculates Islamic prayer times using the Kemenag (Indonesian Ministry of Religious Affairs) astronomical method and sends desktop notifications via libnotify (Linux) or WinRT toast notifications (Windows). The astronomical method is documented in `docs/KEMENAG_METHOD.md`.
+Muslimtify is a minimalist prayer time notification daemon for Linux and Windows desktops, written in C99. It calculates Islamic prayer times using the Kemenag (Indonesian Ministry of Religious Affairs) astronomical method and sends desktop notifications via libnotify (Linux) or WinRT toast notifications (Windows). Runs as a systemd user timer (Linux) or a hidden-window background process (Windows) that checks every minute.
 
 ## Build & Test
 
 ```bash
-# Configure (Debug enables AddressSanitizer + UBSan)
+# Linux — configure (Debug enables AddressSanitizer + UBSan on GCC/Clang)
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-# Windows
-cmake -S . -B build
-cmake --build build --config Release
-
-# Build (Linux)
 cmake --build build -j$(nproc)
 
+# Windows — MSVC multi-config generator
+cmake -B build
+cmake --build build --config Release
+
 # Run all tests
-ctest --test-dir build --output-on-failure
+cd build && ctest --output-on-failure          # Linux
+ctest --test-dir build --output-on-failure -C Release  # Windows
 
-# Run a single test (CTest names: cli, prayertimes, json, config, cache,
-# prayer_checker, platform, string_util, cmd_daemon_win, notification_win)
-ctest --test-dir build -R prayertimes --output-on-failure
+# Run a single test
+cd build && ctest -R prayertimes --output-on-failure
 
-# Format code
-clang-format -i src/*.c src/*.h include/*.h
+# Format code (CI enforces this on both src/ and tests/)
+clang-format -i src/*.c src/*.h include/*.h tests/*.c
 ```
+
+## CI
+
+GitHub Actions (`ci.yml`) runs on push/PR to `main`:
+- **lint:** clang-format `--dry-run --Werror` on all source files, plus informational clang-tidy
+- **build-and-test (Linux):** matrix of GCC × Clang × Debug × Release
+- **build-windows:** MSVC Release build + tests
 
 ## Dependencies
 
 **Linux:** CMake 3.22+, pkg-config, libnotify, libcurl
-**Windows:** CMake 3.22+, MSVC, ole32, runtimeobject (WinRT); libcurl vendored via FetchContent
+**Windows:** CMake 3.22+, MSVC, ole32, runtimeobject (WinRT); libcurl is fetched automatically via FetchContent
 
 ## Architecture
 
@@ -44,34 +48,40 @@ clang-format -i src/*.c src/*.h include/*.h
 
 **Core modules:**
 - `src/prayertimes.h` — Header-only Kemenag prayer time calculator (pure astronomical formulas)
-- `src/json.h` — Header-only JSON parser (arena-based)
-- `src/config.c` — JSON config management (`~/.config/muslimtify/config.json`)
+- `src/json.h` — Header-only JSON parser (arena-based, no malloc per token)
+- `src/config.c` — JSON config management (`~/.config/muslimtify/config.json` on Linux, `%APPDATA%\muslimtify\config.json` on Windows)
+- `src/cache.c` — Daily prayer time cache (`~/.cache/muslimtify` / `%LOCALAPPDATA%\muslimtify`)
 - `src/display.c` — Unicode table rendering, colored terminal output, JSON formatting
-- `src/prayer_checker.c` — Matches current time against prayer times + reminders
-- `src/cache.c` — Caching of location and prayer time results
-- `src/check_cycle.c` — Prevents duplicate notifications within the same minute
+- `src/prayer_checker.c` / `src/check_cycle.c` — Matches current time against prayer times + reminders
 - `src/location.c` — IP-based geolocation via libcurl (ipinfo.io)
-- `src/string_util.c` — String helpers (trim, compare)
+- `src/string_util.c` — Small string helpers
 
-**Platform-specific files** (selected at build time via CMake generator expressions):
-- Linux only: `src/notification.c`, `src/cmd_daemon.c`, `src/platform_linux.c`
-- Windows only: `src/notification_win.c`, `src/cmd_daemon_win.c`, `src/platform_win.c`
+**Platform-split sources** (CMake selects via generator expressions):
+- `src/notification.c` (Linux/libnotify) vs `src/notification_win.c` (Windows/WinRT toast)
+- `src/cmd_daemon.c` (Linux/systemd) vs `src/cmd_daemon_win.c` (Windows hidden-window loop)
+- `src/platform_linux.c` vs `src/platform_win.c` — path resolution, platform abstractions
+
+**Windows service:** `src/muslimtify_service_win.c` builds a separate `muslimtify-service` WIN32 GUI executable (no console window).
 
 **Commands** (each in `src/cmd_*.c`): show, check, next, config, location, enable/disable, reminder, daemon, list
 
 **Systemd integration:** `systemd/muslimtify.timer` triggers `muslimtify.service` (oneshot, runs `muslimtify check`) every minute.
 
+## Tests
+
+Tests use a custom pass/fail counter framework (no external test lib). Test availability varies by platform:
+
+- **Cross-platform:** `test_prayertimes`, `test_json`, `test_string_util`, `test_platform`
+- **Linux-only:** `test_cli`, `test_prayer_checker`, `test_config`, `test_cache`
+- **Windows-only:** `test_cmd_daemon_win`, `test_notification_win`
+
+`test_prayertimes.c` validates against reference CSV data with 1-3 minute tolerance.
+
 ## Code Standards
 
 - C99 standard, compiled with `-Wall -Wextra -Wpedantic -Wshadow -Wformat=2` (GCC/Clang) or `/W4` (MSVC)
-- clang-format (LLVM-based, 2-space indent, 100-char column limit, attach braces)
-- Functions: `snake_case`, prefixed by module name (e.g. `config_load`, `prayer_checker_next`)
-- Error handling: return enum status codes, not bools, when multiple failure modes exist
-- No VLAs; use fixed-size arrays or heap allocations
-- Use `const` for pointers you don't mutate; `size_t` for lengths/indices
-- Tests use a custom simple pass/fail counter framework (no external test lib)
-- `test_prayertimes.c` validates against reference CSV data with 1-3 minute tolerance
-- Linux-only tests: cli, prayer_checker, config, cache. Cross-platform: prayertimes, json, string_util, platform
+- clang-format (LLVM-based, 2-space indent, 100-char column limit; config in `.clang-format`)
+- New source files go in `src/` with a matching header in `include/`; add to the `muslimtify_lib` OBJECT library in `CMakeLists.txt`
 
 ## Commit Convention
 

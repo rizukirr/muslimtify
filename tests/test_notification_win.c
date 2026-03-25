@@ -15,7 +15,7 @@ static int failures = 0;
 BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
                                                        size_t buffer_size);
 wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, const wchar_t *wtitle,
-                                                   const wchar_t *wmsg, BOOL use_reminder_scenario);
+                                                   const wchar_t *wmsg, const char *urgency);
 
 static void report_result(const char *label, bool pass) {
   total++;
@@ -216,7 +216,7 @@ static void test_no_icon_fallback_behavior(void) {
   }
 
   xml = notification_win_build_toast_xml_for_test(exe_dir, L"Prayer Time: Isha",
-                                                  L"It's time for Isha prayer", TRUE);
+                                                  L"It's time for Isha prayer", "critical");
   report_result("caller still builds toast XML without an icon", xml != NULL);
   report_result("caller omits the image node when icon resolution fails",
                 xml != NULL && wcsstr(xml, L"<image ") == NULL);

@@ -79,6 +79,7 @@ add_library(muslimtify_lib OBJECT
     src/cmd_location.c
     src/cmd_prayer.c
     $<IF:$<BOOL:${WIN32}>,src/cmd_daemon_win.c,src/cmd_daemon.c>
+    src/cmd_notification.c
     src/config.c
     src/cache.c
     src/location.c
@@ -198,6 +199,10 @@ install(FILES assets/muslimtify.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/128x128/apps/)
 install(FILES assets/muslimtify.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps/)
+if(WIN32)
+    install(FILES assets/muslimtify.ico
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/)
+endif()
 
 install(FILES systemd/muslimtify.service systemd/muslimtify.timer
     DESTINATION lib/systemd/user/)
