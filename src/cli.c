@@ -7,12 +7,22 @@
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 static const CommandEntry top_commands[] = {
-    {"show", handle_show},       {"check", handle_check},       {"next", handle_next},
-    {"config", handle_config},   {"location", handle_location}, {"enable", handle_enable},
-    {"disable", handle_disable}, {"list", handle_list},         {"reminder", handle_reminder},
-    {"daemon", handle_daemon},   {"notification", handle_notification},
-    {"version", handle_version},   {"--version", handle_version},
-    {"-v", handle_version},      {"help", handle_help},         {"--help", handle_help},
+    {"show", handle_show},
+    {"check", handle_check},
+    {"next", handle_next},
+    {"config", handle_config},
+    {"location", handle_location},
+    {"enable", handle_enable},
+    {"disable", handle_disable},
+    {"list", handle_list},
+    {"reminder", handle_reminder},
+    {"daemon", handle_daemon},
+    {"notification", handle_notification},
+    {"version", handle_version},
+    {"--version", handle_version},
+    {"-v", handle_version},
+    {"help", handle_help},
+    {"--help", handle_help},
     {"-h", handle_help},
 };
 
