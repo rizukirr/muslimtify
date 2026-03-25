@@ -1,5 +1,5 @@
 # AGENTS.md
-This playbook briefs autonomous agents working inside C:\Users\rizki\Projects\muslimtify.
+This playbook briefs autonomous agents working inside Muslimtify project.
 Always read the entire file before acting; updates frequently accompany specs in docs/.
 
 ## Canonical References
@@ -132,7 +132,7 @@ Always read the entire file before acting; updates frequently accompany specs in
 - Systemd timer triggers muslimtify check every minute (OnCalendar=*:*:00).
 
 ## Windows Guidance
-- configure: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+- configure: cmake -S . -B build
 - build: cmake --build build --config Release
 - Optional: supply vcpkg toolchain for curl deps (zlib, nghttp2, libidn2, libpsl, libssh2).
 - Executables land under build/bin/Release; run muslimtify.exe directly via cmd or PowerShell.

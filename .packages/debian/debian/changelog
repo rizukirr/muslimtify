@@ -1,4 +1,4 @@
-muslimtify (0.1.6-1) unstable; urgency=medium
+muslimtify (0.2.0-1) unstable; urgency=medium
 
   * Fix the equation of time that was computed as (q / 15.0) - (RA / 15.0) without handling the 0°/360° wrap-around by Normalize the q - RA difference to [-180°, +180°] before converting to hours, so the wrap-around at the 0°/360° boundary is handled correctly.
 

@@ -44,6 +44,8 @@ GitHub Actions (`ci.yml`) runs on push/PR to `main`:
 
 **Entry flow:** `muslimtify.c` (init curl) → `cli.c` (command dispatch table) → `cmd_*.c` (handlers)
 
+**Headers:** `include/` contains public module headers; `src/` contains internal headers (`json.h`, `prayertimes.h`, `string_util.h` — header-only implementations).
+
 **Core modules:**
 - `src/prayertimes.h` — Header-only Kemenag prayer time calculator (pure astronomical formulas)
 - `src/json.h` — Header-only JSON parser (arena-based, no malloc per token)

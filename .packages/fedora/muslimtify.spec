@@ -1,5 +1,5 @@
 Name:           muslimtify
-Version:        0.1.6
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        A lightweight islamic prayer time notification daemon for Linux
 License:        MIT
