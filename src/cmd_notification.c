@@ -1,6 +1,7 @@
 #include "cli_internal.h"
 #include "location.h"
 #include "notification.h"
+#include "platform.h"
 #include "prayer_checker.h"
 #include <stdio.h>
 #include <time.h>
@@ -18,11 +19,9 @@ static int notification_test(int argc, char **argv) {
     return 1;
 
   time_t now = time(NULL);
-  struct tm *tm_now = localtime(&now);
-  if (!tm_now) {
-    fprintf(stderr, "Error: Failed to get current time\n");
-    return 1;
-  }
+  struct tm tm_buf;
+  platform_localtime(&now, &tm_buf);
+  struct tm *tm_now = &tm_buf;
 
   struct PrayerTimes times =
       calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,

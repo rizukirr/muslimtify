@@ -4,6 +4,7 @@
 #include "config.h"
 #include "location.h"
 #include "notification.h"
+#include "platform.h"
 #include "prayertimes.h"
 
 #include <stdbool.h>
@@ -24,11 +25,9 @@ int run_check_cycle(void) {
   }
 
   time_t now = time(NULL);
-  struct tm *tm_now = localtime(&now);
-  if (!tm_now) {
-    fprintf(stderr, "Error: Failed to get current time\n");
-    return 1;
-  }
+  struct tm tm_buf;
+  platform_localtime(&now, &tm_buf);
+  struct tm *tm_now = &tm_buf;
 
   int current_min = tm_now->tm_hour * 60 + tm_now->tm_min;
   char today[32];
