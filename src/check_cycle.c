@@ -3,8 +3,8 @@
 #include "cache.h"
 #include "config.h"
 #include "location.h"
-#include "platform.h"
 #include "notification.h"
+#include "platform.h"
 #include "prayertimes.h"
 
 #include <stdbool.h>
