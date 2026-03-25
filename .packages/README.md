@@ -1,14 +1,15 @@
 # Packaging Guide
 
 This directory contains packaging configurations for distributing muslimtify
-across three Linux distribution families. Each subdirectory targets a different
+across Linux distributions and Windows. Each subdirectory targets a different
 package manager and build service:
 
-| Directory | Target distros      | Package format | Build service       | User installs with |
+| Directory | Target platform     | Package format | Build service       | User installs with |
 |-----------|---------------------|----------------|---------------------|--------------------|
 | `aur/`    | Arch Linux, Manjaro | PKGBUILD       | AUR (user-built)    | `yay -S muslimtify` |
 | `debian/` | Ubuntu, Debian      | `.deb`         | Launchpad PPA       | `apt install muslimtify` |
 | `fedora/` | Fedora, RHEL, CentOS| `.rpm`         | Fedora COPR         | `dnf install muslimtify` |
+| `winget/` | Windows 10+         | Inno Setup     | GitHub Releases     | `winget install rizukirr.muslimtify` |
 
 ```
 .packages/
@@ -31,6 +32,9 @@ package manager and build service:
 ├── fedora/                 # Fedora (COPR)
 │   ├── muslimtify.spec     # RPM spec file — defines metadata, deps, build, file list
 │   └── upload-copr.sh      # Build SRPM and upload to Fedora COPR
+│
+├── winget/                  # Windows (winget / Inno Setup)
+│   └── muslimtify.iss      # Inno Setup script — builds the Windows installer
 │
 └── README.md               # This file
 ```
@@ -162,6 +166,7 @@ else in this guide depends on having these keys in place.
 | AUR          | SSH key registered on AUR (see above) | https://aur.archlinux.org/ |
 | Launchpad    | GPG key registered (see above) | https://launchpad.net/ |
 | Fedora COPR  | Fedora Account (FAS) + COPR API token | https://accounts.fedoraproject.org/ |
+| winget       | GitHub account + `wingetcreate` CLI | https://github.com/microsoft/winget-pkgs |
 
 ### Repository URLs
 
@@ -200,6 +205,7 @@ When you bump the version, these files **must** be updated:
 | 4 | `.packages/aur/.SRCINFO` | Regenerate with `makepkg --printsrcinfo > .SRCINFO` |
 | 5 | `.packages/debian/debian/changelog` | New entry at the **top** of the file |
 | 6 | `.packages/fedora/muslimtify.spec` | `Version: X.Y.Z`, reset `Release: 1%{?dist}`, new `%changelog` entry |
+| 7 | `.packages/winget/muslimtify.iss` | `#define MyAppVersion "X.Y.Z"` |
 
 ### Version flow
 
@@ -209,7 +215,7 @@ When you bump the version, these files **must** be updated:
 3. Commit everything
 4. Tag and push:   git tag vX.Y.Z && git push --tags
 5. Create GitHub release from the tag
-6. Upload to AUR, PPA, and COPR (see sections below)
+6. Upload to AUR, PPA, COPR, and winget (see sections below)
 ```
 
 > **Important:** The AUR and COPR source tarballs are downloaded from GitHub releases,
@@ -645,9 +651,252 @@ sudo dnf copr disable <YOUR_USERNAME>/muslimtify
 
 ---
 
+## Windows (winget / Inno Setup)
+
+### How it works
+
+The Windows installer is built with Inno Setup. The workflow is:
+
+1. Build the project with CMake and install to a staging directory
+2. Compile the Inno Setup script into a `muslimtify-X.Y.Z-setup.exe` installer
+3. Upload the installer to a GitHub release
+4. Submit a manifest to the `microsoft/winget-pkgs` repository via `wingetcreate`
+5. Microsoft reviews and merges the PR — the package becomes available via `winget install`
+
+The installer handles everything automatically:
+- Installs to `%LOCALAPPDATA%\Programs\Muslimtify` (per-user, no admin required)
+- Creates a Start Menu shortcut with AUMID (required for toast notifications)
+- Adds `bin\` to the user PATH
+- Registers the scheduled task via `muslimtify daemon install`
+- On uninstall: removes the scheduled task, PATH entry, shortcut, and cache
+
+**Key files:**
+
+- `muslimtify.iss` — Inno Setup script. Defines the installer sections:
+  - `[Setup]`: metadata, install location (`{localappdata}\Programs\Muslimtify`),
+    `PrivilegesRequired=lowest`
+  - `[Files]`: binaries, DLLs, icon from the staging directory
+  - `[Icons]`: Start Menu shortcut with `AppUserModelID` for toast notifications
+  - `[Registry]`: adds `{app}\bin` to user PATH
+  - `[Run]`: runs `muslimtify daemon install` post-install
+  - `[UninstallRun]`: runs `muslimtify daemon uninstall` before uninstall
+  - `[Code]`: Pascal script for PATH add/remove logic
+
+### Prerequisites
+
+1. **Inno Setup 6+** installed on Windows:
+
+   Download from https://jrsoftware.org/isdl.php
+
+2. **CMake + MSVC** (for building the project):
+
+   The project uses MSVC on Windows. Visual Studio Build Tools or full Visual Studio
+   with the C/C++ workload is required.
+
+3. **`wingetcreate`** (for submitting to winget):
+
+   ```powershell
+   winget install wingetcreate
+   ```
+
+4. **GitHub Personal Access Token** (for `wingetcreate` to create PRs):
+
+   Create a token at https://github.com/settings/tokens with `public_repo` scope.
+
+### Building the installer
+
+1. **Build the project and install to staging:**
+
+   ```powershell
+   cmake -B build
+   cmake --build build --config Release
+   cmake --install build --config Release --prefix installer/staging
+   ```
+
+   This produces:
+   ```
+   installer/staging/
+     bin/
+       muslimtify.exe
+       muslimtify-service.exe
+       *.dll              (runtime dependencies)
+     share/
+       icons/
+         muslimtify.ico
+   ```
+
+2. **Compile the Inno Setup installer:**
+
+   ```powershell
+   & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .packages\winget\muslimtify.iss
+   ```
+
+   Output: `dist\muslimtify-X.Y.Z-setup.exe`
+
+3. **Test the installer:**
+
+   ```powershell
+   # Interactive install
+   .\dist\muslimtify-X.Y.Z-setup.exe
+
+   # Silent install (how winget runs it)
+   .\dist\muslimtify-X.Y.Z-setup.exe /VERYSILENT /SUPPRESSMSGBOXES
+   ```
+
+   Verify:
+   - `muslimtify` is available in a new terminal
+   - Start Menu shortcut exists with the icon
+   - `muslimtify daemon status` shows the scheduled task
+   - Uninstall from Settings > Apps cleans everything up
+
+### First-time winget submission
+
+This is a one-time process to register the package in the winget repository.
+
+1. **Create a GitHub release** with the installer attached:
+
+   ```bash
+   git tag vX.Y.Z && git push --tags
+   ```
+
+   Then create a release at `https://github.com/<YOUR_USERNAME>/muslimtify/releases/new`,
+   upload `dist/muslimtify-X.Y.Z-setup.exe` as a release asset.
+
+2. **Generate and submit the winget manifest:**
+
+   ```powershell
+   wingetcreate new <INSTALLER_URL>
+   ```
+
+   Replace `<INSTALLER_URL>` with the direct download URL of the installer from the
+   GitHub release, e.g.:
+
+   ```
+   https://github.com/<YOUR_USERNAME>/muslimtify/releases/download/vX.Y.Z/muslimtify-X.Y.Z-setup.exe
+   ```
+
+   `wingetcreate` will prompt you for:
+
+   | Field | Value |
+   |-------|-------|
+   | Package identifier | `rizukirr.muslimtify` |
+   | Package version | `X.Y.Z` |
+   | Package locale | `en-US` |
+   | Publisher | `rizukirr` |
+   | Package name | `Muslimtify` |
+   | License | `MIT` |
+   | Short description | `Prayer time notification daemon for Windows` |
+   | Installer type | Should auto-detect as `inno` |
+
+   It will then ask to submit a PR — provide your GitHub token when prompted.
+
+3. **Wait for review:**
+
+   `wingetcreate` creates a PR to `microsoft/winget-pkgs`. Microsoft's validation bot
+   runs automated checks, then a human reviewer approves the PR. This typically takes
+   a few days.
+
+   Track your PR at: https://github.com/microsoft/winget-pkgs/pulls
+
+### Updating the winget package
+
+For subsequent releases, use `wingetcreate update`:
+
+```powershell
+wingetcreate update rizukirr.muslimtify `
+  --version X.Y.Z `
+  --urls <NEW_INSTALLER_URL> `
+  --submit `
+  --token <GITHUB_PAT>
+```
+
+This automatically creates a PR with the updated manifest.
+
+### Alternative: manual manifest submission
+
+If you prefer not to use `wingetcreate`, you can manually create a manifest and
+submit a PR to `microsoft/winget-pkgs`. The manifest consists of three YAML files
+in `manifests/r/rizukirr/muslimtify/X.Y.Z/`:
+
+**`rizukirr.muslimtify.installer.yaml`:**
+```yaml
+PackageIdentifier: rizukirr.muslimtify
+PackageVersion: X.Y.Z
+InstallerType: inno
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/<YOUR_USERNAME>/muslimtify/releases/download/vX.Y.Z/muslimtify-X.Y.Z-setup.exe
+    InstallerSha256: <SHA256_OF_INSTALLER>
+    InstallerSwitches:
+      Silent: /VERYSILENT /SUPPRESSMSGBOXES
+      SilentWithProgress: /SILENT
+ManifestType: installer
+ManifestVersion: 1.9.0
+```
+
+**`rizukirr.muslimtify.locale.en-US.yaml`:**
+```yaml
+PackageIdentifier: rizukirr.muslimtify
+PackageVersion: X.Y.Z
+PackageLocale: en-US
+Publisher: rizukirr
+PackageName: Muslimtify
+License: MIT
+ShortDescription: Prayer time notification daemon for Windows
+PackageUrl: https://github.com/<YOUR_USERNAME>/muslimtify
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0
+```
+
+**`rizukirr.muslimtify.yaml`:**
+```yaml
+PackageIdentifier: rizukirr.muslimtify
+PackageVersion: X.Y.Z
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.9.0
+```
+
+Generate the SHA256:
+```powershell
+(Get-FileHash .\dist\muslimtify-X.Y.Z-setup.exe -Algorithm SHA256).Hash
+```
+
+Fork `microsoft/winget-pkgs`, create the files under `manifests/r/rizukirr/muslimtify/X.Y.Z/`,
+and submit a PR.
+
+### winget update checklist
+
+```
+[ ] Update #define MyAppVersion in .packages/winget/muslimtify.iss
+[ ] Build project: cmake --build build --config Release
+[ ] Install to staging: cmake --install build --config Release --prefix installer/staging
+[ ] Compile installer: ISCC.exe .packages/winget/muslimtify.iss
+[ ] Test installer (interactive + silent)
+[ ] Create GitHub release, upload installer
+[ ] Submit manifest: wingetcreate update rizukirr.muslimtify --version X.Y.Z --urls <URL> --submit --token <PAT>
+[ ] Track PR: https://github.com/microsoft/winget-pkgs/pulls
+```
+
+### Troubleshooting
+
+- **`ISCC.exe` not found:** Install Inno Setup 6 from https://jrsoftware.org/isdl.php.
+  Default install path is `C:\Program Files (x86)\Inno Setup 6\`.
+- **Staging directory missing files:** Re-run `cmake --install build --config Release --prefix installer/staging`.
+  Make sure the build succeeded first.
+- **`wingetcreate` validation fails:** Check that the installer URL is a direct download
+  link (not a redirect to a HTML page). GitHub release asset URLs work.
+- **winget PR rejected:** Read the review comments. Common issues: missing required fields,
+  SHA256 mismatch, or installer URL not publicly accessible.
+- **Toast notifications don't work after install:** The Start Menu shortcut must have the
+  correct AUMID (`Muslimtify`). Verify the shortcut exists in
+  `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Muslimtify.lnk`.
+
+---
+
 ## Full Release Checklist
 
-Complete walkthrough for publishing a new version to all three platforms.
+Complete walkthrough for publishing a new version to all four platforms.
 
 ### 1. Prepare the release
 
@@ -657,6 +906,7 @@ Complete walkthrough for publishing a new version to all three platforms.
 [ ] Update .packages/aur/PKGBUILD (pkgver=X.Y.Z, pkgrel=1)
 [ ] Update .packages/debian/debian/changelog (new entry at top, date -R for timestamp)
 [ ] Update .packages/fedora/muslimtify.spec (Version, Release, %changelog)
+[ ] Update .packages/winget/muslimtify.iss (#define MyAppVersion "X.Y.Z")
 [ ] Commit all changes
 [ ] Tag and push: git tag vX.Y.Z && git push && git push --tags
 [ ] Create GitHub release from the tag at https://github.com/<YOUR_USERNAME>/muslimtify/releases/new
@@ -688,10 +938,23 @@ Complete walkthrough for publishing a new version to all three platforms.
 [ ] Verify: `https://copr.fedorainfracloud.org/coprs/<YOUR_USERNAME>/`muslimtify/builds/
 ```
 
-### 5. Post-release verification
+### 5. Publish to winget
 
 ```
-[ ] Arch:   yay -S muslimtify (or paru -S muslimtify)
-[ ] Ubuntu: sudo apt update && sudo apt install muslimtify
-[ ] Fedora: sudo dnf copr enable <YOUR_USERNAME>/muslimtify && sudo dnf install muslimtify
+[ ] Build installer: cmake --build build --config Release
+[ ] Install to staging: cmake --install build --config Release --prefix installer/staging
+[ ] Compile: ISCC.exe .packages/winget/muslimtify.iss
+[ ] Test installer locally (interactive + silent)
+[ ] Upload dist/muslimtify-X.Y.Z-setup.exe to the GitHub release
+[ ] Submit: wingetcreate update rizukirr.muslimtify --version X.Y.Z --urls <INSTALLER_URL> --submit --token <PAT>
+[ ] Track PR: https://github.com/microsoft/winget-pkgs/pulls
+```
+
+### 6. Post-release verification
+
+```
+[ ] Arch:    yay -S muslimtify (or paru -S muslimtify)
+[ ] Ubuntu:  sudo apt update && sudo apt install muslimtify
+[ ] Fedora:  sudo dnf copr enable <YOUR_USERNAME>/muslimtify && sudo dnf install muslimtify
+[ ] Windows: winget install rizukirr.muslimtify
 ```
