@@ -133,30 +133,43 @@ static double normalize_deg(double angle) {
 /* ── Method parameter table ─────────────────────────────────────────── */
 
 static const MethodParams METHOD_TABLE[CALC_COUNT] = {
-    [CALC_MWL] = {"mwl", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_MAKKAH] = {"makkah", 18.5, 0.0, 90, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_ISNA] = {"isna", 15.0, 15.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_EGYPT] = {"egypt", 19.5, 17.5, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_KARACHI] = {"karachi", 18.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_TEHRAN] = {"tehran", 17.7, 14.0, 0, 4.5, 0, 1, MIDNIGHT_JAFARI, 0},
-    [CALC_JAFARI] = {"jafari", 16.0, 14.0, 0, 4.0, 0, 1, MIDNIGHT_JAFARI, 0},
-    [CALC_TURKEY] = {"turkey", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_SINGAPORE] = {"singapore", 20.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_JAKIM] = {"jakim", 20.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_KEMENAG] = {"kemenag", 20.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 2},
-    [CALC_FRANCE] = {"france", 12.0, 12.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_RUSSIA] = {"russia", 16.0, 15.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_DUBAI] = {"dubai", 18.2, 18.2, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_QATAR] = {"qatar", 18.0, 0.0, 90, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_KUWAIT] = {"kuwait", 18.0, 17.5, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_JORDAN] = {"jordan", 18.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 5},
-    [CALC_GULF] = {"gulf", 19.5, 0.0, 90, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_TUNISIA] = {"tunisia", 18.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_ALGERIA] = {"algeria", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_MOROCCO] = {"morocco", 19.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_PORTUGAL] = {"portugal", 18.0, 0.0, 77, 0.0, 3, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_MOONSIGHTING] = {"moonsighting", 18.0, 18.0, 0, 0.0, 3, 1, MIDNIGHT_STANDARD, 0},
-    [CALC_CUSTOM] = {"custom", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_MWL] = {"Muslim World League", 18.0, 17.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_MAKKAH] = {"Umm al-Qura, Makkah", 18.5, 0, 90, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_ISNA] = {"ISNA", 15.0, 15.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_EGYPT] = {"Egyptian General Authority", 19.5, 17.5, 0, 0, 0, ASR_STANDARD,
+                    MIDNIGHT_STANDARD, 0},
+    [CALC_KARACHI] = {"Univ. Islamic Sciences, Karachi", 18.0, 18.0, 0, 0, 0, ASR_STANDARD,
+                      MIDNIGHT_STANDARD, 0},
+    [CALC_TEHRAN] = {"Inst. of Geophysics, Tehran", 17.7, 14.0, 0, 4.5, 0, ASR_STANDARD,
+                     MIDNIGHT_JAFARI, 0},
+    [CALC_JAFARI] = {"Shia Ithna-Ashari, Qum", 16.0, 14.0, 0, 4.0, 0, ASR_STANDARD, MIDNIGHT_JAFARI,
+                     0},
+    [CALC_TURKEY] = {"Diyanet, Turkey", 18.0, 17.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_SINGAPORE] = {"MUIS, Singapore", 20.0, 18.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_JAKIM] = {"JAKIM, Malaysia", 20.0, 18.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_KEMENAG] = {"KEMENAG, Indonesia", 20.0, 18.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD,
+                      2},
+    [CALC_FRANCE] = {"UOIF, France", 12.0, 12.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_RUSSIA] = {"Spiritual Admin., Russia", 16.0, 15.0, 0, 0, 0, ASR_STANDARD,
+                     MIDNIGHT_STANDARD, 0},
+    [CALC_DUBAI] = {"GAIAE, Dubai", 18.2, 18.2, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_QATAR] = {"Min. of Awqaf, Qatar", 18.0, 0, 90, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_KUWAIT] = {"Min. of Awqaf, Kuwait", 18.0, 17.5, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD,
+                     0},
+    [CALC_JORDAN] = {"Min. of Awqaf, Jordan", 18.0, 18.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD,
+                     5},
+    [CALC_GULF] = {"Gulf Region", 19.5, 0, 90, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
+    [CALC_TUNISIA] = {"Min. of Religious Affairs, Tunisia", 18.0, 18.0, 0, 0, 0, ASR_STANDARD,
+                      MIDNIGHT_STANDARD, 0},
+    [CALC_ALGERIA] = {"Min. of Religious Affairs, Algeria", 18.0, 17.0, 0, 0, 0, ASR_STANDARD,
+                      MIDNIGHT_STANDARD, 0},
+    [CALC_MOROCCO] = {"Min. of Habous, Morocco", 19.0, 17.0, 0, 0, 0, ASR_STANDARD,
+                      MIDNIGHT_STANDARD, 0},
+    [CALC_PORTUGAL] = {"Comunidade Islamica de Lisboa", 18.0, 0, 77, 0, 3, ASR_STANDARD,
+                       MIDNIGHT_STANDARD, 0},
+    [CALC_MOONSIGHTING] = {"Moonsighting Committee", 18.0, 18.0, 0, 0, 3, ASR_STANDARD,
+                           MIDNIGHT_STANDARD, 0},
+    [CALC_CUSTOM] = {"Custom", 18.0, 17.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
 };
 
 const MethodParams *method_params_get(CalcMethod method) {
@@ -211,9 +224,11 @@ CalcMethod method_from_string(const char *name) {
 }
 
 const char *method_to_string(CalcMethod method) {
-  if (method < 0 || method >= CALC_COUNT)
-    return "custom";
-  return METHOD_TABLE[method].name;
+  for (size_t i = 0; i < sizeof(METHOD_KEYS) / sizeof(METHOD_KEYS[0]); i++) {
+    if (METHOD_KEYS[i].method == method)
+      return METHOD_KEYS[i].key;
+  }
+  return "custom";
 }
 
 // Calculate Julian Day from a calendar date (simplified)

@@ -79,6 +79,7 @@ add_library(muslimtify_lib OBJECT
     src/cmd_location.c
     src/cmd_prayer.c
     $<IF:$<BOOL:${WIN32}>,src/cmd_daemon_win.c,src/cmd_daemon.c>
+    src/cmd_method.c
     src/cmd_notification.c
     src/config.c
     src/cache.c
