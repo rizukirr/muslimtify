@@ -488,6 +488,76 @@ static void test_bandung_jul(void) {
   printf("\n");
 }
 
+// ── Multi-method tests ──────────────────────────────────────────────────────
+// Reference: api.aladhan.com
+// Tolerance: 3 minutes (cross-implementation comparison)
+
+static void test_mwl_london(void) {
+  printf("Test MWL: London — 2026-03-21 (equinox)\n");
+  const MethodParams *p = method_params_get(CALC_MWL);
+  struct PrayerTimes t = calculate_prayer_times(2026, 3, 21, 51.5074, -0.1278, 0.0, p);
+  check_time(t.fajr, "04:07", 3, "Fajr");
+  check_time(t.sunrise, "06:01", 3, "Sunrise");
+  check_time(t.dhuhr, "12:08", 3, "Dhuhr");
+  check_time(t.asr, "15:26", 3, "Asr");
+  check_time(t.maghrib, "18:15", 3, "Maghrib");
+  check_time(t.isha, "20:02", 3, "Isha");
+  printf("\n");
+}
+
+static void test_makkah_riyadh(void) {
+  printf("Test Makkah: Riyadh — 2026-06-21 (summer solstice)\n");
+  const MethodParams *p = method_params_get(CALC_MAKKAH);
+  struct PrayerTimes t = calculate_prayer_times(2026, 6, 21, 24.7136, 46.6753, 3.0, p);
+  check_time(t.fajr, "03:33", 3, "Fajr");
+  check_time(t.sunrise, "05:05", 3, "Sunrise");
+  check_time(t.dhuhr, "11:55", 3, "Dhuhr");
+  check_time(t.asr, "15:16", 3, "Asr");
+  check_time(t.maghrib, "18:45", 3, "Maghrib");
+  check_time(t.isha, "20:15", 3, "Isha");
+  printf("\n");
+}
+
+static void test_isna_newyork(void) {
+  printf("Test ISNA: New York — 2026-01-15\n");
+  const MethodParams *p = method_params_get(CALC_ISNA);
+  struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 40.7128, -74.0060, -5.0, p);
+  check_time(t.fajr, "05:58", 3, "Fajr");
+  check_time(t.sunrise, "07:18", 3, "Sunrise");
+  check_time(t.dhuhr, "12:06", 3, "Dhuhr");
+  check_time(t.asr, "14:34", 3, "Asr");
+  check_time(t.maghrib, "16:53", 3, "Maghrib");
+  check_time(t.isha, "18:14", 3, "Isha");
+  printf("\n");
+}
+
+static void test_egypt_cairo(void) {
+  printf("Test Egypt: Cairo — 2026-09-22 (equinox)\n");
+  const MethodParams *p = method_params_get(CALC_EGYPT);
+  // Cairo observes DST (UTC+3) from late April to late October
+  struct PrayerTimes t = calculate_prayer_times(2026, 9, 22, 30.0444, 31.2357, 3.0, p);
+  check_time(t.fajr, "05:16", 3, "Fajr");
+  check_time(t.sunrise, "06:43", 3, "Sunrise");
+  check_time(t.dhuhr, "12:48", 3, "Dhuhr");
+  check_time(t.asr, "16:16", 3, "Asr");
+  check_time(t.maghrib, "18:52", 3, "Maghrib");
+  check_time(t.isha, "20:09", 3, "Isha");
+  printf("\n");
+}
+
+static void test_jafari_tehran(void) {
+  printf("Test Jafari: Tehran — 2026-03-21 (equinox)\n");
+  const MethodParams *p = method_params_get(CALC_JAFARI);
+  struct PrayerTimes t = calculate_prayer_times(2026, 3, 21, 35.6892, 51.3890, 3.5, p);
+  check_time(t.fajr, "04:52", 3, "Fajr");
+  check_time(t.sunrise, "06:07", 3, "Sunrise");
+  check_time(t.dhuhr, "12:12", 3, "Dhuhr");
+  check_time(t.asr, "15:38", 3, "Asr");
+  check_time(t.maghrib, "18:32", 3, "Maghrib");
+  check_time(t.isha, "19:22", 3, "Isha");
+  printf("\n");
+}
+
 int main(void) {
   printf("=== prayertimes.h unit tests ===\n");
   printf("=== Reference: jadwalsholat.org (Kemenag method) ===\n");
@@ -565,6 +635,14 @@ int main(void) {
   // Bandung (2 tests)
   test_bandung_jan();
   test_bandung_jul();
+
+  // Multi-method tests
+  printf("--- Multi-method validation ---\n\n");
+  test_mwl_london();
+  test_makkah_riyadh();
+  test_isna_newyork();
+  test_egypt_cairo();
+  test_jafari_tehran();
 
   printf("=== Summary ===\n");
   printf("Total checks: %d\n", total);
