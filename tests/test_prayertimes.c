@@ -490,7 +490,11 @@ static void test_bandung_jul(void) {
 
 // ── Multi-method tests ──────────────────────────────────────────────────────
 // Reference: api.aladhan.com
-// Tolerance: 3 minutes (cross-implementation comparison)
+// Tolerances per method based on official accuracy standards:
+//   MWL/ISNA/Egypt: 2 min (standard ihtiyat)
+//   Makkah: 3 min (built-in 3-min adhan ihtiyat in official calendar)
+//   Jafari: 3 min (atmospheric Maghrib uncertainty)
+//   Exception: MWL London Isha uses 3 min (high-latitude twilight)
 // DST note: our calculator uses fixed tz offset; for DST-active dates we pass
 // the DST-adjusted offset to match Aladhan's output.
 
@@ -502,12 +506,12 @@ static void test_mwl_london_jan(void) {
   printf("Test MWL 01: London — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 51.5074, -0.1278, 0.0, p);
-  check_time(t.fajr, "05:59", 3, "Fajr");
-  check_time(t.sunrise, "08:00", 3, "Sunrise");
-  check_time(t.dhuhr, "12:10", 3, "Dhuhr");
-  check_time(t.asr, "14:00", 3, "Asr");
-  check_time(t.maghrib, "16:21", 3, "Maghrib");
-  check_time(t.isha, "18:15", 3, "Isha");
+  check_time(t.fajr, "05:59", 2, "Fajr");
+  check_time(t.sunrise, "08:00", 2, "Sunrise");
+  check_time(t.dhuhr, "12:10", 2, "Dhuhr");
+  check_time(t.asr, "14:00", 2, "Asr");
+  check_time(t.maghrib, "16:21", 2, "Maghrib");
+  check_time(t.isha, "18:15", 2, "Isha");
   printf("\n");
 }
 
@@ -515,12 +519,12 @@ static void test_mwl_london_feb(void) {
   printf("Test MWL 02: London — 2026-02-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 2, 15, 51.5074, -0.1278, 0.0, p);
-  check_time(t.fajr, "05:22", 3, "Fajr");
-  check_time(t.sunrise, "07:15", 3, "Sunrise");
-  check_time(t.dhuhr, "12:15", 3, "Dhuhr");
-  check_time(t.asr, "14:44", 3, "Asr");
-  check_time(t.maghrib, "17:16", 3, "Maghrib");
-  check_time(t.isha, "19:01", 3, "Isha");
+  check_time(t.fajr, "05:22", 2, "Fajr");
+  check_time(t.sunrise, "07:15", 2, "Sunrise");
+  check_time(t.dhuhr, "12:15", 2, "Dhuhr");
+  check_time(t.asr, "14:44", 2, "Asr");
+  check_time(t.maghrib, "17:16", 2, "Maghrib");
+  check_time(t.isha, "19:01", 2, "Isha");
   printf("\n");
 }
 
@@ -528,12 +532,12 @@ static void test_mwl_london_mar(void) {
   printf("Test MWL 03: London — 2026-03-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 3, 15, 51.5074, -0.1278, 0.0, p);
-  check_time(t.fajr, "04:23", 3, "Fajr");
-  check_time(t.sunrise, "06:15", 3, "Sunrise");
-  check_time(t.dhuhr, "12:09", 3, "Dhuhr");
-  check_time(t.asr, "15:19", 3, "Asr");
-  check_time(t.maghrib, "18:05", 3, "Maghrib");
-  check_time(t.isha, "19:51", 3, "Isha");
+  check_time(t.fajr, "04:23", 2, "Fajr");
+  check_time(t.sunrise, "06:15", 2, "Sunrise");
+  check_time(t.dhuhr, "12:09", 2, "Dhuhr");
+  check_time(t.asr, "15:19", 2, "Asr");
+  check_time(t.maghrib, "18:05", 2, "Maghrib");
+  check_time(t.isha, "19:51", 2, "Isha");
   printf("\n");
 }
 
@@ -541,12 +545,12 @@ static void test_mwl_london_apr(void) {
   printf("Test MWL 04: London — 2026-04-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 4, 15, 51.5074, -0.1278, 1.0, p);
-  check_time(t.fajr, "03:56", 3, "Fajr");
-  check_time(t.sunrise, "06:05", 3, "Sunrise");
-  check_time(t.dhuhr, "13:01", 3, "Dhuhr");
-  check_time(t.asr, "16:48", 3, "Asr");
-  check_time(t.maghrib, "19:57", 3, "Maghrib");
-  check_time(t.isha, "21:57", 3, "Isha");
+  check_time(t.fajr, "03:56", 2, "Fajr");
+  check_time(t.sunrise, "06:05", 2, "Sunrise");
+  check_time(t.dhuhr, "13:01", 2, "Dhuhr");
+  check_time(t.asr, "16:48", 2, "Asr");
+  check_time(t.maghrib, "19:57", 2, "Maghrib");
+  check_time(t.isha, "21:57", 2, "Isha");
   printf("\n");
 }
 
@@ -557,10 +561,10 @@ static void test_mwl_london_may(void) {
   // Fajr/Isha at 51.5N in May: high-latitude edge case where Aladhan applies
   // special adjustments (e.g. 1/7th night rule) that our calculator does not.
   // We skip Fajr and Isha for this data point.
-  check_time(t.sunrise, "05:09", 3, "Sunrise");
-  check_time(t.dhuhr, "12:57", 3, "Dhuhr");
-  check_time(t.asr, "17:09", 3, "Asr");
-  check_time(t.maghrib, "20:46", 3, "Maghrib");
+  check_time(t.sunrise, "05:09", 2, "Sunrise");
+  check_time(t.dhuhr, "12:57", 2, "Dhuhr");
+  check_time(t.asr, "17:09", 2, "Asr");
+  check_time(t.maghrib, "20:46", 2, "Maghrib");
   printf("\n");
 }
 
@@ -568,12 +572,12 @@ static void test_mwl_london_jun(void) {
   printf("Test MWL 06: London — 2026-06-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 15, 51.5074, -0.1278, 1.0, p);
-  check_time(t.fajr, "02:30", 3, "Fajr");
-  check_time(t.sunrise, "04:43", 3, "Sunrise");
-  check_time(t.dhuhr, "13:01", 3, "Dhuhr");
-  check_time(t.asr, "17:24", 3, "Asr");
-  check_time(t.maghrib, "21:19", 3, "Maghrib");
-  check_time(t.isha, "23:25", 3, "Isha");
+  check_time(t.fajr, "02:30", 2, "Fajr");
+  check_time(t.sunrise, "04:43", 2, "Sunrise");
+  check_time(t.dhuhr, "13:01", 2, "Dhuhr");
+  check_time(t.asr, "17:24", 2, "Asr");
+  check_time(t.maghrib, "21:19", 2, "Maghrib");
+  check_time(t.isha, "23:25", 2, "Isha");
   printf("\n");
 }
 
@@ -581,12 +585,12 @@ static void test_mwl_london_jul(void) {
   printf("Test MWL 07: London — 2026-07-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 7, 15, 51.5074, -0.1278, 1.0, p);
-  check_time(t.fajr, "02:40", 3, "Fajr");
-  check_time(t.sunrise, "05:01", 3, "Sunrise");
-  check_time(t.dhuhr, "13:07", 3, "Dhuhr");
-  check_time(t.asr, "17:25", 3, "Asr");
-  check_time(t.maghrib, "21:12", 3, "Maghrib");
-  check_time(t.isha, "23:25", 3, "Isha");
+  check_time(t.fajr, "02:40", 2, "Fajr");
+  check_time(t.sunrise, "05:01", 2, "Sunrise");
+  check_time(t.dhuhr, "13:07", 2, "Dhuhr");
+  check_time(t.asr, "17:25", 2, "Asr");
+  check_time(t.maghrib, "21:12", 2, "Maghrib");
+  check_time(t.isha, "23:25", 2, "Isha");
   printf("\n");
 }
 
@@ -594,11 +598,11 @@ static void test_mwl_london_aug(void) {
   printf("Test MWL 08: London — 2026-08-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 8, 15, 51.5074, -0.1278, 1.0, p);
-  check_time(t.fajr, "03:22", 3, "Fajr");
-  check_time(t.sunrise, "05:46", 3, "Sunrise");
-  check_time(t.dhuhr, "13:05", 3, "Dhuhr");
-  check_time(t.asr, "17:05", 3, "Asr");
-  check_time(t.maghrib, "20:23", 3, "Maghrib");
+  check_time(t.fajr, "03:22", 2, "Fajr");
+  check_time(t.sunrise, "05:46", 2, "Sunrise");
+  check_time(t.dhuhr, "13:05", 2, "Dhuhr");
+  check_time(t.asr, "17:05", 2, "Asr");
+  check_time(t.maghrib, "20:23", 2, "Maghrib");
   check_time(t.isha, "22:35", 3, "Isha");
   printf("\n");
 }
@@ -607,11 +611,11 @@ static void test_mwl_london_sep(void) {
   printf("Test MWL 09: London — 2026-09-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 9, 15, 51.5074, -0.1278, 1.0, p);
-  check_time(t.fajr, "04:39", 3, "Fajr");
-  check_time(t.sunrise, "06:35", 3, "Sunrise");
-  check_time(t.dhuhr, "12:56", 3, "Dhuhr");
-  check_time(t.asr, "16:24", 3, "Asr");
-  check_time(t.maghrib, "19:15", 3, "Maghrib");
+  check_time(t.fajr, "04:39", 2, "Fajr");
+  check_time(t.sunrise, "06:35", 2, "Sunrise");
+  check_time(t.dhuhr, "12:56", 2, "Dhuhr");
+  check_time(t.asr, "16:24", 2, "Asr");
+  check_time(t.maghrib, "19:15", 2, "Maghrib");
   check_time(t.isha, "21:04", 3, "Isha");
   printf("\n");
 }
@@ -620,12 +624,12 @@ static void test_mwl_london_oct(void) {
   printf("Test MWL 10: London — 2026-10-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 10, 15, 51.5074, -0.1278, 1.0, p);
-  check_time(t.fajr, "05:33", 3, "Fajr");
-  check_time(t.sunrise, "07:24", 3, "Sunrise");
-  check_time(t.dhuhr, "12:46", 3, "Dhuhr");
-  check_time(t.asr, "15:34", 3, "Asr");
-  check_time(t.maghrib, "18:07", 3, "Maghrib");
-  check_time(t.isha, "19:52", 3, "Isha");
+  check_time(t.fajr, "05:33", 2, "Fajr");
+  check_time(t.sunrise, "07:24", 2, "Sunrise");
+  check_time(t.dhuhr, "12:46", 2, "Dhuhr");
+  check_time(t.asr, "15:34", 2, "Asr");
+  check_time(t.maghrib, "18:07", 2, "Maghrib");
+  check_time(t.isha, "19:52", 2, "Isha");
   printf("\n");
 }
 
@@ -633,12 +637,12 @@ static void test_mwl_london_nov(void) {
   printf("Test MWL 11: London — 2026-11-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 11, 15, 51.5074, -0.1278, 0.0, p);
-  check_time(t.fajr, "05:21", 3, "Fajr");
-  check_time(t.sunrise, "07:18", 3, "Sunrise");
-  check_time(t.dhuhr, "11:45", 3, "Dhuhr");
-  check_time(t.asr, "13:50", 3, "Asr");
-  check_time(t.maghrib, "16:11", 3, "Maghrib");
-  check_time(t.isha, "18:02", 3, "Isha");
+  check_time(t.fajr, "05:21", 2, "Fajr");
+  check_time(t.sunrise, "07:18", 2, "Sunrise");
+  check_time(t.dhuhr, "11:45", 2, "Dhuhr");
+  check_time(t.asr, "13:50", 2, "Asr");
+  check_time(t.maghrib, "16:11", 2, "Maghrib");
+  check_time(t.isha, "18:02", 2, "Isha");
   printf("\n");
 }
 
@@ -646,12 +650,12 @@ static void test_mwl_london_dec(void) {
   printf("Test MWL 12: London — 2026-12-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 15, 51.5074, -0.1278, 0.0, p);
-  check_time(t.fajr, "05:56", 3, "Fajr");
-  check_time(t.sunrise, "08:00", 3, "Sunrise");
-  check_time(t.dhuhr, "11:56", 3, "Dhuhr");
-  check_time(t.asr, "13:36", 3, "Asr");
-  check_time(t.maghrib, "15:52", 3, "Maghrib");
-  check_time(t.isha, "17:49", 3, "Isha");
+  check_time(t.fajr, "05:56", 2, "Fajr");
+  check_time(t.sunrise, "08:00", 2, "Sunrise");
+  check_time(t.dhuhr, "11:56", 2, "Dhuhr");
+  check_time(t.asr, "13:36", 2, "Asr");
+  check_time(t.maghrib, "15:52", 2, "Maghrib");
+  check_time(t.isha, "17:49", 2, "Isha");
   printf("\n");
 }
 
@@ -659,12 +663,12 @@ static void test_mwl_istanbul_jan(void) {
   printf("Test MWL 13: Istanbul — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 41.0082, 28.9784, 3.0, p);
-  check_time(t.fajr, "06:50", 3, "Fajr");
-  check_time(t.sunrise, "08:27", 3, "Sunrise");
-  check_time(t.dhuhr, "13:13", 3, "Dhuhr");
-  check_time(t.asr, "15:40", 3, "Asr");
-  check_time(t.maghrib, "18:00", 3, "Maghrib");
-  check_time(t.isha, "19:32", 3, "Isha");
+  check_time(t.fajr, "06:50", 2, "Fajr");
+  check_time(t.sunrise, "08:27", 2, "Sunrise");
+  check_time(t.dhuhr, "13:13", 2, "Dhuhr");
+  check_time(t.asr, "15:40", 2, "Asr");
+  check_time(t.maghrib, "18:00", 2, "Maghrib");
+  check_time(t.isha, "19:32", 2, "Isha");
   printf("\n");
 }
 
@@ -672,12 +676,12 @@ static void test_mwl_istanbul_mar(void) {
   printf("Test MWL 14: Istanbul — 2026-03-21\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 3, 21, 41.0082, 28.9784, 3.0, p);
-  check_time(t.fajr, "05:34", 3, "Fajr");
-  check_time(t.sunrise, "07:06", 3, "Sunrise");
-  check_time(t.dhuhr, "13:11", 3, "Dhuhr");
-  check_time(t.asr, "16:37", 3, "Asr");
-  check_time(t.maghrib, "19:17", 3, "Maghrib");
-  check_time(t.isha, "20:44", 3, "Isha");
+  check_time(t.fajr, "05:34", 2, "Fajr");
+  check_time(t.sunrise, "07:06", 2, "Sunrise");
+  check_time(t.dhuhr, "13:11", 2, "Dhuhr");
+  check_time(t.asr, "16:37", 2, "Asr");
+  check_time(t.maghrib, "19:17", 2, "Maghrib");
+  check_time(t.isha, "20:44", 2, "Isha");
   printf("\n");
 }
 
@@ -685,12 +689,12 @@ static void test_mwl_istanbul_jun(void) {
   printf("Test MWL 15: Istanbul — 2026-06-21\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 21, 41.0082, 28.9784, 3.0, p);
-  check_time(t.fajr, "03:24", 3, "Fajr");
-  check_time(t.sunrise, "05:32", 3, "Sunrise");
-  check_time(t.dhuhr, "13:06", 3, "Dhuhr");
-  check_time(t.asr, "17:07", 3, "Asr");
-  check_time(t.maghrib, "20:40", 3, "Maghrib");
-  check_time(t.isha, "22:38", 3, "Isha");
+  check_time(t.fajr, "03:24", 2, "Fajr");
+  check_time(t.sunrise, "05:32", 2, "Sunrise");
+  check_time(t.dhuhr, "13:06", 2, "Dhuhr");
+  check_time(t.asr, "17:07", 2, "Asr");
+  check_time(t.maghrib, "20:40", 2, "Maghrib");
+  check_time(t.isha, "22:38", 2, "Isha");
   printf("\n");
 }
 
@@ -698,12 +702,12 @@ static void test_mwl_istanbul_sep(void) {
   printf("Test MWL 16: Istanbul — 2026-09-22\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 9, 22, 41.0082, 28.9784, 3.0, p);
-  check_time(t.fajr, "05:19", 3, "Fajr");
-  check_time(t.sunrise, "06:51", 3, "Sunrise");
-  check_time(t.dhuhr, "12:57", 3, "Dhuhr");
-  check_time(t.asr, "16:23", 3, "Asr");
-  check_time(t.maghrib, "19:02", 3, "Maghrib");
-  check_time(t.isha, "20:28", 3, "Isha");
+  check_time(t.fajr, "05:19", 2, "Fajr");
+  check_time(t.sunrise, "06:51", 2, "Sunrise");
+  check_time(t.dhuhr, "12:57", 2, "Dhuhr");
+  check_time(t.asr, "16:23", 2, "Asr");
+  check_time(t.maghrib, "19:02", 2, "Maghrib");
+  check_time(t.isha, "20:28", 2, "Isha");
   printf("\n");
 }
 
@@ -711,12 +715,12 @@ static void test_mwl_istanbul_dec(void) {
   printf("Test MWL 17: Istanbul — 2026-12-21\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 21, 41.0082, 28.9784, 3.0, p);
-  check_time(t.fajr, "06:46", 3, "Fajr");
-  check_time(t.sunrise, "08:25", 3, "Sunrise");
-  check_time(t.dhuhr, "13:02", 3, "Dhuhr");
-  check_time(t.asr, "15:21", 3, "Asr");
-  check_time(t.maghrib, "17:39", 3, "Maghrib");
-  check_time(t.isha, "19:13", 3, "Isha");
+  check_time(t.fajr, "06:46", 2, "Fajr");
+  check_time(t.sunrise, "08:25", 2, "Sunrise");
+  check_time(t.dhuhr, "13:02", 2, "Dhuhr");
+  check_time(t.asr, "15:21", 2, "Asr");
+  check_time(t.maghrib, "17:39", 2, "Maghrib");
+  check_time(t.isha, "19:13", 2, "Isha");
   printf("\n");
 }
 
@@ -724,12 +728,12 @@ static void test_mwl_tokyo_jan(void) {
   printf("Test MWL 18: Tokyo — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 35.6762, 139.6503, 9.0, p);
-  check_time(t.fajr, "05:21", 3, "Fajr");
-  check_time(t.sunrise, "06:51", 3, "Sunrise");
-  check_time(t.dhuhr, "11:51", 3, "Dhuhr");
-  check_time(t.asr, "14:31", 3, "Asr");
-  check_time(t.maghrib, "16:51", 3, "Maghrib");
-  check_time(t.isha, "18:16", 3, "Isha");
+  check_time(t.fajr, "05:21", 2, "Fajr");
+  check_time(t.sunrise, "06:51", 2, "Sunrise");
+  check_time(t.dhuhr, "11:51", 2, "Dhuhr");
+  check_time(t.asr, "14:31", 2, "Asr");
+  check_time(t.maghrib, "16:51", 2, "Maghrib");
+  check_time(t.isha, "18:16", 2, "Isha");
   printf("\n");
 }
 
@@ -737,12 +741,12 @@ static void test_mwl_tokyo_apr(void) {
   printf("Test MWL 19: Tokyo — 2026-04-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 4, 15, 35.6762, 139.6503, 9.0, p);
-  check_time(t.fajr, "03:40", 3, "Fajr");
-  check_time(t.sunrise, "05:09", 3, "Sunrise");
-  check_time(t.dhuhr, "11:42", 3, "Dhuhr");
-  check_time(t.asr, "15:21", 3, "Asr");
-  check_time(t.maghrib, "18:14", 3, "Maghrib");
-  check_time(t.isha, "19:39", 3, "Isha");
+  check_time(t.fajr, "03:40", 2, "Fajr");
+  check_time(t.sunrise, "05:09", 2, "Sunrise");
+  check_time(t.dhuhr, "11:42", 2, "Dhuhr");
+  check_time(t.asr, "15:21", 2, "Asr");
+  check_time(t.maghrib, "18:14", 2, "Maghrib");
+  check_time(t.isha, "19:39", 2, "Isha");
   printf("\n");
 }
 
@@ -750,12 +754,12 @@ static void test_mwl_tokyo_jul(void) {
   printf("Test MWL 20: Tokyo — 2026-07-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 7, 15, 35.6762, 139.6503, 9.0, p);
-  check_time(t.fajr, "02:52", 3, "Fajr");
-  check_time(t.sunrise, "04:37", 3, "Sunrise");
-  check_time(t.dhuhr, "11:47", 3, "Dhuhr");
-  check_time(t.asr, "15:36", 3, "Asr");
-  check_time(t.maghrib, "18:58", 3, "Maghrib");
-  check_time(t.isha, "20:36", 3, "Isha");
+  check_time(t.fajr, "02:52", 2, "Fajr");
+  check_time(t.sunrise, "04:37", 2, "Sunrise");
+  check_time(t.dhuhr, "11:47", 2, "Dhuhr");
+  check_time(t.asr, "15:36", 2, "Asr");
+  check_time(t.maghrib, "18:58", 2, "Maghrib");
+  check_time(t.isha, "20:36", 2, "Isha");
   printf("\n");
 }
 
@@ -763,12 +767,12 @@ static void test_mwl_tokyo_oct(void) {
   printf("Test MWL 21: Tokyo — 2026-10-15\n");
   const MethodParams *p = method_params_get(CALC_MWL);
   struct PrayerTimes t = calculate_prayer_times(2026, 10, 15, 35.6762, 139.6503, 9.0, p);
-  check_time(t.fajr, "04:23", 3, "Fajr");
-  check_time(t.sunrise, "05:47", 3, "Sunrise");
-  check_time(t.dhuhr, "11:27", 3, "Dhuhr");
-  check_time(t.asr, "14:40", 3, "Asr");
-  check_time(t.maghrib, "17:07", 3, "Maghrib");
-  check_time(t.isha, "18:26", 3, "Isha");
+  check_time(t.fajr, "04:23", 2, "Fajr");
+  check_time(t.sunrise, "05:47", 2, "Sunrise");
+  check_time(t.dhuhr, "11:27", 2, "Dhuhr");
+  check_time(t.asr, "14:40", 2, "Asr");
+  check_time(t.maghrib, "17:07", 2, "Maghrib");
+  check_time(t.isha, "18:26", 2, "Isha");
   printf("\n");
 }
 
@@ -780,12 +784,12 @@ static void test_isna_newyork_jan(void) {
   printf("Test ISNA 01: New York — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 40.7128, -74.006, -5.0, p);
-  check_time(t.fajr, "05:58", 3, "Fajr");
-  check_time(t.sunrise, "07:18", 3, "Sunrise");
-  check_time(t.dhuhr, "12:06", 3, "Dhuhr");
-  check_time(t.asr, "14:34", 3, "Asr");
-  check_time(t.maghrib, "16:53", 3, "Maghrib");
-  check_time(t.isha, "18:14", 3, "Isha");
+  check_time(t.fajr, "05:58", 2, "Fajr");
+  check_time(t.sunrise, "07:18", 2, "Sunrise");
+  check_time(t.dhuhr, "12:06", 2, "Dhuhr");
+  check_time(t.asr, "14:34", 2, "Asr");
+  check_time(t.maghrib, "16:53", 2, "Maghrib");
+  check_time(t.isha, "18:14", 2, "Isha");
   printf("\n");
 }
 
@@ -793,12 +797,12 @@ static void test_isna_newyork_feb(void) {
   printf("Test ISNA 02: New York — 2026-02-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 2, 15, 40.7128, -74.006, -5.0, p);
-  check_time(t.fajr, "05:34", 3, "Fajr");
-  check_time(t.sunrise, "06:50", 3, "Sunrise");
-  check_time(t.dhuhr, "12:10", 3, "Dhuhr");
-  check_time(t.asr, "15:05", 3, "Asr");
-  check_time(t.maghrib, "17:31", 3, "Maghrib");
-  check_time(t.isha, "18:47", 3, "Isha");
+  check_time(t.fajr, "05:34", 2, "Fajr");
+  check_time(t.sunrise, "06:50", 2, "Sunrise");
+  check_time(t.dhuhr, "12:10", 2, "Dhuhr");
+  check_time(t.asr, "15:05", 2, "Asr");
+  check_time(t.maghrib, "17:31", 2, "Maghrib");
+  check_time(t.isha, "18:47", 2, "Isha");
   printf("\n");
 }
 
@@ -806,12 +810,12 @@ static void test_isna_newyork_mar(void) {
   printf("Test ISNA 03: New York — 2026-03-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 3, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "05:53", 3, "Fajr");
-  check_time(t.sunrise, "07:08", 3, "Sunrise");
-  check_time(t.dhuhr, "13:05", 3, "Dhuhr");
-  check_time(t.asr, "16:26", 3, "Asr");
-  check_time(t.maghrib, "19:03", 3, "Maghrib");
-  check_time(t.isha, "20:18", 3, "Isha");
+  check_time(t.fajr, "05:53", 2, "Fajr");
+  check_time(t.sunrise, "07:08", 2, "Sunrise");
+  check_time(t.dhuhr, "13:05", 2, "Dhuhr");
+  check_time(t.asr, "16:26", 2, "Asr");
+  check_time(t.maghrib, "19:03", 2, "Maghrib");
+  check_time(t.isha, "20:18", 2, "Isha");
   printf("\n");
 }
 
@@ -819,12 +823,12 @@ static void test_isna_newyork_apr(void) {
   printf("Test ISNA 04: New York — 2026-04-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 4, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "04:57", 3, "Fajr");
-  check_time(t.sunrise, "06:17", 3, "Sunrise");
-  check_time(t.dhuhr, "12:56", 3, "Dhuhr");
-  check_time(t.asr, "16:39", 3, "Asr");
-  check_time(t.maghrib, "19:36", 3, "Maghrib");
-  check_time(t.isha, "20:56", 3, "Isha");
+  check_time(t.fajr, "04:57", 2, "Fajr");
+  check_time(t.sunrise, "06:17", 2, "Sunrise");
+  check_time(t.dhuhr, "12:56", 2, "Dhuhr");
+  check_time(t.asr, "16:39", 2, "Asr");
+  check_time(t.maghrib, "19:36", 2, "Maghrib");
+  check_time(t.isha, "20:56", 2, "Isha");
   printf("\n");
 }
 
@@ -832,12 +836,12 @@ static void test_isna_newyork_may(void) {
   printf("Test ISNA 05: New York — 2026-05-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 5, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "04:08", 3, "Fajr");
-  check_time(t.sunrise, "05:39", 3, "Sunrise");
-  check_time(t.dhuhr, "12:52", 3, "Dhuhr");
-  check_time(t.asr, "16:48", 3, "Asr");
-  check_time(t.maghrib, "20:06", 3, "Maghrib");
-  check_time(t.isha, "21:37", 3, "Isha");
+  check_time(t.fajr, "04:08", 2, "Fajr");
+  check_time(t.sunrise, "05:39", 2, "Sunrise");
+  check_time(t.dhuhr, "12:52", 2, "Dhuhr");
+  check_time(t.asr, "16:48", 2, "Asr");
+  check_time(t.maghrib, "20:06", 2, "Maghrib");
+  check_time(t.isha, "21:37", 2, "Isha");
   printf("\n");
 }
 
@@ -845,12 +849,12 @@ static void test_isna_newyork_jun(void) {
   printf("Test ISNA 06: New York — 2026-06-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "03:45", 3, "Fajr");
-  check_time(t.sunrise, "05:24", 3, "Sunrise");
-  check_time(t.dhuhr, "12:57", 3, "Dhuhr");
-  check_time(t.asr, "16:57", 3, "Asr");
-  check_time(t.maghrib, "20:29", 3, "Maghrib");
-  check_time(t.isha, "22:09", 3, "Isha");
+  check_time(t.fajr, "03:45", 2, "Fajr");
+  check_time(t.sunrise, "05:24", 2, "Sunrise");
+  check_time(t.dhuhr, "12:57", 2, "Dhuhr");
+  check_time(t.asr, "16:57", 2, "Asr");
+  check_time(t.maghrib, "20:29", 2, "Maghrib");
+  check_time(t.isha, "22:09", 2, "Isha");
   printf("\n");
 }
 
@@ -858,12 +862,12 @@ static void test_isna_newyork_jul(void) {
   printf("Test ISNA 07: New York — 2026-07-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 7, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "04:03", 3, "Fajr");
-  check_time(t.sunrise, "05:38", 3, "Sunrise");
-  check_time(t.dhuhr, "13:02", 3, "Dhuhr");
-  check_time(t.asr, "17:01", 3, "Asr");
-  check_time(t.maghrib, "20:26", 3, "Maghrib");
-  check_time(t.isha, "22:01", 3, "Isha");
+  check_time(t.fajr, "04:03", 2, "Fajr");
+  check_time(t.sunrise, "05:38", 2, "Sunrise");
+  check_time(t.dhuhr, "13:02", 2, "Dhuhr");
+  check_time(t.asr, "17:01", 2, "Asr");
+  check_time(t.maghrib, "20:26", 2, "Maghrib");
+  check_time(t.isha, "22:01", 2, "Isha");
   printf("\n");
 }
 
@@ -871,12 +875,12 @@ static void test_isna_newyork_aug(void) {
   printf("Test ISNA 08: New York — 2026-08-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 8, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "04:43", 3, "Fajr");
-  check_time(t.sunrise, "06:06", 3, "Sunrise");
-  check_time(t.dhuhr, "13:00", 3, "Dhuhr");
-  check_time(t.asr, "16:50", 3, "Asr");
-  check_time(t.maghrib, "19:54", 3, "Maghrib");
-  check_time(t.isha, "21:18", 3, "Isha");
+  check_time(t.fajr, "04:43", 2, "Fajr");
+  check_time(t.sunrise, "06:06", 2, "Sunrise");
+  check_time(t.dhuhr, "13:00", 2, "Dhuhr");
+  check_time(t.asr, "16:50", 2, "Asr");
+  check_time(t.maghrib, "19:54", 2, "Maghrib");
+  check_time(t.isha, "21:18", 2, "Isha");
   printf("\n");
 }
 
@@ -884,12 +888,12 @@ static void test_isna_newyork_sep(void) {
   printf("Test ISNA 09: New York — 2026-09-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 9, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "05:20", 3, "Fajr");
-  check_time(t.sunrise, "06:37", 3, "Sunrise");
-  check_time(t.dhuhr, "12:51", 3, "Dhuhr");
-  check_time(t.asr, "16:23", 3, "Asr");
-  check_time(t.maghrib, "19:05", 3, "Maghrib");
-  check_time(t.isha, "20:21", 3, "Isha");
+  check_time(t.fajr, "05:20", 2, "Fajr");
+  check_time(t.sunrise, "06:37", 2, "Sunrise");
+  check_time(t.dhuhr, "12:51", 2, "Dhuhr");
+  check_time(t.asr, "16:23", 2, "Asr");
+  check_time(t.maghrib, "19:05", 2, "Maghrib");
+  check_time(t.isha, "20:21", 2, "Isha");
   printf("\n");
 }
 
@@ -897,12 +901,12 @@ static void test_isna_newyork_oct(void) {
   printf("Test ISNA 10: New York — 2026-10-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 10, 15, 40.7128, -74.006, -4.0, p);
-  check_time(t.fajr, "05:52", 3, "Fajr");
-  check_time(t.sunrise, "07:07", 3, "Sunrise");
-  check_time(t.dhuhr, "12:42", 3, "Dhuhr");
-  check_time(t.asr, "15:47", 3, "Asr");
-  check_time(t.maghrib, "18:16", 3, "Maghrib");
-  check_time(t.isha, "19:31", 3, "Isha");
+  check_time(t.fajr, "05:52", 2, "Fajr");
+  check_time(t.sunrise, "07:07", 2, "Sunrise");
+  check_time(t.dhuhr, "12:42", 2, "Dhuhr");
+  check_time(t.asr, "15:47", 2, "Asr");
+  check_time(t.maghrib, "18:16", 2, "Maghrib");
+  check_time(t.isha, "19:31", 2, "Isha");
   printf("\n");
 }
 
@@ -910,12 +914,12 @@ static void test_isna_newyork_nov(void) {
   printf("Test ISNA 11: New York — 2026-11-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 11, 15, 40.7128, -74.006, -5.0, p);
-  check_time(t.fajr, "05:24", 3, "Fajr");
-  check_time(t.sunrise, "06:43", 3, "Sunrise");
-  check_time(t.dhuhr, "11:41", 3, "Dhuhr");
-  check_time(t.asr, "14:18", 3, "Asr");
-  check_time(t.maghrib, "16:38", 3, "Maghrib");
-  check_time(t.isha, "17:57", 3, "Isha");
+  check_time(t.fajr, "05:24", 2, "Fajr");
+  check_time(t.sunrise, "06:43", 2, "Sunrise");
+  check_time(t.dhuhr, "11:41", 2, "Dhuhr");
+  check_time(t.asr, "14:18", 2, "Asr");
+  check_time(t.maghrib, "16:38", 2, "Maghrib");
+  check_time(t.isha, "17:57", 2, "Isha");
   printf("\n");
 }
 
@@ -923,12 +927,12 @@ static void test_isna_newyork_dec(void) {
   printf("Test ISNA 12: New York — 2026-12-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 15, 40.7128, -74.006, -5.0, p);
-  check_time(t.fajr, "05:51", 3, "Fajr");
-  check_time(t.sunrise, "07:13", 3, "Sunrise");
-  check_time(t.dhuhr, "11:51", 3, "Dhuhr");
-  check_time(t.asr, "14:12", 3, "Asr");
-  check_time(t.maghrib, "16:29", 3, "Maghrib");
-  check_time(t.isha, "17:52", 3, "Isha");
+  check_time(t.fajr, "05:51", 2, "Fajr");
+  check_time(t.sunrise, "07:13", 2, "Sunrise");
+  check_time(t.dhuhr, "11:51", 2, "Dhuhr");
+  check_time(t.asr, "14:12", 2, "Asr");
+  check_time(t.maghrib, "16:29", 2, "Maghrib");
+  check_time(t.isha, "17:52", 2, "Isha");
   printf("\n");
 }
 
@@ -936,12 +940,12 @@ static void test_isna_toronto_jan(void) {
   printf("Test ISNA 13: Toronto — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 43.6532, -79.3832, -5.0, p);
-  check_time(t.fajr, "06:23", 3, "Fajr");
-  check_time(t.sunrise, "07:48", 3, "Sunrise");
-  check_time(t.dhuhr, "12:27", 3, "Dhuhr");
-  check_time(t.asr, "14:46", 3, "Asr");
-  check_time(t.maghrib, "17:07", 3, "Maghrib");
-  check_time(t.isha, "18:31", 3, "Isha");
+  check_time(t.fajr, "06:23", 2, "Fajr");
+  check_time(t.sunrise, "07:48", 2, "Sunrise");
+  check_time(t.dhuhr, "12:27", 2, "Dhuhr");
+  check_time(t.asr, "14:46", 2, "Asr");
+  check_time(t.maghrib, "17:07", 2, "Maghrib");
+  check_time(t.isha, "18:31", 2, "Isha");
   printf("\n");
 }
 
@@ -949,12 +953,12 @@ static void test_isna_toronto_mar(void) {
   printf("Test ISNA 14: Toronto — 2026-03-21 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 3, 21, 43.6532, -79.3832, -4.0, p);
-  check_time(t.fajr, "06:00", 3, "Fajr");
-  check_time(t.sunrise, "07:19", 3, "Sunrise");
-  check_time(t.dhuhr, "13:25", 3, "Dhuhr");
-  check_time(t.asr, "16:49", 3, "Asr");
-  check_time(t.maghrib, "19:31", 3, "Maghrib");
-  check_time(t.isha, "20:51", 3, "Isha");
+  check_time(t.fajr, "06:00", 2, "Fajr");
+  check_time(t.sunrise, "07:19", 2, "Sunrise");
+  check_time(t.dhuhr, "13:25", 2, "Dhuhr");
+  check_time(t.asr, "16:49", 2, "Asr");
+  check_time(t.maghrib, "19:31", 2, "Maghrib");
+  check_time(t.isha, "20:51", 2, "Isha");
   printf("\n");
 }
 
@@ -962,12 +966,12 @@ static void test_isna_toronto_jun(void) {
   printf("Test ISNA 15: Toronto — 2026-06-21 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 21, 43.6532, -79.3832, -4.0, p);
-  check_time(t.fajr, "03:46", 3, "Fajr");
-  check_time(t.sunrise, "05:36", 3, "Sunrise");
-  check_time(t.dhuhr, "13:19", 3, "Dhuhr");
-  check_time(t.asr, "17:26", 3, "Asr");
-  check_time(t.maghrib, "21:03", 3, "Maghrib");
-  check_time(t.isha, "22:53", 3, "Isha");
+  check_time(t.fajr, "03:46", 2, "Fajr");
+  check_time(t.sunrise, "05:36", 2, "Sunrise");
+  check_time(t.dhuhr, "13:19", 2, "Dhuhr");
+  check_time(t.asr, "17:26", 2, "Asr");
+  check_time(t.maghrib, "21:03", 2, "Maghrib");
+  check_time(t.isha, "22:53", 2, "Isha");
   printf("\n");
 }
 
@@ -975,12 +979,12 @@ static void test_isna_toronto_sep(void) {
   printf("Test ISNA 16: Toronto — 2026-09-22 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 9, 22, 43.6532, -79.3832, -4.0, p);
-  check_time(t.fajr, "05:45", 3, "Fajr");
-  check_time(t.sunrise, "07:05", 3, "Sunrise");
-  check_time(t.dhuhr, "13:10", 3, "Dhuhr");
-  check_time(t.asr, "16:35", 3, "Asr");
-  check_time(t.maghrib, "19:15", 3, "Maghrib");
-  check_time(t.isha, "20:34", 3, "Isha");
+  check_time(t.fajr, "05:45", 2, "Fajr");
+  check_time(t.sunrise, "07:05", 2, "Sunrise");
+  check_time(t.dhuhr, "13:10", 2, "Dhuhr");
+  check_time(t.asr, "16:35", 2, "Asr");
+  check_time(t.maghrib, "19:15", 2, "Maghrib");
+  check_time(t.isha, "20:34", 2, "Isha");
   printf("\n");
 }
 
@@ -988,12 +992,12 @@ static void test_isna_toronto_dec(void) {
   printf("Test ISNA 17: Toronto — 2026-12-21\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 21, 43.6532, -79.3832, -5.0, p);
-  check_time(t.fajr, "06:21", 3, "Fajr");
-  check_time(t.sunrise, "07:48", 3, "Sunrise");
-  check_time(t.dhuhr, "12:16", 3, "Dhuhr");
-  check_time(t.asr, "14:26", 3, "Asr");
-  check_time(t.maghrib, "16:44", 3, "Maghrib");
-  check_time(t.isha, "18:10", 3, "Isha");
+  check_time(t.fajr, "06:21", 2, "Fajr");
+  check_time(t.sunrise, "07:48", 2, "Sunrise");
+  check_time(t.dhuhr, "12:16", 2, "Dhuhr");
+  check_time(t.asr, "14:26", 2, "Asr");
+  check_time(t.maghrib, "16:44", 2, "Maghrib");
+  check_time(t.isha, "18:10", 2, "Isha");
   printf("\n");
 }
 
@@ -1001,12 +1005,12 @@ static void test_isna_chicago_jan(void) {
   printf("Test ISNA 18: Chicago — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 41.8781, -87.6298, -6.0, p);
-  check_time(t.fajr, "05:54", 3, "Fajr");
-  check_time(t.sunrise, "07:16", 3, "Sunrise");
-  check_time(t.dhuhr, "12:00", 3, "Dhuhr");
-  check_time(t.asr, "14:25", 3, "Asr");
-  check_time(t.maghrib, "16:45", 3, "Maghrib");
-  check_time(t.isha, "18:07", 3, "Isha");
+  check_time(t.fajr, "05:54", 2, "Fajr");
+  check_time(t.sunrise, "07:16", 2, "Sunrise");
+  check_time(t.dhuhr, "12:00", 2, "Dhuhr");
+  check_time(t.asr, "14:25", 2, "Asr");
+  check_time(t.maghrib, "16:45", 2, "Maghrib");
+  check_time(t.isha, "18:07", 2, "Isha");
   printf("\n");
 }
 
@@ -1014,12 +1018,12 @@ static void test_isna_chicago_apr(void) {
   printf("Test ISNA 19: Chicago — 2026-04-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 4, 15, 41.8781, -87.6298, -5.0, p);
-  check_time(t.fajr, "04:48", 3, "Fajr");
-  check_time(t.sunrise, "06:10", 3, "Sunrise");
-  check_time(t.dhuhr, "12:51", 3, "Dhuhr");
-  check_time(t.asr, "16:35", 3, "Asr");
-  check_time(t.maghrib, "19:32", 3, "Maghrib");
-  check_time(t.isha, "20:54", 3, "Isha");
+  check_time(t.fajr, "04:48", 2, "Fajr");
+  check_time(t.sunrise, "06:10", 2, "Sunrise");
+  check_time(t.dhuhr, "12:51", 2, "Dhuhr");
+  check_time(t.asr, "16:35", 2, "Asr");
+  check_time(t.maghrib, "19:32", 2, "Maghrib");
+  check_time(t.isha, "20:54", 2, "Isha");
   printf("\n");
 }
 
@@ -1027,12 +1031,12 @@ static void test_isna_chicago_jul(void) {
   printf("Test ISNA 20: Chicago — 2026-07-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 7, 15, 41.8781, -87.6298, -5.0, p);
-  check_time(t.fajr, "03:50", 3, "Fajr");
-  check_time(t.sunrise, "05:29", 3, "Sunrise");
-  check_time(t.dhuhr, "12:57", 3, "Dhuhr");
-  check_time(t.asr, "16:57", 3, "Asr");
-  check_time(t.maghrib, "20:24", 3, "Maghrib");
-  check_time(t.isha, "22:02", 3, "Isha");
+  check_time(t.fajr, "03:50", 2, "Fajr");
+  check_time(t.sunrise, "05:29", 2, "Sunrise");
+  check_time(t.dhuhr, "12:57", 2, "Dhuhr");
+  check_time(t.asr, "16:57", 2, "Asr");
+  check_time(t.maghrib, "20:24", 2, "Maghrib");
+  check_time(t.isha, "22:02", 2, "Isha");
   printf("\n");
 }
 
@@ -1040,12 +1044,12 @@ static void test_isna_chicago_oct(void) {
   printf("Test ISNA 21: Chicago — 2026-10-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 10, 15, 41.8781, -87.6298, -5.0, p);
-  check_time(t.fajr, "05:46", 3, "Fajr");
-  check_time(t.sunrise, "07:03", 3, "Sunrise");
-  check_time(t.dhuhr, "12:36", 3, "Dhuhr");
-  check_time(t.asr, "15:40", 3, "Asr");
-  check_time(t.maghrib, "18:09", 3, "Maghrib");
-  check_time(t.isha, "19:25", 3, "Isha");
+  check_time(t.fajr, "05:46", 2, "Fajr");
+  check_time(t.sunrise, "07:03", 2, "Sunrise");
+  check_time(t.dhuhr, "12:36", 2, "Dhuhr");
+  check_time(t.asr, "15:40", 2, "Asr");
+  check_time(t.maghrib, "18:09", 2, "Maghrib");
+  check_time(t.isha, "19:25", 2, "Isha");
   printf("\n");
 }
 
@@ -1053,12 +1057,12 @@ static void test_isna_losangeles_jan(void) {
   printf("Test ISNA 22: Los Angeles — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 34.0522, -118.2437, -8.0, p);
-  check_time(t.fajr, "05:45", 3, "Fajr");
-  check_time(t.sunrise, "06:58", 3, "Sunrise");
-  check_time(t.dhuhr, "12:02", 3, "Dhuhr");
-  check_time(t.asr, "14:47", 3, "Asr");
-  check_time(t.maghrib, "17:07", 3, "Maghrib");
-  check_time(t.isha, "18:20", 3, "Isha");
+  check_time(t.fajr, "05:45", 2, "Fajr");
+  check_time(t.sunrise, "06:58", 2, "Sunrise");
+  check_time(t.dhuhr, "12:02", 2, "Dhuhr");
+  check_time(t.asr, "14:47", 2, "Asr");
+  check_time(t.maghrib, "17:07", 2, "Maghrib");
+  check_time(t.isha, "18:20", 2, "Isha");
   printf("\n");
 }
 
@@ -1066,12 +1070,12 @@ static void test_isna_losangeles_jun(void) {
   printf("Test ISNA 23: Los Angeles — 2026-06-21 (DST)\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 21, 34.0522, -118.2437, -7.0, p);
-  check_time(t.fajr, "04:18", 3, "Fajr");
-  check_time(t.sunrise, "05:42", 3, "Sunrise");
-  check_time(t.dhuhr, "12:55", 3, "Dhuhr");
-  check_time(t.asr, "16:40", 3, "Asr");
-  check_time(t.maghrib, "20:08", 3, "Maghrib");
-  check_time(t.isha, "21:32", 3, "Isha");
+  check_time(t.fajr, "04:18", 2, "Fajr");
+  check_time(t.sunrise, "05:42", 2, "Sunrise");
+  check_time(t.dhuhr, "12:55", 2, "Dhuhr");
+  check_time(t.asr, "16:40", 2, "Asr");
+  check_time(t.maghrib, "20:08", 2, "Maghrib");
+  check_time(t.isha, "21:32", 2, "Isha");
   printf("\n");
 }
 
@@ -1079,12 +1083,12 @@ static void test_isna_losangeles_dec(void) {
   printf("Test ISNA 23: Los Angeles — 2026-12-21\n");
   const MethodParams *p = method_params_get(CALC_ISNA);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 21, 34.0522, -118.2437, -8.0, p);
-  check_time(t.fajr, "05:40", 3, "Fajr");
-  check_time(t.sunrise, "06:55", 3, "Sunrise");
-  check_time(t.dhuhr, "11:51", 3, "Dhuhr");
-  check_time(t.asr, "14:30", 3, "Asr");
-  check_time(t.maghrib, "16:48", 3, "Maghrib");
-  check_time(t.isha, "18:02", 3, "Isha");
+  check_time(t.fajr, "05:40", 2, "Fajr");
+  check_time(t.sunrise, "06:55", 2, "Sunrise");
+  check_time(t.dhuhr, "11:51", 2, "Dhuhr");
+  check_time(t.asr, "14:30", 2, "Asr");
+  check_time(t.maghrib, "16:48", 2, "Maghrib");
+  check_time(t.isha, "18:02", 2, "Isha");
   printf("\n");
 }
 
@@ -1413,12 +1417,12 @@ static void test_egypt_cairo_jan(void) {
   printf("Test Egypt 01: Cairo — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 30.0444, 31.2357, 2.0, p);
-  check_time(t.fajr, "05:21", 3, "Fajr");
-  check_time(t.sunrise, "06:52", 3, "Sunrise");
-  check_time(t.dhuhr, "12:04", 3, "Dhuhr");
-  check_time(t.asr, "14:57", 3, "Asr");
-  check_time(t.maghrib, "17:17", 3, "Maghrib");
-  check_time(t.isha, "18:39", 3, "Isha");
+  check_time(t.fajr, "05:21", 2, "Fajr");
+  check_time(t.sunrise, "06:52", 2, "Sunrise");
+  check_time(t.dhuhr, "12:04", 2, "Dhuhr");
+  check_time(t.asr, "14:57", 2, "Asr");
+  check_time(t.maghrib, "17:17", 2, "Maghrib");
+  check_time(t.isha, "18:39", 2, "Isha");
   printf("\n");
 }
 
@@ -1426,12 +1430,12 @@ static void test_egypt_cairo_feb(void) {
   printf("Test Egypt 02: Cairo — 2026-02-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 2, 15, 30.0444, 31.2357, 2.0, p);
-  check_time(t.fajr, "05:08", 3, "Fajr");
-  check_time(t.sunrise, "06:35", 3, "Sunrise");
-  check_time(t.dhuhr, "12:09", 3, "Dhuhr");
-  check_time(t.asr, "15:18", 3, "Asr");
-  check_time(t.maghrib, "17:44", 3, "Maghrib");
-  check_time(t.isha, "19:02", 3, "Isha");
+  check_time(t.fajr, "05:08", 2, "Fajr");
+  check_time(t.sunrise, "06:35", 2, "Sunrise");
+  check_time(t.dhuhr, "12:09", 2, "Dhuhr");
+  check_time(t.asr, "15:18", 2, "Asr");
+  check_time(t.maghrib, "17:44", 2, "Maghrib");
+  check_time(t.isha, "19:02", 2, "Isha");
   printf("\n");
 }
 
@@ -1439,12 +1443,12 @@ static void test_egypt_cairo_mar(void) {
   printf("Test Egypt 03: Cairo — 2026-03-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 3, 15, 30.0444, 31.2357, 2.0, p);
-  check_time(t.fajr, "04:39", 3, "Fajr");
-  check_time(t.sunrise, "06:05", 3, "Sunrise");
-  check_time(t.dhuhr, "12:04", 3, "Dhuhr");
-  check_time(t.asr, "15:28", 3, "Asr");
-  check_time(t.maghrib, "18:03", 3, "Maghrib");
-  check_time(t.isha, "19:20", 3, "Isha");
+  check_time(t.fajr, "04:39", 2, "Fajr");
+  check_time(t.sunrise, "06:05", 2, "Sunrise");
+  check_time(t.dhuhr, "12:04", 2, "Dhuhr");
+  check_time(t.asr, "15:28", 2, "Asr");
+  check_time(t.maghrib, "18:03", 2, "Maghrib");
+  check_time(t.isha, "19:20", 2, "Isha");
   printf("\n");
 }
 
@@ -1452,12 +1456,12 @@ static void test_egypt_cairo_apr(void) {
   printf("Test Egypt 04: Cairo — 2026-04-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 4, 15, 30.0444, 31.2357, 2.0, p);
-  check_time(t.fajr, "03:58", 3, "Fajr");
-  check_time(t.sunrise, "05:28", 3, "Sunrise");
-  check_time(t.dhuhr, "11:55", 3, "Dhuhr");
-  check_time(t.asr, "15:30", 3, "Asr");
-  check_time(t.maghrib, "18:22", 3, "Maghrib");
-  check_time(t.isha, "19:43", 3, "Isha");
+  check_time(t.fajr, "03:58", 2, "Fajr");
+  check_time(t.sunrise, "05:28", 2, "Sunrise");
+  check_time(t.dhuhr, "11:55", 2, "Dhuhr");
+  check_time(t.asr, "15:30", 2, "Asr");
+  check_time(t.maghrib, "18:22", 2, "Maghrib");
+  check_time(t.isha, "19:43", 2, "Isha");
   printf("\n");
 }
 
@@ -1465,12 +1469,12 @@ static void test_egypt_cairo_may(void) {
   printf("Test Egypt 05: Cairo — 2026-05-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 5, 15, 30.0444, 31.2357, 3.0, p);
-  check_time(t.fajr, "04:23", 3, "Fajr");
-  check_time(t.sunrise, "06:02", 3, "Sunrise");
-  check_time(t.dhuhr, "12:51", 3, "Dhuhr");
-  check_time(t.asr, "16:28", 3, "Asr");
-  check_time(t.maghrib, "19:41", 3, "Maghrib");
-  check_time(t.isha, "21:09", 3, "Isha");
+  check_time(t.fajr, "04:23", 2, "Fajr");
+  check_time(t.sunrise, "06:02", 2, "Sunrise");
+  check_time(t.dhuhr, "12:51", 2, "Dhuhr");
+  check_time(t.asr, "16:28", 2, "Asr");
+  check_time(t.maghrib, "19:41", 2, "Maghrib");
+  check_time(t.isha, "21:09", 2, "Isha");
   printf("\n");
 }
 
@@ -1478,12 +1482,12 @@ static void test_egypt_cairo_jun(void) {
   printf("Test Egypt 06: Cairo — 2026-06-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 15, 30.0444, 31.2357, 3.0, p);
-  check_time(t.fajr, "04:08", 3, "Fajr");
-  check_time(t.sunrise, "05:53", 3, "Sunrise");
-  check_time(t.dhuhr, "12:56", 3, "Dhuhr");
-  check_time(t.asr, "16:31", 3, "Asr");
-  check_time(t.maghrib, "19:58", 3, "Maghrib");
-  check_time(t.isha, "21:31", 3, "Isha");
+  check_time(t.fajr, "04:08", 2, "Fajr");
+  check_time(t.sunrise, "05:53", 2, "Sunrise");
+  check_time(t.dhuhr, "12:56", 2, "Dhuhr");
+  check_time(t.asr, "16:31", 2, "Asr");
+  check_time(t.maghrib, "19:58", 2, "Maghrib");
+  check_time(t.isha, "21:31", 2, "Isha");
   printf("\n");
 }
 
@@ -1491,12 +1495,12 @@ static void test_egypt_cairo_jul(void) {
   printf("Test Egypt 07: Cairo — 2026-07-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 7, 15, 30.0444, 31.2357, 3.0, p);
-  check_time(t.fajr, "04:21", 3, "Fajr");
-  check_time(t.sunrise, "06:04", 3, "Sunrise");
-  check_time(t.dhuhr, "13:01", 3, "Dhuhr");
-  check_time(t.asr, "16:38", 3, "Asr");
-  check_time(t.maghrib, "19:58", 3, "Maghrib");
-  check_time(t.isha, "21:29", 3, "Isha");
+  check_time(t.fajr, "04:21", 2, "Fajr");
+  check_time(t.sunrise, "06:04", 2, "Sunrise");
+  check_time(t.dhuhr, "13:01", 2, "Dhuhr");
+  check_time(t.asr, "16:38", 2, "Asr");
+  check_time(t.maghrib, "19:58", 2, "Maghrib");
+  check_time(t.isha, "21:29", 2, "Isha");
   printf("\n");
 }
 
@@ -1504,12 +1508,12 @@ static void test_egypt_cairo_aug(void) {
   printf("Test Egypt 08: Cairo — 2026-08-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 8, 15, 30.0444, 31.2357, 3.0, p);
-  check_time(t.fajr, "04:48", 3, "Fajr");
-  check_time(t.sunrise, "06:22", 3, "Sunrise");
-  check_time(t.dhuhr, "13:00", 3, "Dhuhr");
-  check_time(t.asr, "16:37", 3, "Asr");
-  check_time(t.maghrib, "19:36", 3, "Maghrib");
-  check_time(t.isha, "21:00", 3, "Isha");
+  check_time(t.fajr, "04:48", 2, "Fajr");
+  check_time(t.sunrise, "06:22", 2, "Sunrise");
+  check_time(t.dhuhr, "13:00", 2, "Dhuhr");
+  check_time(t.asr, "16:37", 2, "Asr");
+  check_time(t.maghrib, "19:36", 2, "Maghrib");
+  check_time(t.isha, "21:00", 2, "Isha");
   printf("\n");
 }
 
@@ -1517,12 +1521,12 @@ static void test_egypt_cairo_sep(void) {
   printf("Test Egypt 09: Cairo — 2026-09-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 9, 15, 30.0444, 31.2357, 3.0, p);
-  check_time(t.fajr, "05:12", 3, "Fajr");
-  check_time(t.sunrise, "06:39", 3, "Sunrise");
-  check_time(t.dhuhr, "12:50", 3, "Dhuhr");
-  check_time(t.asr, "16:21", 3, "Asr");
-  check_time(t.maghrib, "19:01", 3, "Maghrib");
-  check_time(t.isha, "20:19", 3, "Isha");
+  check_time(t.fajr, "05:12", 2, "Fajr");
+  check_time(t.sunrise, "06:39", 2, "Sunrise");
+  check_time(t.dhuhr, "12:50", 2, "Dhuhr");
+  check_time(t.asr, "16:21", 2, "Asr");
+  check_time(t.maghrib, "19:01", 2, "Maghrib");
+  check_time(t.isha, "20:19", 2, "Isha");
   printf("\n");
 }
 
@@ -1530,12 +1534,12 @@ static void test_egypt_cairo_oct(void) {
   printf("Test Egypt 10: Cairo — 2026-10-15 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 10, 15, 30.0444, 31.2357, 3.0, p);
-  check_time(t.fajr, "05:30", 3, "Fajr");
-  check_time(t.sunrise, "06:57", 3, "Sunrise");
-  check_time(t.dhuhr, "12:41", 3, "Dhuhr");
-  check_time(t.asr, "15:58", 3, "Asr");
-  check_time(t.maghrib, "18:24", 3, "Maghrib");
-  check_time(t.isha, "19:42", 3, "Isha");
+  check_time(t.fajr, "05:30", 2, "Fajr");
+  check_time(t.sunrise, "06:57", 2, "Sunrise");
+  check_time(t.dhuhr, "12:41", 2, "Dhuhr");
+  check_time(t.asr, "15:58", 2, "Asr");
+  check_time(t.maghrib, "18:24", 2, "Maghrib");
+  check_time(t.isha, "19:42", 2, "Isha");
   printf("\n");
 }
 
@@ -1543,12 +1547,12 @@ static void test_egypt_cairo_nov(void) {
   printf("Test Egypt 11: Cairo — 2026-11-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 11, 15, 30.0444, 31.2357, 2.0, p);
-  check_time(t.fajr, "04:50", 3, "Fajr");
-  check_time(t.sunrise, "06:20", 3, "Sunrise");
-  check_time(t.dhuhr, "11:40", 3, "Dhuhr");
-  check_time(t.asr, "14:39", 3, "Asr");
-  check_time(t.maghrib, "16:59", 3, "Maghrib");
-  check_time(t.isha, "18:19", 3, "Isha");
+  check_time(t.fajr, "04:50", 2, "Fajr");
+  check_time(t.sunrise, "06:20", 2, "Sunrise");
+  check_time(t.dhuhr, "11:40", 2, "Dhuhr");
+  check_time(t.asr, "14:39", 2, "Asr");
+  check_time(t.maghrib, "16:59", 2, "Maghrib");
+  check_time(t.isha, "18:19", 2, "Isha");
   printf("\n");
 }
 
@@ -1556,12 +1560,12 @@ static void test_egypt_cairo_dec(void) {
   printf("Test Egypt 12: Cairo — 2026-12-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 15, 30.0444, 31.2357, 2.0, p);
-  check_time(t.fajr, "05:11", 3, "Fajr");
-  check_time(t.sunrise, "06:43", 3, "Sunrise");
-  check_time(t.dhuhr, "11:50", 3, "Dhuhr");
-  check_time(t.asr, "14:38", 3, "Asr");
-  check_time(t.maghrib, "16:57", 3, "Maghrib");
-  check_time(t.isha, "18:20", 3, "Isha");
+  check_time(t.fajr, "05:11", 2, "Fajr");
+  check_time(t.sunrise, "06:43", 2, "Sunrise");
+  check_time(t.dhuhr, "11:50", 2, "Dhuhr");
+  check_time(t.asr, "14:38", 2, "Asr");
+  check_time(t.maghrib, "16:57", 2, "Maghrib");
+  check_time(t.isha, "18:20", 2, "Isha");
   printf("\n");
 }
 
@@ -1569,12 +1573,12 @@ static void test_egypt_kl_jan(void) {
   printf("Test Egypt 13: Kuala Lumpur — 2026-01-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 1, 15, 3.139, 101.6869, 8.0, p);
-  check_time(t.fajr, "06:04", 3, "Fajr");
-  check_time(t.sunrise, "07:24", 3, "Sunrise");
-  check_time(t.dhuhr, "13:23", 3, "Dhuhr");
-  check_time(t.asr, "16:46", 3, "Asr");
-  check_time(t.maghrib, "19:21", 3, "Maghrib");
-  check_time(t.isha, "20:33", 3, "Isha");
+  check_time(t.fajr, "06:04", 2, "Fajr");
+  check_time(t.sunrise, "07:24", 2, "Sunrise");
+  check_time(t.dhuhr, "13:23", 2, "Dhuhr");
+  check_time(t.asr, "16:46", 2, "Asr");
+  check_time(t.maghrib, "19:21", 2, "Maghrib");
+  check_time(t.isha, "20:33", 2, "Isha");
   printf("\n");
 }
 
@@ -1582,12 +1586,12 @@ static void test_egypt_kl_apr(void) {
   printf("Test Egypt 14: Kuala Lumpur — 2026-04-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 4, 15, 3.139, 101.6869, 8.0, p);
-  check_time(t.fajr, "05:52", 3, "Fajr");
-  check_time(t.sunrise, "07:08", 3, "Sunrise");
-  check_time(t.dhuhr, "13:13", 3, "Dhuhr");
-  check_time(t.asr, "16:26", 3, "Asr");
-  check_time(t.maghrib, "19:19", 3, "Maghrib");
-  check_time(t.isha, "20:27", 3, "Isha");
+  check_time(t.fajr, "05:52", 2, "Fajr");
+  check_time(t.sunrise, "07:08", 2, "Sunrise");
+  check_time(t.dhuhr, "13:13", 2, "Dhuhr");
+  check_time(t.asr, "16:26", 2, "Asr");
+  check_time(t.maghrib, "19:19", 2, "Maghrib");
+  check_time(t.isha, "20:27", 2, "Isha");
   printf("\n");
 }
 
@@ -1595,12 +1599,12 @@ static void test_egypt_kl_jul(void) {
   printf("Test Egypt 15: Kuala Lumpur — 2026-07-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 7, 15, 3.139, 101.6869, 8.0, p);
-  check_time(t.fajr, "05:50", 3, "Fajr");
-  check_time(t.sunrise, "07:11", 3, "Sunrise");
-  check_time(t.dhuhr, "13:19", 3, "Dhuhr");
-  check_time(t.asr, "16:44", 3, "Asr");
-  check_time(t.maghrib, "19:28", 3, "Maghrib");
-  check_time(t.isha, "20:40", 3, "Isha");
+  check_time(t.fajr, "05:50", 2, "Fajr");
+  check_time(t.sunrise, "07:11", 2, "Sunrise");
+  check_time(t.dhuhr, "13:19", 2, "Dhuhr");
+  check_time(t.asr, "16:44", 2, "Asr");
+  check_time(t.maghrib, "19:28", 2, "Maghrib");
+  check_time(t.isha, "20:40", 2, "Isha");
   printf("\n");
 }
 
@@ -1608,12 +1612,12 @@ static void test_egypt_kl_oct(void) {
   printf("Test Egypt 16: Kuala Lumpur — 2026-10-15\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 10, 15, 3.139, 101.6869, 8.0, p);
-  check_time(t.fajr, "05:42", 3, "Fajr");
-  check_time(t.sunrise, "06:58", 3, "Sunrise");
-  check_time(t.dhuhr, "12:59", 3, "Dhuhr");
-  check_time(t.asr, "16:16", 3, "Asr");
-  check_time(t.maghrib, "19:00", 3, "Maghrib");
-  check_time(t.isha, "20:08", 3, "Isha");
+  check_time(t.fajr, "05:42", 2, "Fajr");
+  check_time(t.sunrise, "06:58", 2, "Sunrise");
+  check_time(t.dhuhr, "12:59", 2, "Dhuhr");
+  check_time(t.asr, "16:16", 2, "Asr");
+  check_time(t.maghrib, "19:00", 2, "Maghrib");
+  check_time(t.isha, "20:08", 2, "Isha");
   printf("\n");
 }
 
@@ -1621,12 +1625,12 @@ static void test_egypt_alexandria_mar(void) {
   printf("Test Egypt 17: Alexandria — 2026-03-21\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 3, 21, 31.2001, 29.9187, 2.0, p);
-  check_time(t.fajr, "04:35", 3, "Fajr");
-  check_time(t.sunrise, "06:03", 3, "Sunrise");
-  check_time(t.dhuhr, "12:08", 3, "Dhuhr");
-  check_time(t.asr, "15:35", 3, "Asr");
-  check_time(t.maghrib, "18:12", 3, "Maghrib");
-  check_time(t.isha, "19:31", 3, "Isha");
+  check_time(t.fajr, "04:35", 2, "Fajr");
+  check_time(t.sunrise, "06:03", 2, "Sunrise");
+  check_time(t.dhuhr, "12:08", 2, "Dhuhr");
+  check_time(t.asr, "15:35", 2, "Asr");
+  check_time(t.maghrib, "18:12", 2, "Maghrib");
+  check_time(t.isha, "19:31", 2, "Isha");
   printf("\n");
 }
 
@@ -1634,12 +1638,12 @@ static void test_egypt_alexandria_jun(void) {
   printf("Test Egypt 18: Alexandria — 2026-06-21 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 6, 21, 31.2001, 29.9187, 3.0, p);
-  check_time(t.fajr, "04:08", 3, "Fajr");
-  check_time(t.sunrise, "05:57", 3, "Sunrise");
-  check_time(t.dhuhr, "13:02", 3, "Dhuhr");
-  check_time(t.asr, "16:41", 3, "Asr");
-  check_time(t.maghrib, "20:07", 3, "Maghrib");
-  check_time(t.isha, "21:43", 3, "Isha");
+  check_time(t.fajr, "04:08", 2, "Fajr");
+  check_time(t.sunrise, "05:57", 2, "Sunrise");
+  check_time(t.dhuhr, "13:02", 2, "Dhuhr");
+  check_time(t.asr, "16:41", 2, "Asr");
+  check_time(t.maghrib, "20:07", 2, "Maghrib");
+  check_time(t.isha, "21:43", 2, "Isha");
   printf("\n");
 }
 
@@ -1647,12 +1651,12 @@ static void test_egypt_alexandria_sep(void) {
   printf("Test Egypt 19: Alexandria — 2026-09-22 (DST)\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 9, 22, 31.2001, 29.9187, 3.0, p);
-  check_time(t.fajr, "05:20", 3, "Fajr");
-  check_time(t.sunrise, "06:48", 3, "Sunrise");
-  check_time(t.dhuhr, "12:53", 3, "Dhuhr");
-  check_time(t.asr, "16:21", 3, "Asr");
-  check_time(t.maghrib, "18:57", 3, "Maghrib");
-  check_time(t.isha, "20:16", 3, "Isha");
+  check_time(t.fajr, "05:20", 2, "Fajr");
+  check_time(t.sunrise, "06:48", 2, "Sunrise");
+  check_time(t.dhuhr, "12:53", 2, "Dhuhr");
+  check_time(t.asr, "16:21", 2, "Asr");
+  check_time(t.maghrib, "18:57", 2, "Maghrib");
+  check_time(t.isha, "20:16", 2, "Isha");
   printf("\n");
 }
 
@@ -1660,12 +1664,12 @@ static void test_egypt_alexandria_dec(void) {
   printf("Test Egypt 20: Alexandria — 2026-12-21\n");
   const MethodParams *p = method_params_get(CALC_EGYPT);
   struct PrayerTimes t = calculate_prayer_times(2026, 12, 21, 31.2001, 29.9187, 2.0, p);
-  check_time(t.fajr, "05:21", 3, "Fajr");
-  check_time(t.sunrise, "06:55", 3, "Sunrise");
-  check_time(t.dhuhr, "11:58", 3, "Dhuhr");
-  check_time(t.asr, "14:44", 3, "Asr");
-  check_time(t.maghrib, "17:02", 3, "Maghrib");
-  check_time(t.isha, "18:26", 3, "Isha");
+  check_time(t.fajr, "05:21", 2, "Fajr");
+  check_time(t.sunrise, "06:55", 2, "Sunrise");
+  check_time(t.dhuhr, "11:58", 2, "Dhuhr");
+  check_time(t.asr, "14:44", 2, "Asr");
+  check_time(t.maghrib, "17:02", 2, "Maghrib");
+  check_time(t.isha, "18:26", 2, "Isha");
   printf("\n");
 }
 
