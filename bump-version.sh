@@ -57,6 +57,14 @@ if [ -f "$PKGBUILD" ]; then
     echo "  updated ${PKGBUILD}"
 fi
 
+# ── Winget / Inno Setup ──────────────────────────────────────────────────────
+
+ISS=".packages/winget/muslimtify.iss"
+if [ -f "$ISS" ]; then
+    sed -i "s/^#define MyAppVersion \".*\"/#define MyAppVersion \"${VERSION}\"/" "$ISS"
+    echo "  updated ${ISS}"
+fi
+
 # ── Debian changelog ─────────────────────────────────────────────────────────
 
 CHANGELOG=".packages/debian/debian/changelog"
@@ -67,4 +75,4 @@ fi
 
 echo ""
 echo "Done. Verify with:"
-echo "  grep -n 'VERSION\|Version\|pkgver\|muslimtify (' CMakeLists.txt ${SPEC} ${PKGBUILD} ${CHANGELOG}"
+echo "  grep -n 'VERSION\|Version\|pkgver\|MyAppVersion\|muslimtify (' CMakeLists.txt ${SPEC} ${PKGBUILD} ${ISS} ${CHANGELOG}"
