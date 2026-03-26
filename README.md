@@ -2,9 +2,9 @@
 
 Muslimtify keeps you consistent with your daily prayers by delivering accurate prayer times and timely desktop notifications. Designed for Linux and Windows, it automatically calculates prayer schedules and reminds you 30, 15, and 5 minutes before the Adhan — or at your own custom intervals — and when it's time to pray. All calculations run locally, requiring no internet connection or external services.
 
-Currently, Muslimtify uses the Kemenag (Indonesian Ministry of Religious Affairs) method for prayer time calculation, with more methods planned in future updates. With persistent configuration and minimal setup, Muslimtify integrates seamlessly into your daily routine without interrupting your workflow.
+Muslimtify supports **23 international calculation methods** including MWL, ISNA, Umm al-Qura (Makkah), Egyptian General Authority, Kemenag (Indonesia), JAKIM (Malaysia), Diyanet (Turkey), Jafari (Shia), and more. The default method is Kemenag. With persistent configuration and minimal setup, Muslimtify integrates seamlessly into your daily routine without interrupting your workflow.
 
-> Prayer time calculations are powered by [libmuslim](https://github.com/rizukirr/libmuslim), a portable library extracted from this project to enable a more flexible and reusable ecosystem for Muslim developers. Currently only support the Kemenag (Indonesian Ministry of Religious Affairs) method, with additional calculation methods to be introduced in future releases on [libmuslim](https://github.com/rizukirr/libmuslim).
+> Prayer time calculations are powered by [libmuslim](https://github.com/rizukirr/libmuslim), a portable library extracted from this project to enable a more flexible and reusable ecosystem for Muslim developers.
 
 
 | Linux | Windows |
@@ -98,13 +98,48 @@ Config paths:
 Common setup commands:
 
 ```bash
-muslimtify location auto # detect location from IP
-muslimtify location set <latitude> <longitude>
-muslimtify reminder all 30,15,5 # set all reminders to 30, 15, and 5 minutes before adzan
-muslimtify config show # show today's prayer times
-muslimtify config validate # loads your current config file and runs a small set of sanity checks
-muslimtify config reset # restore default config file
+muslimtify location auto          # detect location from IP
+muslimtify location set <lat> <lon>  # set location manually
+muslimtify method list            # list all 23 available calculation methods
+muslimtify method set mwl         # set calculation method
+muslimtify method madhab hanafi   # set madhab (shafi/hanafi)
+muslimtify reminder all 30,15,5   # set all reminders to 30, 15, and 5 minutes before adzan
+muslimtify config show            # show current configuration
+muslimtify config validate        # run sanity checks on config file
+muslimtify config reset           # restore default config file
 ```
+
+### Calculation Methods
+
+Muslimtify supports the following calculation methods:
+
+| Key | Method | Region |
+|-----|--------|--------|
+| `mwl` | Muslim World League | Europe, Far East |
+| `makkah` | Umm al-Qura, Makkah | Arabian Peninsula |
+| `isna` | ISNA | North America |
+| `egypt` | Egyptian General Authority | Africa, Middle East |
+| `karachi` | Univ. Islamic Sciences, Karachi | Pakistan, India, Bangladesh |
+| `tehran` | Inst. of Geophysics, Tehran | Iran |
+| `jafari` | Shia Ithna-Ashari, Qum | Shia communities |
+| `turkey` | Diyanet, Turkey | Turkey |
+| `singapore` | MUIS, Singapore | Singapore |
+| `jakim` | JAKIM, Malaysia | Malaysia |
+| `kemenag` | KEMENAG, Indonesia | Indonesia (default) |
+| `france` | UOIF, France | France |
+| `russia` | Spiritual Admin., Russia | Russia |
+| `dubai` | GAIAE, Dubai | UAE |
+| `qatar` | Min. of Awqaf, Qatar | Qatar |
+| `kuwait` | Min. of Awqaf, Kuwait | Kuwait |
+| `jordan` | Min. of Awqaf, Jordan | Jordan |
+| `gulf` | Gulf Region | Gulf states |
+| `tunisia` | Min. of Religious Affairs | Tunisia |
+| `algeria` | Min. of Religious Affairs | Algeria |
+| `morocco` | Min. of Habous, Morocco | Morocco |
+| `portugal` | Comunidade Islamica de Lisboa | Portugal |
+| `moonsighting` | Moonsighting Committee | Worldwide |
+
+You can also use a custom method by setting `"method": "custom"` in `config.json` with your own `fajr_angle` and `isha_angle` values.
 
 Manual JSON editing is useful when you want precise control over enabled
 prayers, reminder offsets, notification settings, or location data.
@@ -158,6 +193,10 @@ prayers, reminder offsets, notification settings, or location data.
     "urgency": "normal",
     "sound": true,
     "icon": "muslimtify"
+  },
+  "calculation": {
+    "method": "kemenag",
+    "madhab": "shafi"
   }
 }
 ```
