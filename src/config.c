@@ -97,6 +97,8 @@ Config config_default(void) {
   if (!copy_string(cfg.madhab, sizeof(cfg.madhab), "shafi")) {
     log_truncation("madhab");
   }
+  cfg.fajr_angle = 0;
+  cfg.isha_angle = 0;
 
   return cfg;
 }
@@ -194,7 +196,13 @@ static int write_json_file(FILE *f, const Config *cfg) {
   fprintf(f, ",\n");
   fprintf(f, "    \"madhab\": ");
   json_escape_string(f, cfg->madhab);
-  fprintf(f, "\n");
+  if (strcmp(cfg->calculation_method, "custom") == 0) {
+    fprintf(f, ",\n");
+    fprintf(f, "    \"fajr_angle\": %.1f,\n", cfg->fajr_angle);
+    fprintf(f, "    \"isha_angle\": %.1f\n", cfg->isha_angle);
+  } else {
+    fprintf(f, "\n");
+  }
   fprintf(f, "  }\n");
   fprintf(f, "}\n");
 
@@ -439,6 +447,12 @@ int config_load(Config *cfg) {
         log_truncation("madhab");
       }
     }
+    char *fajr_angle_str = get_value(ctx, "fajr_angle", calculation);
+    char *isha_angle_str = get_value(ctx, "isha_angle", calculation);
+    if (fajr_angle_str)
+      cfg->fajr_angle = atof(fajr_angle_str);
+    if (isha_angle_str)
+      cfg->isha_angle = atof(isha_angle_str);
   }
 
   json_end(ctx);
@@ -591,4 +605,24 @@ void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bu
       }
     }
   }
+}
+
+MethodParams method_params_from_config(const Config *cfg) {
+  CalcMethod method = method_from_string(cfg->calculation_method);
+  const MethodParams *base = method_params_get(method);
+  MethodParams params = base ? *base : *method_params_get(CALC_KEMENAG);
+
+  if (strcmp(cfg->madhab, "hanafi") == 0)
+    params.asr_shadow = ASR_HANAFI;
+  else
+    params.asr_shadow = ASR_STANDARD;
+
+  if (method == CALC_CUSTOM) {
+    if (cfg->fajr_angle > 0)
+      params.fajr_angle = cfg->fajr_angle;
+    if (cfg->isha_angle > 0)
+      params.isha_angle = cfg->isha_angle;
+  }
+
+  return params;
 }

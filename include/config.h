@@ -44,6 +44,8 @@ typedef struct {
   // Calculation
   char calculation_method[32];
   char madhab[16];
+  double fajr_angle; // custom method only (0 = use method default)
+  double isha_angle; // custom method only (0 = use method default)
 } Config;
 
 /**
@@ -90,6 +92,9 @@ int config_parse_reminders(const char *reminder_str, int *reminders, int max_rem
  * Format reminders array to string (e.g., "30,15,5")
  */
 void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bufsize);
+
+#include "prayertimes.h"
+MethodParams method_params_from_config(const Config *cfg);
 
 #ifdef __cplusplus
 }

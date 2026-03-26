@@ -1,6 +1,6 @@
 # Build directories
 build/
-build-release/
+build-*/
 
 # CMake
 CMakeCache.txt

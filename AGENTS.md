@@ -120,7 +120,7 @@ Always read the entire file before acting; updates frequently accompany specs in
 
 ## Git + Commit Hygiene
 - Create topic branches from main; do not commit directly to main.
-- Commit message format: type: short description (types: feat, fix, refactor, test, chore, docs).
+- Commit message format: type: short description (types: feat, fix, refactor, test, chore, docs), never use Author or Co-Authored commits.
 - Never mix formatting-only and logic changes in one commit.
 - Run tests + clang-format before pushing; CI expects clean tree.
 - Avoid committing secrets (config.json, API keys); path ~/.config/muslimtify is user-specific.

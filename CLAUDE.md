@@ -87,3 +87,4 @@ Tests use a custom pass/fail counter framework (no external test lib). Test avai
 
 Format: `type: short description`
 Types: feat, fix, refactor, test, chore, docs
+Note: Don't ever use co-authored commits

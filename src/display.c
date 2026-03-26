@@ -364,8 +364,10 @@ void display_config(const Config *cfg) {
   printf("  Sound: %s\n", cfg->notification_sound ? "enabled" : "disabled");
   printf("  Icon: %s\n\n", cfg->notification_icon);
 
+  CalcMethod method = method_from_string(cfg->calculation_method);
+  const MethodParams *mparams = method_params_get(method);
   printf("Calculation Method:\n");
-  printf("  Method: %s\n", cfg->calculation_method);
+  printf("  Method: %s (%s)\n", cfg->calculation_method, mparams ? mparams->name : "Unknown");
   printf("  Madhab: %s\n\n", cfg->madhab);
 
   display_reminders(cfg);
