@@ -44,6 +44,8 @@ typedef struct {
   // Calculation
   char calculation_method[32];
   char madhab[16];
+  double fajr_angle; // custom method only (0 = use method default)
+  double isha_angle; // custom method only (0 = use method default)
 } Config;
 
 /**
