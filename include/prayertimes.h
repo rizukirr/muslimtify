@@ -31,22 +31,68 @@ extern "C" {
 
 #define REFRACTION_CORRECTION 0.833 // for dhuha/maghrib (deg)
 
-#define FAJR_ANGLE_KEMENAG 20.0 // Kemenag Fajr = −20°
-#define ISHA_ANGLE_KEMENAG 18.0 // Kemenag Isha = −18°
-
-#define SHADOW_FACTOR_STANDARD 1.0 // for Asr (standard madhab)
-
 // Dhuha prayer time: sun altitude of 4°30' above eastern horizon
 // (irtifa' syams / setinggi tombak — standard in Indonesian falak)
 #define DHUHA_ALTITUDE 4.3
 
-// Ihtiyat (precautionary) adjustments in minutes (Kemenag standard)
-#define IHTIYAT_FAJR 2.0
-#define IHTIYAT_SUNRISE (-2.0)
-#define IHTIYAT_DHUHR 2.0
-#define IHTIYAT_ASR 2.0
-#define IHTIYAT_MAGHRIB 2.0
-#define IHTIYAT_ISHA 2.0
+/* ── Calculation-method catalogue ────────────────────────────────────── */
+
+typedef enum {
+  CALC_MWL,
+  CALC_MAKKAH,
+  CALC_ISNA,
+  CALC_EGYPT,
+  CALC_KARACHI,
+  CALC_TEHRAN,
+  CALC_JAFARI,
+  CALC_TURKEY,
+  CALC_SINGAPORE,
+  CALC_JAKIM,
+  CALC_KEMENAG,
+  CALC_FRANCE,
+  CALC_RUSSIA,
+  CALC_DUBAI,
+  CALC_QATAR,
+  CALC_KUWAIT,
+  CALC_JORDAN,
+  CALC_GULF,
+  CALC_TUNISIA,
+  CALC_ALGERIA,
+  CALC_MOROCCO,
+  CALC_PORTUGAL,
+  CALC_MOONSIGHTING,
+  CALC_CUSTOM,
+  CALC_COUNT
+} CalcMethod;
+
+typedef enum {
+  ASR_STANDARD = 1,
+  ASR_HANAFI = 2,
+} AsrSchool;
+
+typedef enum {
+  HIGHLAT_NONE,
+  HIGHLAT_MIDDLE_OF_NIGHT,
+  HIGHLAT_ONE_SEVENTH,
+  HIGHLAT_ANGLE_BASED,
+} HighLatMethod;
+
+typedef enum {
+  MIDNIGHT_STANDARD = 0,
+  MIDNIGHT_JAFARI,
+} MidnightMode;
+
+typedef struct {
+  const char *name;
+  double fajr_angle;
+  double isha_angle;    /* 0 when isha uses interval instead */
+  int isha_interval;    /* minutes after maghrib (0 = use angle) */
+  double maghrib_angle; /* >0 for Jafari/Tehran */
+  int maghrib_interval; /* minutes after sunset (0 = at sunset) */
+  int asr_shadow;       /* shadow factor: 1 = standard, 2 = Hanafi */
+  MidnightMode midnight_mode;
+  int ihtiyat; /* precautionary minutes added to each time */
+} MethodParams;
 
 struct PrayerTimes {
   double fajr;
@@ -62,12 +108,18 @@ void format_time_hm(double timeHours, char *outBuffer, size_t bufSize);
 
 void format_time_hms(double timeHours, char *outBuffer, size_t bufSize);
 
+const MethodParams *method_params_get(CalcMethod method);
+CalcMethod method_from_string(const char *name);
+const char *method_to_string(CalcMethod method);
+
 struct PrayerTimes calculate_prayer_times(int year, int month, int day, double latitude,
-                                          double longitude, double timezone);
+                                          double longitude, double timezone,
+                                          const MethodParams *params);
 
 #ifdef PRAYERTIMES_IMPLEMENTATION
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 // Helper: normalize angle to [0,360)
@@ -76,6 +128,92 @@ static double normalize_deg(double angle) {
   if (a < 0)
     a += 360.0;
   return a;
+}
+
+/* ── Method parameter table ─────────────────────────────────────────── */
+
+static const MethodParams METHOD_TABLE[CALC_COUNT] = {
+    [CALC_MWL] = {"mwl", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_MAKKAH] = {"makkah", 18.5, 0.0, 90, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_ISNA] = {"isna", 15.0, 15.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_EGYPT] = {"egypt", 19.5, 17.5, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_KARACHI] = {"karachi", 18.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_TEHRAN] = {"tehran", 17.7, 14.0, 0, 4.5, 0, 1, MIDNIGHT_JAFARI, 0},
+    [CALC_JAFARI] = {"jafari", 16.0, 14.0, 0, 4.0, 0, 1, MIDNIGHT_JAFARI, 0},
+    [CALC_TURKEY] = {"turkey", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_SINGAPORE] = {"singapore", 20.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_JAKIM] = {"jakim", 20.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_KEMENAG] = {"kemenag", 20.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 2},
+    [CALC_FRANCE] = {"france", 12.0, 12.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_RUSSIA] = {"russia", 16.0, 15.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_DUBAI] = {"dubai", 18.2, 18.2, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_QATAR] = {"qatar", 18.0, 0.0, 90, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_KUWAIT] = {"kuwait", 18.0, 17.5, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_JORDAN] = {"jordan", 18.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 5},
+    [CALC_GULF] = {"gulf", 19.5, 0.0, 90, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_TUNISIA] = {"tunisia", 18.0, 18.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_ALGERIA] = {"algeria", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_MOROCCO] = {"morocco", 19.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_PORTUGAL] = {"portugal", 18.0, 0.0, 77, 0.0, 3, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_MOONSIGHTING] = {"moonsighting", 18.0, 18.0, 0, 0.0, 3, 1, MIDNIGHT_STANDARD, 0},
+    [CALC_CUSTOM] = {"custom", 18.0, 17.0, 0, 0.0, 0, 1, MIDNIGHT_STANDARD, 0},
+};
+
+const MethodParams *method_params_get(CalcMethod method) {
+  if (method < 0 || method >= CALC_COUNT)
+    return NULL;
+  return &METHOD_TABLE[method];
+}
+
+/* String key ↔ enum mapping */
+
+typedef struct {
+  const char *key;
+  CalcMethod method;
+} MethodKeyEntry;
+
+static const MethodKeyEntry METHOD_KEYS[] = {
+    {"mwl", CALC_MWL},
+    {"makkah", CALC_MAKKAH},
+    {"isna", CALC_ISNA},
+    {"egypt", CALC_EGYPT},
+    {"karachi", CALC_KARACHI},
+    {"tehran", CALC_TEHRAN},
+    {"jafari", CALC_JAFARI},
+    {"turkey", CALC_TURKEY},
+    {"singapore", CALC_SINGAPORE},
+    {"jakim", CALC_JAKIM},
+    {"kemenag", CALC_KEMENAG},
+    {"france", CALC_FRANCE},
+    {"russia", CALC_RUSSIA},
+    {"dubai", CALC_DUBAI},
+    {"qatar", CALC_QATAR},
+    {"kuwait", CALC_KUWAIT},
+    {"jordan", CALC_JORDAN},
+    {"gulf", CALC_GULF},
+    {"tunisia", CALC_TUNISIA},
+    {"algeria", CALC_ALGERIA},
+    {"morocco", CALC_MOROCCO},
+    {"portugal", CALC_PORTUGAL},
+    {"moonsighting", CALC_MOONSIGHTING},
+    {"custom", CALC_CUSTOM},
+};
+
+CalcMethod method_from_string(const char *name) {
+  if (!name)
+    return CALC_CUSTOM;
+  size_t count = sizeof(METHOD_KEYS) / sizeof(METHOD_KEYS[0]);
+  for (size_t i = 0; i < count; i++) {
+    if (strcmp(name, METHOD_KEYS[i].key) == 0)
+      return METHOD_KEYS[i].method;
+  }
+  return CALC_CUSTOM;
+}
+
+const char *method_to_string(CalcMethod method) {
+  if (method < 0 || method >= CALC_COUNT)
+    return "custom";
+  return METHOD_TABLE[method].name;
 }
 
 // Calculate Julian Day from a calendar date (simplified)
@@ -133,6 +271,26 @@ static double hour_angle(double lat, double decl, double angle) {
   return ha * RAD_TO_DEG / 15.0; // convert from degrees to hours
 }
 
+// Safe version that checks cos_ha bounds for high-latitude locations
+static double hour_angle_safe(double lat, double decl, double angle, bool *failed) {
+  double lat_rad = lat * DEG_TO_RAD;
+  double decl_rad = decl * DEG_TO_RAD;
+  double angle_rad = angle * DEG_TO_RAD;
+
+  double numerator = -sin(angle_rad) - sin(lat_rad) * sin(decl_rad);
+  double denominator = cos(lat_rad) * cos(decl_rad);
+  double cos_ha = numerator / denominator;
+
+  if (cos_ha < -1.0 || cos_ha > 1.0) {
+    *failed = true;
+    return 0.0;
+  }
+
+  *failed = false;
+  double ha = acos(cos_ha);
+  return ha * RAD_TO_DEG / 15.0;
+}
+
 // Format time (double hours) into "HH:MM"
 void format_time_hm(double timeHours, char *outBuffer, size_t bufSize) {
   int hours = (int)timeHours;
@@ -169,42 +327,78 @@ void format_time_hms(double timeHours, char *outBuffer, size_t bufSize) {
 }
 
 struct PrayerTimes calculate_prayer_times(int year, int month, int day, double latitude,
-                                          double longitude, double timezone) {
+                                          double longitude, double timezone,
+                                          const MethodParams *params) {
   double jd = julian_day(year, month, day);
   double decl, eqt;
   sun_position(jd, &decl, &eqt);
 
   double noon = 12.0 + timezone - (longitude / 15.0) - eqt;
 
+  /* Sunrise & sunset (always use refraction correction) */
   double ha_sunrise = hour_angle(latitude, decl, REFRACTION_CORRECTION);
   double sunrise = noon - ha_sunrise;
-  double maghrib = noon + ha_sunrise;
+  double sunset = noon + ha_sunrise;
 
-  double ha_fajr = hour_angle(latitude, decl, FAJR_ANGLE_KEMENAG);
+  /* Night duration for high-latitude fallback */
+  double night = (24.0 - sunset) + sunrise;
+
+  /* Fajr */
+  bool fajr_failed = false;
+  double ha_fajr = hour_angle_safe(latitude, decl, params->fajr_angle, &fajr_failed);
   double fajr = noon - ha_fajr;
+  if (fajr_failed) {
+    /* Angle-based high-latitude fallback */
+    fajr = sunrise - (params->fajr_angle / 60.0) * night;
+  }
 
-  double ha_isha = hour_angle(latitude, decl, ISHA_ANGLE_KEMENAG);
-  double isha = noon + ha_isha;
+  /* Maghrib */
+  double maghrib;
+  if (params->maghrib_angle > 0.0) {
+    /* Jafari / Tehran: use angle below horizon */
+    double ha_mag = hour_angle(latitude, decl, params->maghrib_angle);
+    maghrib = noon + ha_mag;
+  } else {
+    maghrib = sunset;
+  }
+  if (params->maghrib_interval > 0) {
+    maghrib = sunset + (double)params->maghrib_interval / 60.0;
+  }
 
+  /* Isha */
+  double isha;
+  if (params->isha_angle > 0.0) {
+    bool isha_failed = false;
+    double ha_isha = hour_angle_safe(latitude, decl, params->isha_angle, &isha_failed);
+    isha = noon + ha_isha;
+    if (isha_failed) {
+      isha = sunset + (params->isha_angle / 60.0) * night;
+    }
+  } else {
+    /* Interval-based (e.g. Makkah 90 min after maghrib) */
+    isha = maghrib + (double)params->isha_interval / 60.0;
+  }
+
+  /* Asr */
   double asr_angle =
-      atan(1.0 / (SHADOW_FACTOR_STANDARD + tan(fabs(latitude - decl) * DEG_TO_RAD))) * RAD_TO_DEG;
-  // For Asr, angle is above horizon, so we pass negative to indicate positive
-  // altitude
+      atan(1.0 / ((double)params->asr_shadow + tan(fabs(latitude - decl) * DEG_TO_RAD))) *
+      RAD_TO_DEG;
   double ha_asr = hour_angle(latitude, decl, -asr_angle);
   double asr = noon + ha_asr;
 
-  // Calculate Dhuha time: sun altitude 4.5° above eastern horizon
-  // (irtifa' syams / setinggi tombak — standard in Indonesian falak)
+  /* Dhuha */
   double ha_dhuha = hour_angle(latitude, decl, -DHUHA_ALTITUDE);
   double dhuha = noon - ha_dhuha;
 
-  // Apply ihtiyat (precautionary) adjustments according to Kemenag standard
-  fajr += IHTIYAT_FAJR / 60.0;       // +2 minutes
-  sunrise += IHTIYAT_SUNRISE / 60.0; // -2 minutes
-  noon += IHTIYAT_DHUHR / 60.0;      // +2 minutes
-  asr += IHTIYAT_ASR / 60.0;         // +2 minutes
-  maghrib += IHTIYAT_MAGHRIB / 60.0; // +2 minutes
-  isha += IHTIYAT_ISHA / 60.0;       // +2 minutes
+  /* Apply ihtiyat (precautionary) adjustments */
+  double iht = (double)params->ihtiyat / 60.0;
+  fajr += iht;
+  sunrise -= iht; /* sunrise ihtiyat is inverted */
+  noon += iht;
+  asr += iht;
+  maghrib += iht;
+  isha += iht;
+  /* Dhuha does not get ihtiyat */
 
   struct PrayerTimes times = {
       .fajr = fajr,
