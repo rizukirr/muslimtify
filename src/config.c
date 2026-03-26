@@ -606,3 +606,23 @@ void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bu
     }
   }
 }
+
+MethodParams method_params_from_config(const Config *cfg) {
+  CalcMethod method = method_from_string(cfg->calculation_method);
+  const MethodParams *base = method_params_get(method);
+  MethodParams params = base ? *base : *method_params_get(CALC_KEMENAG);
+
+  if (strcmp(cfg->madhab, "hanafi") == 0)
+    params.asr_shadow = ASR_HANAFI;
+  else
+    params.asr_shadow = ASR_STANDARD;
+
+  if (method == CALC_CUSTOM) {
+    if (cfg->fajr_angle > 0)
+      params.fajr_angle = cfg->fajr_angle;
+    if (cfg->isha_angle > 0)
+      params.isha_angle = cfg->isha_angle;
+  }
+
+  return params;
+}

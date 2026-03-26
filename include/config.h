@@ -93,6 +93,9 @@ int config_parse_reminders(const char *reminder_str, int *reminders, int max_rem
  */
 void config_format_reminders(const PrayerConfig *prayer, char *buffer, size_t bufsize);
 
+#include "prayertimes.h"
+MethodParams method_params_from_config(const Config *cfg);
+
 #ifdef __cplusplus
 }
 #endif
