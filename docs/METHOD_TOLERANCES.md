@@ -229,27 +229,6 @@ Sources:
 
 ---
 
-### Jafari / Shia (Qum) — 3 min tolerance
-
-| Parameter | Value |
-|-----------|-------|
-| Ihtiyat | Jurisprudential (ihtiyat wajib concept, no fixed value) |
-| Rounding | Not specified |
-| Stated accuracy | Not published |
-
-Shia authorities do not publish computational tolerance standards. The emphasis is on ensuring
-times are definitely within the valid window, not on computational precision. The Maghrib angle
-difference between Qum (4.0) and Tehran (4.5) itself creates a ~5-minute difference, meaning
-method selection matters more than computational tolerance.
-
-Three scholarly positions exist on Maghrib: (1) wait for eastern redness to disappear (~4-4.5
-degrees), (2) begin at geometric sunset, (3) begin at sunset but wait as ihtiyat. Grand Ayatollah
-Sistani follows position 1 as obligatory precaution.
-
-**Recommended test tolerance: 3 minutes** (due to atmospheric uncertainty in Maghrib)
-
----
-
 ## Summary: Recommended Test Tolerances
 
 | Method | Tolerance | Rationale |
@@ -264,7 +243,6 @@ Sistani follows position 1 as obligatory precaution.
 | **MUIS** | 2 min | Matches JAKIM/Kemenag parameters |
 | **Diyanet** | 2 min | Without temkin; official times differ by temkin amount |
 | **Tehran** | 3 min | Acknowledged atmospheric uncertainty for twilight prayers |
-| **Jafari** | 3 min | Atmospheric Maghrib + no published standards |
 | **All others** | 2 min | Default conservative standard |
 
 **Note:** These tolerances are for validating our calculator against reference sources (Aladhan
