@@ -1,3 +1,9 @@
+muslimtify (0.2.0-2) unstable; urgency=medium
+
+  * Re-release: rebuild source package for PPA upload
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Fri, 27 Mar 2026 14:00:00 +0700
+
 muslimtify (0.2.0-1) unstable; urgency=medium
 
   * Add full Windows support for Muslimtify, including toast notifications with icon, Task Scheduler daemon, service helper, install/uninstall scripts, and Inno Setup installer for winget distribution

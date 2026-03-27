@@ -6,7 +6,9 @@ DISTRO="${1:-noble}"  # Ubuntu series to target
 ARCH="amd64"
 CHROOT_DIR="${HOME}/.cache/muslimtify-deb-chroot"
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-PKG_VERSION="$(grep -oP '\(\K[^)]+' "$PROJECT_DIR/.packages/debian/debian/changelog" | head -1 | cut -d- -f1)"
+PKG_FULL_VERSION="$(grep -oP '\(\K[^)]+' "$PROJECT_DIR/.packages/debian/debian/changelog" | head -1)"
+PKG_VERSION="$(echo "$PKG_FULL_VERSION" | cut -d- -f1)"
+PKG_DEBIAN_REV="$(echo "$PKG_FULL_VERSION" | cut -d- -f2)"
 PKG_NAME="muslimtify"
 GPG_KEY="47EED10975B13711"
 PPA="ppa:rizukirr/muslimtify"
@@ -92,8 +94,8 @@ ls -lh /tmp/${PKG_NAME}_${PKG_VERSION}*
 # --- Sign on host as the real user ---
 REAL_USER="${SUDO_USER:-$(whoami)}"
 REAL_HOME="$(eval echo "~${REAL_USER}")"
-DSC_FILE="${OUTPUT_DIR}/${PKG_NAME}_${PKG_VERSION}-1.dsc"
-CHANGES_FILE="${OUTPUT_DIR}/${PKG_NAME}_${PKG_VERSION}-1_source.changes"
+DSC_FILE="${OUTPUT_DIR}/${PKG_NAME}_${PKG_FULL_VERSION}.dsc"
+CHANGES_FILE="${OUTPUT_DIR}/${PKG_NAME}_${PKG_FULL_VERSION}_source.changes"
 
 echo "==> Signing source package on host as ${REAL_USER}..."
 
