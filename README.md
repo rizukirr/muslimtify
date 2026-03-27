@@ -2,7 +2,7 @@
 
 Muslimtify keeps you consistent with your daily prayers by delivering accurate prayer times and timely desktop notifications. Designed for Linux and Windows, it automatically calculates prayer schedules and reminds you 30, 15, and 5 minutes before the Adhan — or at your own custom intervals — and when it's time to pray. All calculations run locally, requiring no internet connection or external services.
 
-Muslimtify supports **22 international calculation methods** including MWL, ISNA, Umm al-Qura (Makkah), Egyptian General Authority, Kemenag (Indonesia), JAKIM (Malaysia), Diyanet (Turkey), and more. The default method is Kemenag. With persistent configuration and minimal setup, Muslimtify integrates seamlessly into your daily routine without interrupting your workflow.
+Muslimtify supports **21 international calculation methods** including MWL, ISNA, Umm al-Qura (Makkah), Egyptian General Authority, Kemenag (Indonesia), JAKIM (Malaysia), Diyanet (Turkey), and more. The default method is Kemenag. With persistent configuration and minimal setup, Muslimtify integrates seamlessly into your daily routine without interrupting your workflow.
 
 > Prayer time calculations are powered by [libmuslim](https://github.com/rizukirr/libmuslim), a portable library extracted from this project to enable a more flexible and reusable ecosystem for Muslim developers.
 
@@ -120,7 +120,6 @@ Muslimtify supports the following calculation methods:
 | `isna` | ISNA | North America |
 | `egypt` | Egyptian General Authority | Africa, Middle East |
 | `karachi` | Univ. Islamic Sciences, Karachi | Pakistan, India, Bangladesh |
-| `tehran` | Inst. of Geophysics, Tehran | Iran |
 | `turkey` | Diyanet, Turkey | Turkey |
 | `singapore` | MUIS, Singapore | Singapore |
 | `jakim` | JAKIM, Malaysia | Malaysia |

@@ -18,30 +18,29 @@ simplified model (~1 arcminute accuracy), which is sufficient for prayer times.
 All angles are in degrees. Isha interval is in minutes after Maghrib when angle-based is not
 used.
 
-| #  | Method Key    | Organization                          | Fajr   | Isha Angle | Isha Interval | Maghrib Angle | Maghrib Offset | Asr     | Midnight   |
-|----|---------------|---------------------------------------|--------|------------|---------------|---------------|----------------|---------|------------|
-| 1  | `mwl`         | Muslim World League                   | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 2  | `makkah`      | Umm al-Qura, Makkah                  | 18.5   | -          | 90 min\*      | -             | 0 min          | Shafi'i | Standard   |
-| 3  | `isna`        | Islamic Society of North America      | 15.0   | 15.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 4  | `egypt`       | Egyptian General Authority of Survey  | 19.5   | 17.5       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 5  | `karachi`     | Univ. of Islamic Sciences, Karachi    | 18.0   | 18.0       | -             | -             | 0 min          | Hanafi  | Standard   |
-| 6  | `tehran`      | Institute of Geophysics, Tehran       | 17.7   | 14.0       | -             | 4.5           | -              | Shafi'i | Jafari     |
-| 7  | `turkey`      | Diyanet Isleri Baskanligi             | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 8  | `singapore`   | MUIS, Singapore                       | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 9  | `jakim`       | JAKIM, Malaysia                       | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 10 | `kemenag`     | Kemenag, Indonesia                    | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 11 | `france`      | UOIF, France                          | 12.0   | 12.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 12 | `russia`      | Spiritual Administration of Muslims   | 16.0   | 15.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 13 | `dubai`       | GAIAE, Dubai                          | 18.2   | 18.2       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 14 | `qatar`       | Ministry of Awqaf, Qatar              | 18.0   | -          | 90 min        | -             | 0 min          | Shafi'i | Standard   |
-| 15 | `kuwait`      | Ministry of Awqaf, Kuwait             | 18.0   | 17.5       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 16 | `jordan`      | Ministry of Awqaf, Jordan             | 18.0   | 18.0       | -             | -             | 5 min          | Shafi'i | Standard   |
-| 17 | `gulf`        | Gulf Region (general)                 | 19.5   | -          | 90 min        | -             | 0 min          | Shafi'i | Standard   |
-| 18 | `tunisia`     | Ministry of Religious Affairs         | 18.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 19 | `algeria`     | Ministry of Religious Affairs         | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 20 | `morocco`     | Ministry of Habous and Islamic Affairs| 19.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 21 | `portugal`    | Comunidade Islamica de Lisboa         | 18.0   | -          | 77 min        | -             | 3 min          | Shafi'i | Standard   |
-| 22 | `moonsighting`| Moonsighting Committee Worldwide      | 18.0\*\*| 18.0\*\*  | -             | -             | 3 min          | Shafi'i | Standard   |
+| #  | Method Key    | Organization                          | Fajr   | Isha Angle | Isha Interval | Maghrib Offset | Asr     |
+|----|---------------|---------------------------------------|--------|------------|---------------|----------------|---------|
+| 1  | `mwl`         | Muslim World League                   | 18.0   | 17.0       | -             | 0 min          | Shafi'i |
+| 2  | `makkah`      | Umm al-Qura, Makkah                  | 18.5   | -          | 90 min\*      | 0 min          | Shafi'i |
+| 3  | `isna`        | Islamic Society of North America      | 15.0   | 15.0       | -             | 0 min          | Shafi'i |
+| 4  | `egypt`       | Egyptian General Authority of Survey  | 19.5   | 17.5       | -             | 0 min          | Shafi'i |
+| 5  | `karachi`     | Univ. of Islamic Sciences, Karachi    | 18.0   | 18.0       | -             | 0 min          | Hanafi  |
+| 6  | `turkey`      | Diyanet Isleri Baskanligi             | 18.0   | 17.0       | -             | 0 min          | Shafi'i |
+| 7  | `singapore`   | MUIS, Singapore                       | 20.0   | 18.0       | -             | 0 min          | Shafi'i |
+| 8  | `jakim`       | JAKIM, Malaysia                       | 20.0   | 18.0       | -             | 0 min          | Shafi'i |
+| 9  | `kemenag`     | Kemenag, Indonesia                    | 20.0   | 18.0       | -             | 0 min          | Shafi'i |
+| 10 | `france`      | UOIF, France                          | 12.0   | 12.0       | -             | 0 min          | Shafi'i |
+| 11 | `russia`      | Spiritual Administration of Muslims   | 16.0   | 15.0       | -             | 0 min          | Shafi'i |
+| 12 | `dubai`       | GAIAE, Dubai                          | 18.2   | 18.2       | -             | 0 min          | Shafi'i |
+| 13 | `qatar`       | Ministry of Awqaf, Qatar              | 18.0   | -          | 90 min        | 0 min          | Shafi'i |
+| 14 | `kuwait`      | Ministry of Awqaf, Kuwait             | 18.0   | 17.5       | -             | 0 min          | Shafi'i |
+| 15 | `jordan`      | Ministry of Awqaf, Jordan             | 18.0   | 18.0       | -             | 5 min          | Shafi'i |
+| 16 | `gulf`        | Gulf Region (general)                 | 19.5   | -          | 90 min        | 0 min          | Shafi'i |
+| 17 | `tunisia`     | Ministry of Religious Affairs         | 18.0   | 18.0       | -             | 0 min          | Shafi'i |
+| 18 | `algeria`     | Ministry of Religious Affairs         | 18.0   | 17.0       | -             | 0 min          | Shafi'i |
+| 19 | `morocco`     | Ministry of Habous and Islamic Affairs| 19.0   | 17.0       | -             | 0 min          | Shafi'i |
+| 20 | `portugal`    | Comunidade Islamica de Lisboa         | 18.0   | -          | 77 min        | 3 min          | Shafi'i |
+| 21 | `moonsighting`| Moonsighting Committee Worldwide      | 18.0\*\*| 18.0\*\*  | -             | 3 min          | Shafi'i |
 
 > \* Umm al-Qura uses **120 minutes** during Ramadan instead of 90.
 >
@@ -52,7 +51,6 @@ used.
 ### Midnight Modes
 
 - **Standard:** Midpoint between Sunset and Sunrise.
-- **Jafari (used by Tehran):** Midpoint between Sunset and Fajr (produces an earlier midnight).
 
 ---
 
@@ -89,12 +87,6 @@ used.
 - Official times are manually adjusted per city by the Ministry of Habous.
 - Developers approximate with $19.0^\circ$ Fajr and $17.0^\circ$ Isha, plus Maghrib/Dhuhr
   offsets of up to 5-7 minutes.
-
-### Tehran (Shia)
-
-- Maghrib is **angle-based** ($4.5^\circ$), NOT sunset.
-  This means waiting until the "eastern redness" (*Shafaq al-Sharqi*) passes overhead.
-- Midnight = midpoint between Sunset and Fajr (NOT Sunset and Sunrise).
 
 ### Jordan
 
@@ -249,7 +241,6 @@ typedef enum {
   CALC_ISNA,
   CALC_EGYPT,
   CALC_KARACHI,
-  CALC_TEHRAN,
   CALC_TURKEY,
   CALC_SINGAPORE,
   CALC_JAKIM,
@@ -285,7 +276,6 @@ typedef enum {
 
 typedef enum {
   MIDNIGHT_STANDARD = 0, // midpoint Sunset-Sunrise
-  MIDNIGHT_JAFARI,       // midpoint Sunset-Fajr
 } MidnightMode;
 ```
 
@@ -296,7 +286,6 @@ typedef struct {
   double       fajr_angle;
   double       isha_angle;          // 0 if using fixed interval
   double       isha_interval;       // minutes after Maghrib (0 if using angle)
-  double       maghrib_angle;       // 0 for sunset-based
   double       maghrib_interval;    // minutes after sunset (0 for immediate)
   AsrSchool    asr_school;
   MidnightMode midnight_mode;
@@ -308,30 +297,29 @@ typedef struct {
 ### Method Table (Static Initialization)
 
 ```c
-//                              fajr   isha_a isha_i mag_a mag_i asr       midnight       iht  ram
+//                              fajr   isha_a isha_i mag_i asr       midnight       iht  ram
 static const MethodParams METHOD_TABLE[CALC_COUNT] = {
-  [CALC_MWL]         = { 18.0,  17.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_MAKKAH]      = { 18.5,   0,    90,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0, 120   },
-  [CALC_ISNA]        = { 15.0,  15.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_EGYPT]       = { 19.5,  17.5,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_KARACHI]     = { 18.0,  18.0,   0,   0,    0,   ASR_HANAFI,   MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_TEHRAN]      = { 17.7,  14.0,   0,   4.5,  0,   ASR_STANDARD, MIDNIGHT_JAFARI,   0,   0   },
-  [CALC_TURKEY]      = { 18.0,  17.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_SINGAPORE]   = { 20.0,  18.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_JAKIM]       = { 20.0,  18.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_KEMENAG]     = { 20.0,  18.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 2,   0   },
-  [CALC_FRANCE]      = { 12.0,  12.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_RUSSIA]      = { 16.0,  15.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_DUBAI]       = { 18.2,  18.2,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_QATAR]       = { 18.0,   0,    90,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_KUWAIT]      = { 18.0,  17.5,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_JORDAN]      = { 18.0,  18.0,   0,   0,    5,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_GULF]        = { 19.5,   0,    90,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_TUNISIA]     = { 18.0,  18.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_ALGERIA]     = { 18.0,  17.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_MOROCCO]     = { 19.0,  17.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_PORTUGAL]    = { 18.0,   0,    77,   0,    3,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
-  [CALC_MOONSIGHTING]= { 18.0,  18.0,   0,   0,    3,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_MWL]         = { 18.0,  17.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_MAKKAH]      = { 18.5,   0,    90,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0, 120   },
+  [CALC_ISNA]        = { 15.0,  15.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_EGYPT]       = { 19.5,  17.5,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_KARACHI]     = { 18.0,  18.0,   0,   0,   ASR_HANAFI,   MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_TURKEY]      = { 18.0,  17.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_SINGAPORE]   = { 20.0,  18.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_JAKIM]       = { 20.0,  18.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_KEMENAG]     = { 20.0,  18.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 2,   0   },
+  [CALC_FRANCE]      = { 12.0,  12.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_RUSSIA]      = { 16.0,  15.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_DUBAI]       = { 18.2,  18.2,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_QATAR]       = { 18.0,   0,    90,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_KUWAIT]      = { 18.0,  17.5,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_JORDAN]      = { 18.0,  18.0,   0,   5,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_GULF]        = { 19.5,   0,    90,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_TUNISIA]     = { 18.0,  18.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_ALGERIA]     = { 18.0,  17.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_MOROCCO]     = { 19.0,  17.0,   0,   0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_PORTUGAL]    = { 18.0,   0,    77,   3,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
+  [CALC_MOONSIGHTING]= { 18.0,  18.0,   0,   3,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
 };
 ```
 
@@ -346,8 +334,7 @@ The current `calculate_prayer_times()` must be extended to handle three branchin
 1. **Isha:** If `isha_interval > 0`, compute as `maghrib + interval / 60.0` instead of using
    the hour angle formula with `isha_angle`.
 
-2. **Maghrib:** If `maghrib_angle > 0` (Tehran/Jafari), compute hour angle with that angle.
-   If `maghrib_interval > 0` (Jordan/Portugal), add interval to sunset. Otherwise
+2. **Maghrib:** If `maghrib_interval > 0` (Jordan/Portugal), add interval to sunset. Otherwise
    Maghrib = sunset.
 
 3. **Asr:** Use `asr_school` as the shadow factor $n$ in the formula.
