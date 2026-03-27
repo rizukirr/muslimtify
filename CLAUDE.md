@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Muslimtify is a minimalist prayer time notification daemon for Linux and Windows desktops, written in C99. It calculates Islamic prayer times using the Kemenag (Indonesian Ministry of Religious Affairs) astronomical method and sends desktop notifications via libnotify (Linux) or WinRT toast notifications (Windows). Runs as a systemd user timer (Linux) or a hidden-window background process (Windows) that checks every minute.
+Muslimtify is a minimalist prayer time notification daemon for Linux and Windows desktops, written in C99. It supports 21 international calculation methods (default: Kemenag/Indonesia) and sends desktop notifications via libnotify (Linux) or WinRT toast notifications (Windows). Runs as a systemd user timer (Linux) or a hidden-window background process (Windows) that checks every minute.
+
+Prayer time calculation logic originated here and was extracted into [libmuslim](https://github.com/rizukirr/libmuslim).
 
 ## Build & Test
 
@@ -63,7 +65,7 @@ GitHub Actions (`ci.yml`) runs on push/PR to `main`:
 
 **Windows service:** `src/muslimtify_service_win.c` builds a separate `muslimtify-service` WIN32 GUI executable (no console window).
 
-**Commands** (each in `src/cmd_*.c`): show, check, next, config, location, enable/disable, reminder, daemon, list
+**Commands** (each in `src/cmd_*.c`): show, check, next, config, location, enable/disable, reminder, daemon, list, method, notification
 
 **Systemd integration:** `systemd/muslimtify.timer` triggers `muslimtify.service` (oneshot, runs `muslimtify check`) every minute.
 
