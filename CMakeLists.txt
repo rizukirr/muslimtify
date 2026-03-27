@@ -182,10 +182,11 @@ if(BUILD_TESTING)
     if(WIN32)
         add_executable(test_cmd_daemon_win
             tests/test_cmd_daemon_win.c
+            src/cmd_daemon_win.c
+            src/platform_win.c
         )
         muslimtify_set_target_defaults(test_cmd_daemon_win)
-        target_link_libraries(test_cmd_daemon_win
-            muslimtify_lib ole32 runtimeobject CURL::libcurl)
+        target_compile_definitions(test_cmd_daemon_win PRIVATE MUSLIMTIFY_CMD_DAEMON_WIN_TEST)
         add_test(NAME cmd_daemon_win COMMAND test_cmd_daemon_win)
 
         add_executable(test_notification_win

@@ -7,9 +7,11 @@
 #include <wchar.h>
 #include <windows.h>
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_WIN_TEST
 #include "location.h"
 #include "method_detect.h"
 #include "string_util.h"
+#endif
 
 static wchar_t *utf8_to_wide(const char *text) {
   int len;
@@ -158,6 +160,7 @@ static int daemon_install_handler(int argc, char **argv) {
   if (result == 0) {
     printf("Scheduled task 'muslimtify' created successfully.\n");
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_WIN_TEST
     /* Auto-detect location and calculation method */
     Config cfg;
     if (config_load(&cfg) != 0) {
@@ -189,6 +192,7 @@ static int daemon_install_handler(int argc, char **argv) {
         }
       }
     }
+#endif
 
     printf("Prayer times will be checked every minute.\n");
   }
