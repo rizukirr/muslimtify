@@ -26,23 +26,22 @@ used.
 | 4  | `egypt`       | Egyptian General Authority of Survey  | 19.5   | 17.5       | -             | -             | 0 min          | Shafi'i | Standard   |
 | 5  | `karachi`     | Univ. of Islamic Sciences, Karachi    | 18.0   | 18.0       | -             | -             | 0 min          | Hanafi  | Standard   |
 | 6  | `tehran`      | Institute of Geophysics, Tehran       | 17.7   | 14.0       | -             | 4.5           | -              | Shafi'i | Jafari     |
-| 7  | `jafari`      | Shia Ithna-Ashari (Leva Inst., Qum)  | 16.0   | 14.0       | -             | 4.0           | -              | Shafi'i | Jafari     |
-| 8  | `turkey`      | Diyanet Isleri Baskanligi             | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 9  | `singapore`   | MUIS, Singapore                       | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 10 | `jakim`       | JAKIM, Malaysia                       | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 11 | `kemenag`     | Kemenag, Indonesia                    | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 12 | `france`      | UOIF, France                          | 12.0   | 12.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 13 | `russia`      | Spiritual Administration of Muslims   | 16.0   | 15.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 14 | `dubai`       | GAIAE, Dubai                          | 18.2   | 18.2       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 15 | `qatar`       | Ministry of Awqaf, Qatar              | 18.0   | -          | 90 min        | -             | 0 min          | Shafi'i | Standard   |
-| 16 | `kuwait`      | Ministry of Awqaf, Kuwait             | 18.0   | 17.5       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 17 | `jordan`      | Ministry of Awqaf, Jordan             | 18.0   | 18.0       | -             | -             | 5 min          | Shafi'i | Standard   |
-| 18 | `gulf`        | Gulf Region (general)                 | 19.5   | -          | 90 min        | -             | 0 min          | Shafi'i | Standard   |
-| 19 | `tunisia`     | Ministry of Religious Affairs         | 18.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 20 | `algeria`     | Ministry of Religious Affairs         | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 21 | `morocco`     | Ministry of Habous and Islamic Affairs| 19.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
-| 22 | `portugal`    | Comunidade Islamica de Lisboa         | 18.0   | -          | 77 min        | -             | 3 min          | Shafi'i | Standard   |
-| 23 | `moonsighting`| Moonsighting Committee Worldwide      | 18.0\*\*| 18.0\*\*  | -             | -             | 3 min          | Shafi'i | Standard   |
+| 7  | `turkey`      | Diyanet Isleri Baskanligi             | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 8  | `singapore`   | MUIS, Singapore                       | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 9  | `jakim`       | JAKIM, Malaysia                       | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 10 | `kemenag`     | Kemenag, Indonesia                    | 20.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 11 | `france`      | UOIF, France                          | 12.0   | 12.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 12 | `russia`      | Spiritual Administration of Muslims   | 16.0   | 15.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 13 | `dubai`       | GAIAE, Dubai                          | 18.2   | 18.2       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 14 | `qatar`       | Ministry of Awqaf, Qatar              | 18.0   | -          | 90 min        | -             | 0 min          | Shafi'i | Standard   |
+| 15 | `kuwait`      | Ministry of Awqaf, Kuwait             | 18.0   | 17.5       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 16 | `jordan`      | Ministry of Awqaf, Jordan             | 18.0   | 18.0       | -             | -             | 5 min          | Shafi'i | Standard   |
+| 17 | `gulf`        | Gulf Region (general)                 | 19.5   | -          | 90 min        | -             | 0 min          | Shafi'i | Standard   |
+| 18 | `tunisia`     | Ministry of Religious Affairs         | 18.0   | 18.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 19 | `algeria`     | Ministry of Religious Affairs         | 18.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 20 | `morocco`     | Ministry of Habous and Islamic Affairs| 19.0   | 17.0       | -             | -             | 0 min          | Shafi'i | Standard   |
+| 21 | `portugal`    | Comunidade Islamica de Lisboa         | 18.0   | -          | 77 min        | -             | 3 min          | Shafi'i | Standard   |
+| 22 | `moonsighting`| Moonsighting Committee Worldwide      | 18.0\*\*| 18.0\*\*  | -             | -             | 3 min          | Shafi'i | Standard   |
 
 > \* Umm al-Qura uses **120 minutes** during Ramadan instead of 90.
 >
@@ -53,7 +52,7 @@ used.
 ### Midnight Modes
 
 - **Standard:** Midpoint between Sunset and Sunrise.
-- **Jafari:** Midpoint between Sunset and Fajr (produces an earlier midnight).
+- **Jafari (used by Tehran):** Midpoint between Sunset and Fajr (produces an earlier midnight).
 
 ---
 
@@ -91,9 +90,9 @@ used.
 - Developers approximate with $19.0^\circ$ Fajr and $17.0^\circ$ Isha, plus Maghrib/Dhuhr
   offsets of up to 5-7 minutes.
 
-### Jafari / Tehran (Shia)
+### Tehran (Shia)
 
-- Maghrib is **angle-based** ($4.0^\circ$ for Jafari, $4.5^\circ$ for Tehran), NOT sunset.
+- Maghrib is **angle-based** ($4.5^\circ$), NOT sunset.
   This means waiting until the "eastern redness" (*Shafaq al-Sharqi*) passes overhead.
 - Midnight = midpoint between Sunset and Fajr (NOT Sunset and Sunrise).
 
@@ -136,7 +135,7 @@ The Asr altitude angle:
 asr_angle = atan(1.0 / (n + tan(abs(latitude - declination))))
 ```
 
-> **Note:** Jafari Asr ($n = 4/7$) exists in theory but is rarely implemented in modern
+> **Note:** Some Shia sources mention Asr at $n = 4/7$, but this is rarely implemented in modern
 > calculators. Most Shia apps use Standard ($n = 1$) for Asr.
 
 ---
@@ -251,7 +250,6 @@ typedef enum {
   CALC_EGYPT,
   CALC_KARACHI,
   CALC_TEHRAN,
-  CALC_JAFARI,
   CALC_TURKEY,
   CALC_SINGAPORE,
   CALC_JAKIM,
@@ -318,7 +316,6 @@ static const MethodParams METHOD_TABLE[CALC_COUNT] = {
   [CALC_EGYPT]       = { 19.5,  17.5,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
   [CALC_KARACHI]     = { 18.0,  18.0,   0,   0,    0,   ASR_HANAFI,   MIDNIGHT_STANDARD, 0,   0   },
   [CALC_TEHRAN]      = { 17.7,  14.0,   0,   4.5,  0,   ASR_STANDARD, MIDNIGHT_JAFARI,   0,   0   },
-  [CALC_JAFARI]      = { 16.0,  14.0,   0,   4.0,  0,   ASR_STANDARD, MIDNIGHT_JAFARI,   0,   0   },
   [CALC_TURKEY]      = { 18.0,  17.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
   [CALC_SINGAPORE]   = { 20.0,  18.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },
   [CALC_JAKIM]       = { 20.0,  18.0,   0,   0,    0,   ASR_STANDARD, MIDNIGHT_STANDARD, 0,   0   },

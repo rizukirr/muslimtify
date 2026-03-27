@@ -44,7 +44,6 @@ typedef enum {
   CALC_EGYPT,
   CALC_KARACHI,
   CALC_TEHRAN,
-  CALC_JAFARI,
   CALC_TURKEY,
   CALC_SINGAPORE,
   CALC_JAKIM,
@@ -87,7 +86,7 @@ typedef struct {
   double fajr_angle;
   double isha_angle;    /* 0 when isha uses interval instead */
   int isha_interval;    /* minutes after maghrib (0 = use angle) */
-  double maghrib_angle; /* >0 for Jafari/Tehran */
+  double maghrib_angle; /* >0 for Tehran */
   int maghrib_interval; /* minutes after sunset (0 = at sunset) */
   int asr_shadow;       /* shadow factor: 1 = standard, 2 = Hanafi */
   MidnightMode midnight_mode;
@@ -142,8 +141,6 @@ static const MethodParams METHOD_TABLE[CALC_COUNT] = {
                       MIDNIGHT_STANDARD, 0},
     [CALC_TEHRAN] = {"Inst. of Geophysics, Tehran", 17.7, 14.0, 0, 4.5, 0, ASR_STANDARD,
                      MIDNIGHT_JAFARI, 0},
-    [CALC_JAFARI] = {"Shia Ithna-Ashari, Qum", 16.0, 14.0, 0, 4.0, 0, ASR_STANDARD, MIDNIGHT_JAFARI,
-                     0},
     [CALC_TURKEY] = {"Diyanet, Turkey", 18.0, 17.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
     [CALC_SINGAPORE] = {"MUIS, Singapore", 20.0, 18.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
     [CALC_JAKIM] = {"JAKIM, Malaysia", 20.0, 18.0, 0, 0, 0, ASR_STANDARD, MIDNIGHT_STANDARD, 0},
@@ -186,29 +183,17 @@ typedef struct {
 } MethodKeyEntry;
 
 static const MethodKeyEntry METHOD_KEYS[] = {
-    {"mwl", CALC_MWL},
-    {"makkah", CALC_MAKKAH},
-    {"isna", CALC_ISNA},
-    {"egypt", CALC_EGYPT},
-    {"karachi", CALC_KARACHI},
-    {"tehran", CALC_TEHRAN},
-    {"jafari", CALC_JAFARI},
-    {"turkey", CALC_TURKEY},
-    {"singapore", CALC_SINGAPORE},
-    {"jakim", CALC_JAKIM},
-    {"kemenag", CALC_KEMENAG},
-    {"france", CALC_FRANCE},
-    {"russia", CALC_RUSSIA},
-    {"dubai", CALC_DUBAI},
-    {"qatar", CALC_QATAR},
-    {"kuwait", CALC_KUWAIT},
-    {"jordan", CALC_JORDAN},
-    {"gulf", CALC_GULF},
-    {"tunisia", CALC_TUNISIA},
-    {"algeria", CALC_ALGERIA},
-    {"morocco", CALC_MOROCCO},
-    {"portugal", CALC_PORTUGAL},
-    {"moonsighting", CALC_MOONSIGHTING},
+    {"mwl", CALC_MWL},           {"makkah", CALC_MAKKAH},
+    {"isna", CALC_ISNA},         {"egypt", CALC_EGYPT},
+    {"karachi", CALC_KARACHI},   {"tehran", CALC_TEHRAN},
+    {"turkey", CALC_TURKEY},     {"singapore", CALC_SINGAPORE},
+    {"jakim", CALC_JAKIM},       {"kemenag", CALC_KEMENAG},
+    {"france", CALC_FRANCE},     {"russia", CALC_RUSSIA},
+    {"dubai", CALC_DUBAI},       {"qatar", CALC_QATAR},
+    {"kuwait", CALC_KUWAIT},     {"jordan", CALC_JORDAN},
+    {"gulf", CALC_GULF},         {"tunisia", CALC_TUNISIA},
+    {"algeria", CALC_ALGERIA},   {"morocco", CALC_MOROCCO},
+    {"portugal", CALC_PORTUGAL}, {"moonsighting", CALC_MOONSIGHTING},
     {"custom", CALC_CUSTOM},
 };
 
@@ -370,7 +355,7 @@ struct PrayerTimes calculate_prayer_times(int year, int month, int day, double l
   /* Maghrib */
   double maghrib;
   if (params->maghrib_angle > 0.0) {
-    /* Jafari / Tehran: use angle below horizon */
+    /* Tehran: use angle below horizon */
     double ha_mag = hour_angle(latitude, decl, params->maghrib_angle);
     maghrib = noon + ha_mag;
   } else {
