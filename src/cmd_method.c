@@ -173,11 +173,8 @@ static int method_auto_handler(int argc, char **argv) {
 }
 
 static const CommandEntry method_commands[] = {
-    {"show", method_show_handler},
-    {"set", method_set_handler},
-    {"auto", method_auto_handler},
-    {"list", method_list_handler},
-    {"madhab", method_madhab_handler},
+    {"show", method_show_handler}, {"set", method_set_handler},       {"auto", method_auto_handler},
+    {"list", method_list_handler}, {"madhab", method_madhab_handler},
 };
 
 int handle_method(int argc, char **argv) {
