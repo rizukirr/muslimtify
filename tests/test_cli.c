@@ -473,6 +473,78 @@ static void test_check(void) {
   check_ret("check disabled ret", 0);
 }
 
+static void test_method(void) {
+  printf("  method...\n");
+  reset_config();
+
+  // method (default = show)
+  run(2, (char *[]){"m", "method", NULL});
+  check_ret("method bare ret", 0);
+  check_contains("method bare out", "Calculation Method:");
+
+  // method show
+  run(3, (char *[]){"m", "method", "show", NULL});
+  check_ret("method show ret", 0);
+  check_contains("method show method", "kemenag");
+  check_contains("method show madhab", "Madhab:");
+
+  // method list
+  run(3, (char *[]){"m", "method", "list", NULL});
+  check_ret("method list ret", 0);
+  check_contains("method list header", "Available calculation methods:");
+  check_contains("method list kemenag", "kemenag");
+  check_contains("method list mwl", "mwl");
+  check_contains("method list current", "*");
+
+  // method set isna
+  run(3, (char *[]){"m", "method", "isna", NULL});
+  check_ret("method set isna ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("method set isna cfg", strcmp(cfg.calculation_method, "isna") == 0);
+  }
+
+  // method set (explicit)
+  run(4, (char *[]){"m", "method", "set", "egypt", NULL});
+  check_ret("method set egypt ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("method set egypt cfg", strcmp(cfg.calculation_method, "egypt") == 0);
+  }
+
+  // method set invalid
+  run(4, (char *[]){"m", "method", "set", "invalid_method", NULL});
+  check_ret("method set invalid ret", 1);
+
+  // method madhab hanafi
+  run(4, (char *[]){"m", "method", "madhab", "hanafi", NULL});
+  check_ret("method madhab hanafi ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("method madhab hanafi cfg", strcmp(cfg.madhab, "hanafi") == 0);
+  }
+
+  // method madhab shafi
+  run(4, (char *[]){"m", "method", "madhab", "shafi", NULL});
+  check_ret("method madhab shafi ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("method madhab shafi cfg", strcmp(cfg.madhab, "shafi") == 0);
+  }
+
+  // method madhab invalid
+  run(4, (char *[]){"m", "method", "madhab", "maliki", NULL});
+  check_ret("method madhab invalid ret", 1);
+
+  // method madhab (no arg)
+  run(3, (char *[]){"m", "method", "madhab", NULL});
+  check_ret("method madhab noarg ret", 1);
+}
+
 static void test_daemon_errors(void) {
   printf("  daemon errors...\n");
   reset_config();
@@ -497,6 +569,7 @@ int main(void) {
   test_show();
   test_next();
   test_check();
+  test_method();
   test_daemon_errors();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);
