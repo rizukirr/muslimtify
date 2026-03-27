@@ -7,6 +7,12 @@
 #include <wchar.h>
 #include <windows.h>
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_WIN_TEST
+#include "location.h"
+#include "method_detect.h"
+#include "string_util.h"
+#endif
+
 static wchar_t *utf8_to_wide(const char *text) {
   int len;
   wchar_t *wide;
@@ -153,6 +159,41 @@ static int daemon_install_handler(int argc, char **argv) {
   int result = run_schtasks(args);
   if (result == 0) {
     printf("Scheduled task 'muslimtify' created successfully.\n");
+
+#ifndef MUSLIMTIFY_CMD_DAEMON_WIN_TEST
+    /* Auto-detect location and calculation method */
+    Config cfg;
+    if (config_load(&cfg) != 0) {
+      fprintf(stderr, "Warning: Failed to load config, skipping auto-detect\n");
+    } else {
+      printf("Detecting location...\n");
+      if (location_fetch(&cfg) != 0) {
+        fprintf(stderr, "Warning: Failed to detect location, skipping auto-detect\n");
+      } else {
+        if (cfg.city[0] != '\0') {
+          printf("Location detected: %s, %s\n", cfg.city, cfg.country);
+        } else {
+          printf("Location detected: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
+        }
+
+        CalcMethod detected = method_detect_by_country(cfg.country);
+        const char *method_key = method_to_string(detected);
+        const MethodParams *p = method_params_get(detected);
+
+        copy_string(cfg.calculation_method, sizeof(cfg.calculation_method), method_key);
+
+        if (config_save(&cfg) != 0) {
+          fprintf(stderr, "Warning: Failed to save config\n");
+        } else {
+          printf("Method auto-detected: %s", method_key);
+          if (p)
+            printf(" (%s)", p->name);
+          printf("\n");
+        }
+      }
+    }
+#endif
+
     printf("Prayer times will be checked every minute.\n");
   }
   return result;

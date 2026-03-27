@@ -10,6 +10,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "location.h"
+#include "method_detect.h"
+#include "string_util.h"
+
 // ── helpers ─────────────────────────────────────────────────────────────────
 
 static int systemctl_user(const char *const *args) {
@@ -136,6 +140,38 @@ static int daemon_install_handler(int argc, char **argv) {
 
   printf("✓ Created %s\n", service_path);
   printf("✓ Created %s\n", timer_path);
+
+  /* Auto-detect location and calculation method */
+  Config cfg;
+  if (config_load(&cfg) != 0) {
+    fprintf(stderr, "Warning: Failed to load config, skipping auto-detect\n");
+  } else {
+    printf("Detecting location...\n");
+    if (location_fetch(&cfg) != 0) {
+      fprintf(stderr, "Warning: Failed to detect location, skipping auto-detect\n");
+    } else {
+      if (cfg.city[0] != '\0') {
+        printf("✓ Location detected: %s, %s\n", cfg.city, cfg.country);
+      } else {
+        printf("✓ Location detected: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
+      }
+
+      CalcMethod detected = method_detect_by_country(cfg.country);
+      const char *method_key = method_to_string(detected);
+      const MethodParams *p = method_params_get(detected);
+
+      copy_string(cfg.calculation_method, sizeof(cfg.calculation_method), method_key);
+
+      if (config_save(&cfg) != 0) {
+        fprintf(stderr, "Warning: Failed to save config\n");
+      } else {
+        printf("✓ Method auto-detected: %s", method_key);
+        if (p)
+          printf(" (%s)", p->name);
+        printf("\n");
+      }
+    }
+  }
 
   if (systemctl_user((const char *[]){"daemon-reload", NULL}) != 0) {
     fprintf(stderr, "Error: systemctl daemon-reload failed\n");
