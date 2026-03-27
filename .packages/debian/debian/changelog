@@ -1,5 +1,21 @@
 muslimtify (0.2.0-1) unstable; urgency=medium
 
+  * Add full Windows support for Muslimtify, including toast notifications with icon, Task Scheduler daemon, service helper, install/uninstall scripts, and Inno Setup installer for winget distribution
+  * Add 23 international prayer time calculation methods (MWL, Makkah, ISNA, Egypt, and more)
+  * Add muslimtify method command for calculation method management
+  * Add fajr_angle/isha_angle config fields for custom method parameters
+  * Display full method name in config output
+  * Add platform abstraction layer (Linux/Windows)
+  * Extract shared check cycle, decouple from CLI
+  * Route display, persistence, and system calls through platform layer
+  * Downgrade from C23 to C99 for MSVC compatibility
+  * Add comprehensive multi-method validation (~108 data points)
+  * Add unit tests for json.h, platform boundary, and Windows components
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Fri, 27 March 2026 13:78:00 +0700
+
+muslimtify (0.1.6-1) unstable; urgency=medium
+
   * Fix the equation of time that was computed as (q / 15.0) - (RA / 15.0) without handling the 0°/360° wrap-around by Normalize the q - RA difference to [-180°, +180°] before converting to hours, so the wrap-around at the 0°/360° boundary is handled correctly.
 
  -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Sat, 21 Mar 2026 13:48:00 +0700

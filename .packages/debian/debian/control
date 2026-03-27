@@ -11,4 +11,4 @@ Rules-Requires-Root: no
 Package: muslimtify
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: A lightweight islamic prayer time notification daemon for Linux
+Description: An Islamic prayer time notification daemon for Linux
