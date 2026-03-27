@@ -205,30 +205,6 @@ Sources:
 
 ---
 
-### Tehran (Institute of Geophysics) — 3 min tolerance
-
-| Parameter | Value |
-|-----------|-------|
-| Ihtiyat | ~5-6 min for Fajr prayer (delay after adhan) |
-| Rounding | Nearest minute (sub-minute is "unscientific") |
-| Stated accuracy | "Second-level precision" for Dhuhr/Asr/Sunrise/Sunset |
-
-The Calendar Center of the Institute of Geophysics states that sunrise, sunset, Dhuhr, and Asr
-can be calculated with "second-level precision." However, **Maghrib, Isha, and Fajr cannot**
-because they depend on the visual effect of the sub-horizon sun on the atmosphere — temperature,
-humidity, and pollution introduce irreducible uncertainty.
-
-The Maghrib angle (4.5 degrees) already builds in precaution: it waits for eastern redness
-(*hamre mashreqiyeh*) to disappear, adding ~10-15 minutes compared to geometric sunset.
-
-**Recommended test tolerance: 2 min for Dhuhr/Asr/Sunrise, 3 min for Fajr/Isha/Maghrib**
-(simplified to 3 min overall)
-
-Sources:
-- [Hawzah News - Institute of Geophysics Interview](https://www.hawzahnews.com/news/896560)
-
----
-
 ## Summary: Recommended Test Tolerances
 
 | Method | Tolerance | Rationale |
@@ -242,7 +218,6 @@ Sources:
 | **JAKIM** | 2 min | Zone constraint ≤2 min |
 | **MUIS** | 2 min | Matches JAKIM/Kemenag parameters |
 | **Diyanet** | 2 min | Without temkin; official times differ by temkin amount |
-| **Tehran** | 3 min | Acknowledged atmospheric uncertainty for twilight prayers |
 | **All others** | 2 min | Default conservative standard |
 
 **Note:** These tolerances are for validating our calculator against reference sources (Aladhan
