@@ -1,6 +1,7 @@
 #include "cache.h"
 #include "cli_internal.h"
 #include "prayertimes.h"
+#include "string_util.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -55,8 +56,7 @@ static int method_set_handler(int argc, char **argv) {
     return 1;
   }
 
-  strncpy(cfg.calculation_method, argv[0], sizeof(cfg.calculation_method) - 1);
-  cfg.calculation_method[sizeof(cfg.calculation_method) - 1] = '\0';
+  copy_string(cfg.calculation_method, sizeof(cfg.calculation_method), argv[0]);
 
   if (config_save(&cfg) != 0) {
     fprintf(stderr, "Error: Failed to save config\n");
@@ -88,8 +88,7 @@ static int method_madhab_handler(int argc, char **argv) {
     return 1;
   }
 
-  strncpy(cfg.madhab, argv[0], sizeof(cfg.madhab) - 1);
-  cfg.madhab[sizeof(cfg.madhab) - 1] = '\0';
+  copy_string(cfg.madhab, sizeof(cfg.madhab), argv[0]);
 
   if (config_save(&cfg) != 0) {
     fprintf(stderr, "Error: Failed to save config\n");
