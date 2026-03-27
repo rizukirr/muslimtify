@@ -32,8 +32,9 @@ bool copy_string(char *dst, size_t dst_size, const char *src) {
   }
 
   size_t limit = dst_size - 1;
-  size_t copy_len = bounded_strlen(src, limit);
-  bool fits = src[copy_len] == '\0';
+  size_t src_len = strlen(src);
+  size_t copy_len = src_len < limit ? src_len : limit;
+  bool fits = src_len <= limit;
   if (copy_len > 0) {
     memcpy(dst, src, copy_len);
   }
