@@ -62,9 +62,13 @@ sudo ./install.sh
 muslimtify daemon install
 ```
 
-### Windows Source Install
+### Windows (winget)
 
-Windows support is currently in early access and limited to source builds. We plan to launch on the Microsoft Store once the implementation reaches a stable milestone:
+```powershell
+winget install muslimtify
+```
+
+### Windows Source Install
 
 ```powershell
 git clone https://github.com/rizukirr/muslimtify.git
