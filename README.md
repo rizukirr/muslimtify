@@ -18,7 +18,6 @@ Muslimtify supports **21 international calculation methods** including MWL, ISNA
 
 ```bash
 yay -S muslimtify
-muslimtify daemon install
 ```
 
 ### Fedora (COPR)
@@ -26,7 +25,6 @@ muslimtify daemon install
 ```bash
 sudo dnf copr enable rizukirr/muslimtify
 sudo dnf install muslimtify
-muslimtify daemon install
 ```
 
 ### Debian/Ubuntu (PPA)
@@ -35,7 +33,6 @@ muslimtify daemon install
 sudo add-apt-repository ppa:rizukirr/muslimtify
 sudo apt update
 sudo apt install muslimtify
-muslimtify daemon install
 ```
 
 ### Linux Source Install
@@ -87,6 +84,9 @@ cmake --build build --config Release
 cmake --install build --config Release
 muslimtify daemon install
 ```
+
+## Post Installation check
+Run `muslimtify daemon status` to check if Muslimtify is registered with systemd. If no status is found, run `muslimtify daemon install` to register the service and ensure it runs as expected.
 
 ## Configuration
 
