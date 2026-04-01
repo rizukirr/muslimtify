@@ -36,3 +36,5 @@ Testing/
 external
 docs/superpowers/
 .claude/
+.omc/
+**/.omc/

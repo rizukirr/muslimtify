@@ -1,8 +1,9 @@
-muslimtify (0.2.0-2) unstable; urgency=medium
+muslimtify (0.2.1-1) unstable; urgency=medium
 
-  * Re-release: rebuild source package for PPA upload
+  * Auto-detect location and method on daemon install
+  * Bug fixes and improvements
 
- -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Fri, 27 Mar 2026 14:00:00 +0700
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Thu, 02 April 2026 05:41:00 +0700
 
 muslimtify (0.2.0-1) unstable; urgency=medium
 
