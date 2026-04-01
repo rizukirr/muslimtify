@@ -64,6 +64,9 @@ function(muslimtify_set_target_defaults target)
         target_compile_options(${target} PRIVATE
             -Wall -Wextra -Wpedantic -Wshadow -Wformat=2
         )
+        if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+            target_compile_options(${target} PRIVATE -Wno-c11-extensions)
+        endif()
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
             target_link_options(${target} PRIVATE -fsanitize=address,undefined)
