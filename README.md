@@ -241,6 +241,6 @@ for details.
 
 ## Support
 
-- Bugs and feature requests: GitHub Issues
-- Questions and discussion: GitHub Discussions
+- Bugs and feature requests: [GitHub Issues](https://github.com/rizukirr/muslimtify/issues)
+- Questions and discussion: [GitHub Discussions](https://github.com/rizukirr/muslimtify/discussions)
 - Or buy me a ☕ [Ko-fi](https://ko-fi.com/rizukirr)
