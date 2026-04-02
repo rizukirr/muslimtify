@@ -85,8 +85,10 @@ cmake --install build --config Release
 muslimtify daemon install
 ```
 
-## Post Installation check
+## Post Installation
 Run `muslimtify daemon status` to check if Muslimtify is registered with systemd. If no status is found, run `muslimtify daemon install` to register the service and ensure it runs as expected.
+
+Muslimtify automatically selects the standard prayer time calculation method based on your country and location. Run `muslimtify` to verify that your configuration is correct. If the automatic selection does not meet your needs, you can set it manually using `muslimtify method set <method>`. A full list of available methods is documented [here](#calculation-methods).
 
 ## Configuration
 
