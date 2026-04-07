@@ -86,6 +86,13 @@ Config config_default(void) {
     log_truncation("notification_urgency");
   }
   cfg.notification_sound = true;
+  if (!copy_string(cfg.notification_sound_alarm, sizeof(cfg.notification_sound_alarm), "alarm")) {
+    log_truncation("notification_sound_alarm");
+  }
+  if (!copy_string(cfg.notification_sound_reminder, sizeof(cfg.notification_sound_reminder),
+                   "reminder")) {
+    log_truncation("notification_sound_reminder");
+  }
   if (!copy_string(cfg.notification_icon, sizeof(cfg.notification_icon), "muslimtify")) {
     log_truncation("notification_icon");
   }
@@ -185,6 +192,12 @@ static int write_json_file(FILE *f, const Config *cfg) {
   json_escape_string(f, cfg->notification_urgency);
   fprintf(f, ",\n");
   fprintf(f, "    \"sound\": %s,\n", cfg->notification_sound ? "true" : "false");
+  fprintf(f, "    \"sound_alarm\": ");
+  json_escape_string(f, cfg->notification_sound_alarm);
+  fprintf(f, ",\n");
+  fprintf(f, "    \"sound_reminder\": ");
+  json_escape_string(f, cfg->notification_sound_reminder);
+  fprintf(f, ",\n");
   fprintf(f, "    \"icon\": ");
   json_escape_string(f, cfg->notification_icon);
   fprintf(f, "\n");
@@ -413,6 +426,8 @@ int config_load(Config *cfg) {
     char *timeout_str = get_value(ctx, "timeout", notification);
     char *urgency_str = get_value(ctx, "urgency", notification);
     char *sound_str = get_value(ctx, "sound", notification);
+    char *sound_alarm_str = get_value(ctx, "sound_alarm", notification);
+    char *sound_reminder_str = get_value(ctx, "sound_reminder", notification);
     char *icon_str = get_value(ctx, "icon", notification);
 
     if (timeout_str)
@@ -424,6 +439,18 @@ int config_load(Config *cfg) {
     }
     if (sound_str)
       cfg->notification_sound = strcmp(sound_str, "true") == 0;
+    if (sound_alarm_str) {
+      if (!copy_string(cfg->notification_sound_alarm, sizeof(cfg->notification_sound_alarm),
+                       sound_alarm_str)) {
+        log_truncation("notification_sound_alarm");
+      }
+    }
+    if (sound_reminder_str) {
+      if (!copy_string(cfg->notification_sound_reminder, sizeof(cfg->notification_sound_reminder),
+                       sound_reminder_str)) {
+        log_truncation("notification_sound_reminder");
+      }
+    }
     if (icon_str) {
       if (!copy_string(cfg->notification_icon, sizeof(cfg->notification_icon), icon_str)) {
         log_truncation("notification_icon");

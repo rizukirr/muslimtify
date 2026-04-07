@@ -439,7 +439,7 @@ static BOOL resolve_toast_icon_path(wchar_t *buffer, size_t buffer_size) {
 }
 
 static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
-                                const char *urgency);
+                                const char *urgency, const char *sound_preset);
 
 #ifdef MUSLIMTIFY_NOTIFICATION_WIN_TEST
 BOOL notification_win_resolve_toast_icon_path_for_test(const wchar_t *base_dir, wchar_t *buffer,
@@ -470,7 +470,7 @@ wchar_t *notification_win_build_toast_xml_for_test(const wchar_t *base_dir, cons
       goto fail;
   }
 
-  xml = build_toast_xml(escaped_title, escaped_message, wicon, urgency);
+  xml = build_toast_xml(escaped_title, escaped_message, wicon, urgency, "default");
 
 fail:
   free(escaped_title);
@@ -522,8 +522,32 @@ static const wchar_t *urgency_to_toast_open(const char *urgency) {
   return L"<toast duration=\"long\">";
 }
 
+// Append an <audio> element for the given preset.
+// NULL preset → <audio silent="true"/>
+// "alarm"     → looping alarm sound (caps at ~25s — WinRT toast duration limit)
+// "reminder"  → short reminder ding
+// "default"   → omit <audio> entirely so the system plays the default sound
+// unknown     → treat as "default"
+static BOOL append_audio_element(wchar_t **xml, size_t *len, size_t *cap,
+                                 const char *sound_preset) {
+  if (sound_preset == NULL) {
+    return append_wide_segment(xml, len, cap, L"<audio silent=\"true\"/>");
+  }
+  if (strcmp(sound_preset, "alarm") == 0) {
+    return append_wide_segment(
+        xml, len, cap,
+        L"<audio src=\"ms-winsoundevent:Notification.Looping.Alarm\" loop=\"true\"/>");
+  }
+  if (strcmp(sound_preset, "reminder") == 0) {
+    return append_wide_segment(xml, len, cap,
+                               L"<audio src=\"ms-winsoundevent:Notification.Reminder\"/>");
+  }
+  // "default" or unknown → no <audio> element; Windows plays its default sound
+  return TRUE;
+}
+
 static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, const wchar_t *wicon,
-                                const char *urgency) {
+                                const char *urgency, const char *sound_preset) {
   wchar_t *xml = NULL;
   size_t xml_len = 0;
   size_t xml_cap = 0;
@@ -559,7 +583,13 @@ static wchar_t *build_toast_xml(const wchar_t *wtitle, const wchar_t *wmsg, cons
   if (!append_wide_segment(&xml, &xml_len, &xml_cap, wmsg)) {
     goto fail;
   }
-  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"</text></binding></visual></toast>")) {
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"</text></binding></visual>")) {
+    goto fail;
+  }
+  if (!append_audio_element(&xml, &xml_len, &xml_cap, sound_preset)) {
+    goto fail;
+  }
+  if (!append_wide_segment(&xml, &xml_len, &xml_cap, L"</toast>")) {
     goto fail;
   }
 
@@ -635,8 +665,9 @@ static void send_toast_xml(const wchar_t *xml) {
   toast->lpVtbl->Release(toast);
 }
 
-/* Build toast XML from title/message with optional reminder scenario and icon */
-static void send_notification(const char *title, const char *message, const char *urgency) {
+/* Build toast XML from title/message with optional reminder scenario, icon, and sound */
+static void send_notification(const char *title, const char *message, const char *urgency,
+                              const char *sound_preset) {
   if (!g_state.initialized)
     return;
   if (!title || !message)
@@ -662,7 +693,7 @@ static void send_notification(const char *title, const char *message, const char
   }
 
   /* Build toast XML */
-  wchar_t *xml = build_toast_xml(wtitle, wmsg, wicon, urgency);
+  wchar_t *xml = build_toast_xml(wtitle, wmsg, wicon, urgency, sound_preset);
   free(wtitle);
   free(wmsg);
   free(wicon);
@@ -741,11 +772,11 @@ fail:
 }
 
 void notify_send(const char *title, const char *message) {
-  send_notification(title, message, "normal");
+  send_notification(title, message, "normal", "default");
 }
 
 void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
-                   const char *urgency_str) {
+                   const char *urgency_str, const char *sound_preset) {
   char title[128];
   char message[256];
 
@@ -759,7 +790,7 @@ void notify_prayer(const char *prayer_name, const char *time_str, int minutes_be
                 prayer_name, minutes_before, time_str);
   }
 
-  send_notification(title, message, urgency_str);
+  send_notification(title, message, urgency_str, sound_preset);
 }
 
 void notify_cleanup(void) {

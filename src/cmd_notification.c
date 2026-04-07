@@ -42,7 +42,8 @@ static int notification_test(int argc, char **argv) {
 
   char time_str[16];
   format_time_hm(prayer_get_time(&times, next), time_str, sizeof(time_str));
-  notify_prayer(prayer_get_name(next), time_str, 0, cfg.notification_urgency);
+  const char *sound_preset = cfg.notification_sound ? cfg.notification_sound_alarm : NULL;
+  notify_prayer(prayer_get_name(next), time_str, 0, cfg.notification_urgency, sound_preset);
   notify_cleanup();
 
   printf("Sent test notification for %s at %s\n", prayer_get_name(next), time_str);

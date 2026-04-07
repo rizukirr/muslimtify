@@ -13,11 +13,11 @@ static const CommandEntry top_commands[] = {
     {"location", handle_location}, {"enable", handle_enable},
     {"disable", handle_disable},   {"list", handle_list},
     {"reminder", handle_reminder}, {"daemon", handle_daemon},
-    {"run", handle_run},           {"method", handle_method},
-    {"notification", handle_notification},
-    {"version", handle_version},   {"--version", handle_version},
-    {"-v", handle_version},        {"help", handle_help},
-    {"--help", handle_help},       {"-h", handle_help},
+    {"method", handle_method},     {"notification", handle_notification},
+    {"sound", handle_sound},       {"version", handle_version},
+    {"--version", handle_version}, {"-v", handle_version},
+    {"help", handle_help},         {"--help", handle_help},
+    {"-h", handle_help},
 };
 
 // â”€â”€ version / help
@@ -74,7 +74,6 @@ void cli_print_help(void) {
   printf("  disable <prayer>  Disable prayer notification\n");
   printf("  list              List prayer notification status\n");
   printf("  reminder          Manage prayer reminders\n");
-  printf("  run               Launch the GUI\n");
 #ifdef _WIN32
   printf("  daemon            Manage scheduled task "
          "[install|uninstall|status]\n");
@@ -83,6 +82,8 @@ void cli_print_help(void) {
          "[install|uninstall|status]\n");
 #endif
   printf("  notification test Send a test notification for the next prayer\n");
+  printf("  sound             Manage notification sound "
+         "[on|off|status|set|reminder-set]\n");
   printf("  version           Show version information\n");
   printf("  help              Show this help message\n\n");
   printf("Examples:\n");

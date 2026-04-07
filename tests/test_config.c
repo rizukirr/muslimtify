@@ -221,6 +221,9 @@ static void test_default(void) {
   check_bool("default sunrise no reminders", cfg.sunrise.reminder_count == 0);
   check_bool("default method kemenag", strcmp(cfg.calculation_method, "kemenag") == 0);
   check_bool("default madhab shafi", strcmp(cfg.madhab, "shafi") == 0);
+  check_bool("default sound on", cfg.notification_sound == true);
+  check_bool("default sound_alarm", strcmp(cfg.notification_sound_alarm, "alarm") == 0);
+  check_bool("default sound_reminder", strcmp(cfg.notification_sound_reminder, "reminder") == 0);
 }
 
 // ── round-trip save/load test ───────────────────────────────────────────────
@@ -253,6 +256,8 @@ static void test_round_trip(void) {
   out.sunrise.enabled = true;
   out.notification_timeout = 8000;
   out.notification_sound = false;
+  strncpy(out.notification_sound_alarm, "default", sizeof(out.notification_sound_alarm) - 1);
+  strncpy(out.notification_sound_reminder, "alarm", sizeof(out.notification_sound_reminder) - 1);
   strncpy(out.notification_urgency, "critical", sizeof(out.notification_urgency) - 1);
 
   check_bool("config path includes muslimtify dir",
@@ -277,6 +282,8 @@ static void test_round_trip(void) {
   check_bool("rt sunrise enabled", in.sunrise.enabled == true);
   check_bool("rt timeout", in.notification_timeout == 8000);
   check_bool("rt sound", in.notification_sound == false);
+  check_bool("rt sound_alarm", strcmp(in.notification_sound_alarm, "default") == 0);
+  check_bool("rt sound_reminder", strcmp(in.notification_sound_reminder, "alarm") == 0);
   check_bool("rt urgency", strcmp(in.notification_urgency, "critical") == 0);
   check_bool("rt method", strcmp(in.calculation_method, "kemenag") == 0);
   check_bool("rt madhab", strcmp(in.madhab, "shafi") == 0);

@@ -90,8 +90,20 @@ void notify_send(const char *title, const char *message) {
   g_object_unref(G_OBJECT(n));
 }
 
+// Map a sound preset to a freedesktop XDG sound-name.
+// Returns NULL for "default" (no hint — daemon picks its own) or unknown preset.
+static const char *sound_preset_to_xdg_name(const char *preset) {
+  if (!preset)
+    return NULL;
+  if (strcmp(preset, "reminder") == 0)
+    return "message-new-instant";
+  if (strcmp(preset, "alarm") == 0)
+    return "alarm-clock-elapsed";
+  return NULL; // "default" or unknown → let daemon decide
+}
+
 void notify_prayer(const char *prayer_name, const char *time_str, int minutes_before,
-                   const char *urgency_str) {
+                   const char *urgency_str, const char *sound_preset) {
   char title[128];
   char message[256];
 
@@ -118,6 +130,17 @@ void notify_prayer(const char *prayer_name, const char *time_str, int minutes_be
     urgency = NOTIFY_URGENCY_NORMAL;
   }
   notify_notification_set_urgency(n, urgency);
+
+  // Sound handling: NULL preset → explicitly suppress; otherwise set sound-name
+  // hint if we have a mapping, else let the daemon pick its default.
+  if (sound_preset == NULL) {
+    notify_notification_set_hint(n, "suppress-sound", g_variant_new_boolean(TRUE));
+  } else {
+    const char *sound_name = sound_preset_to_xdg_name(sound_preset);
+    if (sound_name) {
+      notify_notification_set_hint(n, "sound-name", g_variant_new_string(sound_name));
+    }
+  }
 
   notify_notification_show(n, NULL);
   g_object_unref(G_OBJECT(n));

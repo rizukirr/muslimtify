@@ -2,13 +2,10 @@
 
 #include "cli.h"
 #include "config.h"
-#include "platform.h"
 #include <stdio.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
 // ── test infrastructure ─────────────────────────────────────────────────────
@@ -98,55 +95,6 @@ static int run(int argc, char **argv) {
   return ret;
 }
 
-static int run_external_process(const char *path, char *const argv[]) {
-  pid_t pid = fork();
-  if (pid < 0) {
-    captured[0] = '\0';
-    last_ret = 1;
-    return last_ret;
-  }
-
-  if (pid == 0) {
-    FILE *f = fopen(output_file, "w");
-    if (!f) {
-      _exit(127);
-    }
-
-    int fd = fileno(f);
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
-    fclose(f);
-
-    execv(path, argv);
-    perror(path);
-    _exit(127);
-  }
-
-  int status = 0;
-  if (waitpid(pid, &status, 0) < 0) {
-    captured[0] = '\0';
-    last_ret = 1;
-    return last_ret;
-  }
-
-  FILE *r = fopen(output_file, "r");
-  if (r) {
-    size_t n = fread(captured, 1, sizeof(captured) - 1, r);
-    captured[n] = '\0';
-    fclose(r);
-  } else {
-    captured[0] = '\0';
-  }
-
-  if (WIFEXITED(status)) {
-    last_ret = WEXITSTATUS(status);
-  } else {
-    last_ret = 1;
-  }
-
-  return last_ret;
-}
-
 // ── assertion helpers ────────────────────────────────────────────────────────
 
 static void check_ret(const char *test, int expected) {
@@ -226,27 +174,6 @@ static void test_version_and_help(void) {
   run(2, (char *[]){"m", "xyzzy", NULL});
   check_ret("unknown ret", 1);
   check_contains("unknown out", "Unknown command");
-}
-
-static void test_run_help_line(void) {
-  printf("  run help line...\n");
-  reset_config();
-
-  run(2, (char *[]){"m", "help", NULL});
-  check_ret("run help ret", 0);
-  check_contains("run help out", "run               Launch the GUI");
-}
-
-static void test_run_command(void) {
-  printf("  run command...\n");
-  reset_config();
-
-  char binary_path[PLATFORM_PATH_MAX];
-  snprintf(binary_path, sizeof(binary_path), "%s/muslimtify", platform_exe_dir());
-  char *argv[] = {binary_path, "run", NULL};
-  run_external_process(binary_path, argv);
-  check_ret("run command ret", 1);
-  check_contains("run command out", "Failed to open display");
 }
 
 static void test_config(void) {
@@ -618,6 +545,129 @@ static void test_method(void) {
   check_ret("method madhab noarg ret", 1);
 }
 
+static void test_sound(void) {
+  printf("  sound...\n");
+  reset_config();
+
+  // sound (bare) → status output, ret 0
+  run(2, (char *[]){"m", "sound", NULL});
+  check_ret("sound bare ret", 0);
+  check_contains("sound bare out", "Sound:");
+  check_contains("sound bare alarm line", "Alarm preset:");
+  check_contains("sound bare reminder line", "Reminder preset:");
+
+  // sound status (explicit)
+  run(3, (char *[]){"m", "sound", "status", NULL});
+  check_ret("sound status ret", 0);
+  check_contains("sound status out", "Sound:");
+
+  // sound show (alias)
+  run(3, (char *[]){"m", "sound", "show", NULL});
+  check_ret("sound show ret", 0);
+  check_contains("sound show out", "Sound:");
+
+  // sound off
+  run(3, (char *[]){"m", "sound", "off", NULL});
+  check_ret("sound off ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound off cfg", cfg.notification_sound == false);
+  }
+
+  // sound on
+  run(3, (char *[]){"m", "sound", "on", NULL});
+  check_ret("sound on ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound on cfg", cfg.notification_sound == true);
+  }
+
+  // sound set alarm
+  run(4, (char *[]){"m", "sound", "set", "alarm", NULL});
+  check_ret("sound set alarm ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound set alarm cfg", strcmp(cfg.notification_sound_alarm, "alarm") == 0);
+  }
+
+  // sound set default
+  run(4, (char *[]){"m", "sound", "set", "default", NULL});
+  check_ret("sound set default ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound set default cfg", strcmp(cfg.notification_sound_alarm, "default") == 0);
+  }
+
+  // sound set reminder
+  run(4, (char *[]){"m", "sound", "set", "reminder", NULL});
+  check_ret("sound set reminder ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound set reminder cfg", strcmp(cfg.notification_sound_alarm, "reminder") == 0);
+  }
+
+  // sound reminder-set alarm
+  run(4, (char *[]){"m", "sound", "reminder-set", "alarm", NULL});
+  check_ret("sound reminder-set alarm ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound reminder-set alarm cfg",
+               strcmp(cfg.notification_sound_reminder, "alarm") == 0);
+  }
+
+  // sound reminder-set default
+  run(4, (char *[]){"m", "sound", "reminder-set", "default", NULL});
+  check_ret("sound reminder-set default ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound reminder-set default cfg",
+               strcmp(cfg.notification_sound_reminder, "default") == 0);
+  }
+
+  // sound reminder-set reminder (restore default)
+  run(4, (char *[]){"m", "sound", "reminder-set", "reminder", NULL});
+  check_ret("sound reminder-set reminder ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound reminder-set reminder cfg",
+               strcmp(cfg.notification_sound_reminder, "reminder") == 0);
+  }
+
+  // sound set (no arg) → error
+  run(3, (char *[]){"m", "sound", "set", NULL});
+  check_ret("sound set noarg ret", 1);
+
+  // sound reminder-set (no arg) → error
+  run(3, (char *[]){"m", "sound", "reminder-set", NULL});
+  check_ret("sound reminder-set noarg ret", 1);
+
+  // sound set bogus → error, config unchanged
+  reset_config();
+  run(4, (char *[]){"m", "sound", "set", "bogus", NULL});
+  check_ret("sound set bogus ret", 1);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("sound set bogus unchanged", strcmp(cfg.notification_sound_alarm, "alarm") == 0);
+  }
+
+  // sound reminder-set bogus → error
+  run(4, (char *[]){"m", "sound", "reminder-set", "bogus", NULL});
+  check_ret("sound reminder-set bogus ret", 1);
+
+  // sound unknown subcommand → error
+  run(3, (char *[]){"m", "sound", "bogus", NULL});
+  check_ret("sound unknown ret", 1);
+}
+
 static void test_daemon_errors(void) {
   printf("  daemon errors...\n");
   reset_config();
@@ -634,8 +684,6 @@ int main(void) {
 
   printf("Running CLI tests...\n");
   test_version_and_help();
-  test_run_help_line();
-  test_run_command();
   test_config();
   test_location();
   test_enable_disable();
@@ -645,6 +693,7 @@ int main(void) {
   test_next();
   test_check();
   test_method();
+  test_sound();
   test_daemon_errors();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);

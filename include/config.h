@@ -39,6 +39,8 @@ typedef struct {
   int notification_timeout;
   char notification_urgency[16];
   bool notification_sound;
+  char notification_sound_alarm[16];    // preset name for "it's time" notification
+  char notification_sound_reminder[16]; // preset name for pre-prayer reminder notifications
   char notification_icon[64];
 
   // Calculation
