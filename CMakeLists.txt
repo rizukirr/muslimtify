@@ -228,6 +228,13 @@ if(BUILD_TESTING)
     endif()
 endif()
 
+# -- GUI ----------------------------------------------------------------------
+
+option(BUILD_GUI "Build muslimtify-gui target" ON)
+if(BUILD_GUI)
+    add_subdirectory(src/gui)
+endif()
+
 # -- Install ------------------------------------------------------------------
 
 install(TARGETS muslimtify DESTINATION ${CMAKE_INSTALL_BINDIR})
