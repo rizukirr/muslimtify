@@ -67,7 +67,8 @@ static double parse_timezone_offset(const char *tz_name) {
       {"Europe/London", 0.0},        {"Europe/Paris", 1.0},
       {"Europe/Istanbul", 3.0},      {"America/New_York", -5.0},
       {"America/Chicago", -6.0},     {"America/Denver", -7.0},
-      {"America/Los_Angeles", -8.0}, {"UTC", 0.0},
+      {"America/Los_Angeles", -8.0}, {"Africa/Cairo", 3.0},
+      {"UTC", 0.0},
   };
 
   for (size_t i = 0; i < sizeof(timezones) / sizeof(timezones[0]); i++) {
