@@ -3,7 +3,7 @@
 #define COBJMACROS
 
 #include "notification.h"
-#include <Windows.h>
+#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

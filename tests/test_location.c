@@ -1,4 +1,6 @@
+#ifndef _WIN32
 #define _GNU_SOURCE
+#endif
 
 #include "location.h"
 
@@ -153,7 +155,9 @@ static void test_edge_cases(void) {
     failures++;
   }
 
-  // TZ leak check: a call must restore the previous TZ environment.
+#ifndef _WIN32
+  // TZ leak check (POSIX-specific): a call must restore the previous TZ env.
+  // The Windows backend does not touch TZ — skip there.
   total++;
   setenv("TZ", "Asia/Tokyo", 1);
   tzset();
@@ -167,6 +171,7 @@ static void test_edge_cases(void) {
   }
   unsetenv("TZ");
   tzset();
+#endif
 }
 
 int main(void) {

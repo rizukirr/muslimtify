@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include "location.h"
 #include "json.h"
 #include "string_util.h"
@@ -52,36 +50,6 @@ static void location_log_trunc(const char *field) {
     fprintf(stderr, "location: truncated field %s\n", field ? field : "(unknown)");
     location_trunc_logged = true;
   }
-}
-
-// Compute the UTC offset in hours for `tz_name` at the moment `when`.
-// Honors DST and historical zone changes from the system tzdb.
-// Returns 0.0 and writes a warning to stderr if `tz_name` is unknown
-// to the OS (i.e. tzset() couldn't resolve it).
-double parse_timezone_offset(const char *tz_name, time_t when) {
-  if (!tz_name)
-    return 0.0;
-
-  const char *old_tz = getenv("TZ");
-  char *saved = old_tz ? strdup(old_tz) : NULL;
-
-  setenv("TZ", tz_name, 1);
-  tzset();
-
-  struct tm lt;
-  localtime_r(&when, &lt);
-  double offset = (double)lt.tm_gmtoff / 3600.0;
-
-  if (saved) {
-    setenv("TZ", saved, 1);
-    free(saved);
-  } else {
-    unsetenv("TZ");
-  }
-
-  tzset();
-
-  return offset;
 }
 
 int location_fetch(Config *cfg) {
