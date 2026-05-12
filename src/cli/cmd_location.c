@@ -106,12 +106,12 @@ static int location_set_handler(int argc, char **argv) {
     if (strncmp(argv[i], "--timezone=", 11) == 0) {
       override_tz = argv[i] + 11;
       if (*override_tz == '\0') {
-        fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone=Africa/Cairo)\n");
+        fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone=Asia/Jakarta)\n");
         return 1;
       }
     } else if (strcmp(argv[i], "--timezone") == 0) {
       if (i + 1 >= argc) {
-        fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone Africa/Cairo)\n");
+        fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone Asia/Jakarta)\n");
         return 1;
       }
       override_tz = argv[++i];
