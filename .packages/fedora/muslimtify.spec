@@ -1,5 +1,5 @@
 Name:           muslimtify
-Version:        0.2.1
+Version:        0.2.2
 Release:        1%{?dist}
 Summary:        An Islamic prayer time notification daemon for Linux
 License:        MIT
@@ -50,6 +50,18 @@ fi
 %{_prefix}/lib/systemd/user/muslimtify.timer
 
 %changelog
+* Tue May 12 2026 Rizki Rakasiwi <rizkirr.xyz@gmail.com> - 0.2.2-1
+- Fix timezone offsets by using system tzdb instead of hardcoded table; honors DST (closes #11)
+- Add Win32 timezone implementation with CLDR-derived IANA-to-Windows mapping
+- Add --timezone=<iana> override flag to 'location set'
+- Add get_system_timezone helper for Linux and Windows
+- Clear stale city/country and refresh timezone on 'location set'
+- Stop auto-filling city from ipinfo; add --city=<name> flag
+- Prefer Asia/Jakarta over Asia/Bangkok for SE Asia Standard Time
+- Add 'sound' command with reminder/alarm/default presets
+- Refactor source tree into src/{core,cli,platform}/ subdirectories
+- CI: enforce non-empty test suites on Windows
+
 * Thu Apr 03 2026 Rizki Rakasiwi <rizkirr.xyz@gmail.com> - 0.2.1-1
 - Auto-detect location and method on daemon install
 - Bug fixes and improvements
