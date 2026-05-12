@@ -2,7 +2,7 @@
 # Build source package in debootstrap chroot and upload to Launchpad PPA
 set -euo pipefail
 
-DISTRO="${1:-noble}"  # Ubuntu series to target
+DISTRO="${1:-resolute}"  # Ubuntu series to target
 ARCH="amd64"
 CHROOT_DIR="${HOME}/.cache/muslimtify-deb-chroot"
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
