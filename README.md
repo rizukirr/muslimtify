@@ -105,8 +105,10 @@ Common setup commands:
 
 ```bash
 muslimtify location auto          # detect location from IP
+muslimtify location auto --city=Mansoura  # auto-detect but use your own city label
 muslimtify location set <lat> <lon>  # set location manually (uses system timezone)
 muslimtify location set <lat> <lon> --timezone=Asia/Jakarta  # override timezone
+muslimtify location set <lat> <lon> --city=Jakarta  # add a city label
 muslimtify method list            # list all 23 available calculation methods
 muslimtify method set mwl         # set calculation method
 muslimtify method madhab hanafi   # set madhab (shafi/hanafi)
