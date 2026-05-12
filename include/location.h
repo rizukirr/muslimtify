@@ -19,7 +19,7 @@ extern "C" {
 double parse_timezone_offset(const char *tz_name, time_t when);
 
 /**
- * Write the host system's IANA timezone name (e.g. "Africa/Cairo") into
+ * Write the host system's IANA timezone name (e.g. "Asia/Jakarta") into
  * `buf` (capacity `cap`, NUL-terminated). Used by `location set` to refresh
  * the timezone after the user supplies coordinates without going through
  * the ipinfo.io geolocation path.

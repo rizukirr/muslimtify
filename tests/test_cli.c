@@ -243,6 +243,46 @@ static void test_location(void) {
   run(5, (char *[]){"m", "location", "set", "-7.25", "xyz", NULL});
   check_ret("location set bad lon ret", 1);
 
+  // location set --timezone=<iana> (equals form)
+  run(6, (char *[]){"m", "location", "set", "30.0", "31.0", "--timezone=Africa/Cairo", NULL});
+  check_ret("location set --timezone= ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set --timezone= zone", strcmp(cfg.timezone, "Africa/Cairo") == 0);
+    // Cairo is +2 (EET) or +3 (EEST); accept either.
+    check_bool("location set --timezone= offset",
+               cfg.timezone_offset >= 2.0 && cfg.timezone_offset <= 3.0);
+  }
+
+  // location set --timezone <iana> (space form)
+  run(7, (char *[]){"m", "location", "set", "51.5", "-0.1", "--timezone", "Europe/London", NULL});
+  check_ret("location set --timezone space ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set --timezone space zone", strcmp(cfg.timezone, "Europe/London") == 0);
+  }
+
+  // location set --timezone=<bogus> rejected
+  run(6, (char *[]){"m", "location", "set", "30.0", "31.0", "--timezone=Asia/Foobar", NULL});
+  check_ret("location set --timezone bogus ret", 1);
+
+  // location set --timezone (missing value)
+  run(6, (char *[]){"m", "location", "set", "30.0", "31.0", "--timezone", NULL});
+  check_ret("location set --timezone missing ret", 1);
+
+  // location set with --timezone= preceding positionals (flag-order flexibility)
+  run(6, (char *[]){"m", "location", "set", "--timezone=Asia/Tokyo", "35.68", "139.69", NULL});
+  check_ret("location set --timezone-first ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set --timezone-first zone", strcmp(cfg.timezone, "Asia/Tokyo") == 0);
+    check_bool("location set --timezone-first offset",
+               cfg.timezone_offset > 8.9 && cfg.timezone_offset < 9.1);
+  }
+
   // location clear
   reset_config();
   run(3, (char *[]){"m", "location", "clear", NULL});
