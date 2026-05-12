@@ -69,9 +69,13 @@ void cli_print_help(void) {
   printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
   printf("  config            Show configuration\n");
   printf("  location          Manage location [show|auto|set|clear|refresh]\n");
-  printf("    set <lat> <lon> [--timezone=<iana>]\n");
+  printf("    set <lat> <lon> [--timezone=<iana>] [--city=<name>]\n");
   printf("                      Set coordinates manually. Timezone is\n");
   printf("                      auto-derived from the host OS unless overridden.\n");
+  printf("                      City is a cosmetic label; not set unless given.\n");
+  printf("    auto [--city=<name>]\n");
+  printf("                      Auto-detect via ipinfo.io. ipinfo's city guess\n");
+  printf("                      is ignored; pass --city=<name> to label it.\n");
   printf("  method            Manage calculation method [show|set|list|madhab]\n");
   printf("  enable <prayer>   Enable prayer notification\n");
   printf("  disable <prayer>  Disable prayer notification\n");
@@ -95,6 +99,8 @@ void cli_print_help(void) {
   printf("  muslimtify location auto      # Auto-detect location\n");
   printf("  muslimtify location set -6.21 106.84 --timezone=Asia/Jakarta\n");
   printf("                                # Set coords + explicit timezone\n");
+  printf("  muslimtify location set -6.21 106.84 --city=Jakarta\n");
+  printf("                                # Set coords with a city label\n");
   printf("  muslimtify method list        # List available methods\n");
   printf("  muslimtify method set mwl     # Set calculation method\n");
   printf("  muslimtify method madhab hanafi  # Set madhab\n");

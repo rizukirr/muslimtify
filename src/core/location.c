@@ -130,13 +130,10 @@ int location_fetch(Config *cfg) {
     cfg->timezone_offset = parse_timezone_offset(tz_str, time(NULL));
   }
 
-  // Parse city
-  char *city_str = get_value(ctx, "city", response.data);
-  if (city_str) {
-    if (!copy_string(cfg->city, sizeof(cfg->city), city_str)) {
-      location_log_trunc("city");
-    }
-  }
+  // Note: ipinfo's "city" field is intentionally NOT read. The city label is
+  // opt-in user metadata set via `location set/auto --city=<name>`. ipinfo's
+  // guess is often wrong (e.g. picking the metro centroid over the user's
+  // actual city) and feeds nothing functional in the calculation pipeline.
 
   // Parse country
   char *country_str = get_value(ctx, "country", response.data);

@@ -283,6 +283,48 @@ static void test_location(void) {
                cfg.timezone_offset > 8.9 && cfg.timezone_offset < 9.1);
   }
 
+  // location set --city=<name> writes the label
+  run(6, (char *[]){"m", "location", "set", "-6.21", "106.84", "--city=Jakarta", NULL});
+  check_ret("location set --city= ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set --city= label", strcmp(cfg.city, "Jakarta") == 0);
+  }
+
+  // location set --city <name> (space form)
+  run(7, (char *[]){"m", "location", "set", "-6.21", "106.84", "--city", "Surabaya", NULL});
+  check_ret("location set --city space ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set --city space label", strcmp(cfg.city, "Surabaya") == 0);
+  }
+
+  // location set without --city clears any prior city
+  run(5, (char *[]){"m", "location", "set", "-6.21", "106.84", NULL});
+  check_ret("location set no-city ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set no-city clears", cfg.city[0] == '\0');
+  }
+
+  // location set --city (missing value)
+  run(6, (char *[]){"m", "location", "set", "-6.21", "106.84", "--city", NULL});
+  check_ret("location set --city missing ret", 1);
+
+  // location set combining --timezone and --city
+  run(7, (char *[]){"m", "location", "set", "31.04", "31.38", "--timezone=Africa/Cairo",
+                    "--city=Mansoura", NULL});
+  check_ret("location set --tz+--city ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set --tz+--city zone", strcmp(cfg.timezone, "Africa/Cairo") == 0);
+    check_bool("location set --tz+--city label", strcmp(cfg.city, "Mansoura") == 0);
+  }
+
   // location clear
   reset_config();
   run(3, (char *[]){"m", "location", "clear", NULL});
