@@ -3,8 +3,10 @@
 #include "display.h"
 #include "location.h"
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 static int location_show_handler(int argc, char **argv) {
@@ -85,9 +87,44 @@ static int location_refresh_handler(int argc, char **argv) {
   return 0;
 }
 
+static const char *LOCATION_SET_USAGE =
+    "Usage: muslimtify location set <latitude> <longitude> [--timezone=<iana>]\n";
+
+// Returns true if `tz` is one of the canonical UTC aliases (so an offset of 0.0
+// is expected, not a sign of an unrecognized zone).
+static bool is_utc_zone(const char *tz) {
+  return strcmp(tz, "UTC") == 0 || strcmp(tz, "Etc/UTC") == 0 || strcmp(tz, "Etc/GMT") == 0 ||
+         strcmp(tz, "GMT") == 0;
+}
+
 static int location_set_handler(int argc, char **argv) {
-  if (argc < 2) {
-    fprintf(stderr, "Usage: muslimtify location set <latitude> <longitude>\n");
+  const char *override_tz = NULL;
+  const char *positional[2] = {NULL, NULL};
+  int pos_count = 0;
+
+  for (int i = 0; i < argc; ++i) {
+    if (strncmp(argv[i], "--timezone=", 11) == 0) {
+      override_tz = argv[i] + 11;
+      if (*override_tz == '\0') {
+        fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone=Africa/Cairo)\n");
+        return 1;
+      }
+    } else if (strcmp(argv[i], "--timezone") == 0) {
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone Africa/Cairo)\n");
+        return 1;
+      }
+      override_tz = argv[++i];
+    } else if (pos_count < 2) {
+      positional[pos_count++] = argv[i];
+    } else {
+      fprintf(stderr, "Error: unexpected argument '%s'\n%s", argv[i], LOCATION_SET_USAGE);
+      return 1;
+    }
+  }
+
+  if (pos_count < 2) {
+    fputs(LOCATION_SET_USAGE, stderr);
     return 1;
   }
 
@@ -99,28 +136,49 @@ static int location_set_handler(int argc, char **argv) {
 
   char *end_lat, *end_lon;
   errno = 0;
-  cfg.latitude = strtod(argv[0], &end_lat);
-  if (end_lat == argv[0] || *end_lat != '\0' || errno == ERANGE) {
-    fprintf(stderr, "Error: Invalid latitude '%s'\n", argv[0]);
+  cfg.latitude = strtod(positional[0], &end_lat);
+  if (end_lat == positional[0] || *end_lat != '\0' || errno == ERANGE) {
+    fprintf(stderr, "Error: Invalid latitude '%s'\n", positional[0]);
     return 1;
   }
   errno = 0;
-  cfg.longitude = strtod(argv[1], &end_lon);
-  if (end_lon == argv[1] || *end_lon != '\0' || errno == ERANGE) {
-    fprintf(stderr, "Error: Invalid longitude '%s'\n", argv[1]);
+  cfg.longitude = strtod(positional[1], &end_lon);
+  if (end_lon == positional[1] || *end_lon != '\0' || errno == ERANGE) {
+    fprintf(stderr, "Error: Invalid longitude '%s'\n", positional[1]);
     return 1;
   }
   cfg.auto_detect = false;
 
   // The user picked coordinates manually — the previously cached city/country
-  // and ipinfo-derived timezone no longer apply. Clear them and re-derive
-  // the timezone from the host OS so the offset stays correct.
+  // no longer apply. Clear them.
   cfg.city[0] = '\0';
   cfg.country[0] = '\0';
-  if (get_system_timezone(cfg.timezone, sizeof(cfg.timezone)) != 0) {
-    fprintf(stderr, "Warning: could not detect system timezone, defaulting to %s\n", cfg.timezone);
+
+  if (override_tz) {
+    // Explicit override — validate it resolves to something other than the
+    // implicit UTC fallback. Useful when the host OS timezone differs from
+    // the coordinates' real timezone (e.g. running from a different region).
+    double off = parse_timezone_offset(override_tz, time(NULL));
+    if (off == 0.0 && !is_utc_zone(override_tz)) {
+      fprintf(stderr, "Error: Unknown timezone '%s' (no offset resolvable)\n", override_tz);
+      return 1;
+    }
+    size_t tz_len = strlen(override_tz);
+    if (tz_len + 1 > sizeof(cfg.timezone)) {
+      fprintf(stderr, "Error: Timezone name too long\n");
+      return 1;
+    }
+    memcpy(cfg.timezone, override_tz, tz_len + 1);
+    cfg.timezone_offset = off;
+  } else {
+    // No override — re-derive from the host OS so the offset stays correct
+    // even after manual coords (avoids inheriting a stale ipinfo-derived zone).
+    if (get_system_timezone(cfg.timezone, sizeof(cfg.timezone)) != 0) {
+      fprintf(stderr, "Warning: could not detect system timezone, defaulting to %s\n",
+              cfg.timezone);
+    }
+    cfg.timezone_offset = parse_timezone_offset(cfg.timezone, time(NULL));
   }
-  cfg.timezone_offset = parse_timezone_offset(cfg.timezone, time(NULL));
 
   if (config_save(&cfg) != 0) {
     fprintf(stderr, "Error: Failed to save config\n");
@@ -129,7 +187,8 @@ static int location_set_handler(int argc, char **argv) {
 
   cache_invalidate();
   printf("✓ Location set to: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
-  printf("  Timezone: %s (UTC%+.1f)\n", cfg.timezone, cfg.timezone_offset);
+  printf("  Timezone: %s (UTC%+.1f)%s\n", cfg.timezone, cfg.timezone_offset,
+         override_tz ? " [override]" : "");
   return 0;
 }
 

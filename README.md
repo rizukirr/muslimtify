@@ -105,7 +105,8 @@ Common setup commands:
 
 ```bash
 muslimtify location auto          # detect location from IP
-muslimtify location set <lat> <lon>  # set location manually
+muslimtify location set <lat> <lon>  # set location manually (uses system timezone)
+muslimtify location set <lat> <lon> --timezone=Africa/Cairo  # override timezone
 muslimtify method list            # list all 23 available calculation methods
 muslimtify method set mwl         # set calculation method
 muslimtify method madhab hanafi   # set madhab (shafi/hanafi)
@@ -221,6 +222,9 @@ prayers, reminder offsets, notification settings, or location data.
 
 - Run `muslimtify location auto` again.
 - Set coordinates manually with `muslimtify location set <latitude> <longitude>`.
+  If the host machine is in a different region than the coordinates, override
+  the timezone with `--timezone=<iana>`, e.g.
+  `muslimtify location set 30.04 31.24 --timezone=Africa/Cairo`.
 - Check network access to `ipinfo.io` if auto detection keeps failing.
 
 ### Config file problems
