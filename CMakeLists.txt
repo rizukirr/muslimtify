@@ -25,14 +25,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 include(GNUInstallDirs)
 include(FetchContent)
 
-# -- Ccompose ------------------------------------------------------------------
-
-FetchContent_Declare(ccompose
-    GIT_REPOSITORY https://github.com/rizukirr/ccompose.git
-    GIT_TAG main)
-FetchContent_MakeAvailable(ccompose)
-
-
 # -- Dependencies --------------------------------------------------------------
 
 if(WIN32)
@@ -83,7 +75,7 @@ function(muslimtify_set_target_defaults target)
 endfunction()
 
 # -- Object libraries ---------------------------------------------------------
-# muslimtify_core: platform-agnostic + platform abstraction (shared by cli/gui)
+# muslimtify_core: platform-agnostic + platform abstraction
 # muslimtify_cli : CLI dispatcher + command handlers
 
 add_library(muslimtify_core OBJECT
@@ -130,12 +122,12 @@ muslimtify_set_target_defaults(muslimtify)
 
 if(WIN32)
     target_link_libraries(muslimtify
-        muslimtify_cli muslimtify_core ole32 runtimeobject CURL::libcurl ccompose)
+        muslimtify_cli muslimtify_core ole32 runtimeobject CURL::libcurl)
 else()
     target_include_directories(muslimtify PRIVATE
         ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
     target_link_libraries(muslimtify
-        muslimtify_cli muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} ccompose m)
+        muslimtify_cli muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
 endif()
 
 # -- Testing ------------------------------------------------------------------
@@ -226,13 +218,6 @@ if(BUILD_TESTING)
         target_link_libraries(test_notification_win ole32 runtimeobject)
         add_test(NAME notification_win COMMAND test_notification_win)
     endif()
-endif()
-
-# -- GUI ----------------------------------------------------------------------
-
-option(BUILD_GUI "Build muslimtify-gui target" ON)
-if(BUILD_GUI)
-    add_subdirectory(src/gui)
 endif()
 
 # -- Install ------------------------------------------------------------------
