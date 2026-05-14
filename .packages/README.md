@@ -807,7 +807,6 @@ wingetcreate update rizukirr.muslimtify `
   --version X.Y.Z `
   --urls <NEW_INSTALLER_URL> `
   --submit `
-  --token <GITHUB_PAT>
 ```
 
 This automatically creates a PR with the updated manifest.
