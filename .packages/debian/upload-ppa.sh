@@ -2,7 +2,7 @@
 # Build source package in debootstrap chroot and upload to Launchpad PPA
 set -euo pipefail
 
-DISTRO="${1:-noble}"  # Ubuntu series to target
+DISTRO="${1:-resolute}"  # Ubuntu series to target
 ARCH="amd64"
 CHROOT_DIR="${HOME}/.cache/muslimtify-deb-chroot"
 PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -80,8 +80,16 @@ cp -a /build/.packages/debian/debian ${PKG_NAME}-${PKG_VERSION}/
 sed -i '1s/unstable/${DISTRO}/' ${PKG_NAME}-${PKG_VERSION}/debian/changelog
 
 # Build unsigned source package
+# -sa for first revision (-1): include orig tarball (new upstream version).
+# -sd for later revisions (-2, -3, ...): omit orig, reuse the one Launchpad
+#     already accepted — re-uploading orig is rejected as a checksum conflict.
+if [ \"${PKG_DEBIAN_REV}\" = \"1\" ]; then
+    ORIG_FLAG=\"-sa\"
+else
+    ORIG_FLAG=\"-sd\"
+fi
 cd ${PKG_NAME}-${PKG_VERSION}
-dpkg-buildpackage -S -us -uc -d
+dpkg-buildpackage -S \${ORIG_FLAG} -us -uc -d
 
 # Copy results out
 cp /tmp/${PKG_NAME}_${PKG_VERSION}* /build/.packages/debian/ 2>/dev/null || true

@@ -41,3 +41,6 @@ docs/superpowers/
 .omx/
 **/.omx/
 /gui
+docs/plans/
+.no-vibe/
+/.tmp_disc.json

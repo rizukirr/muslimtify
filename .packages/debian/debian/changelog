@@ -1,3 +1,24 @@
+muslimtify (0.2.2-2) unstable; urgency=medium
+
+  * Rebuild for Ubuntu 26.04 (resolute).
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Tue, 12 May 2026 19:59:55 +0700
+
+muslimtify (0.2.2-1) unstable; urgency=medium
+
+  * Fix timezone offsets by using system tzdb instead of a hardcoded table; honors DST and historical zone changes (closes #11)
+  * Add Win32 timezone implementation with CLDR-derived IANA-to-Windows mapping (DST-aware)
+  * Add --timezone=<iana> override flag to 'location set' for cross-region use
+  * Add get_system_timezone helper (Linux: /etc/localtime; Windows: dynamic time-zone reverse lookup)
+  * Clear stale city/country and refresh timezone on 'location set'
+  * Stop auto-filling city from ipinfo; add --city=<name> flag for explicit user labels
+  * Prefer Asia/Jakarta over Asia/Bangkok for SE Asia Standard Time
+  * Add 'sound' command with reminder/alarm/default presets (libnotify + WinRT toast)
+  * Refactor source tree into src/{core,cli,platform}/ subdirectories
+  * CI: enforce non-empty test suites on Windows; fix curl FetchContent leaking BUILD_TESTING=OFF
+
+ -- Rizki Rakasiwi <rizkirr.xyz@gmail.com>  Tue, 12 May 2026 19:33:55 +0700
+
 muslimtify (0.2.1-1) unstable; urgency=medium
 
   * Auto-detect location and method on daemon install
