@@ -1,9 +1,16 @@
 CompileFlags:
+  CompilationDatabase: build
   Add: [-DCCOMPOSE_IMPLEMENTATION,
     -DMUSLIMTIFY_NAVIGATION_IMPLEMENTATION,
     -DMUSLIMTIFY_DASHBOARD_CONTENT_IMPLEMENTATION,
     -DMUSLIMTIFY_TOPBAR_IMPLEMENTATION,
-    -Wno-macro-redefined]
+    -DMUSLIMTIFY_APP_ASSETS_IMPLEMENTATION,
+    -I/home/rizki/Projects/muslimtify/build/_deps/ccompose-src/include,
+    -Wno-macro-redefined,
+    -Wno-c2y-extensions,
+    -Wno-c23-extensions,
+    -Wno-variadic-macro-arguments-omitted,
+    -Wno-unused-parameter]
 Diagnostics:
   ClangTidy:
     Remove: [misc-definitions-in-headers]

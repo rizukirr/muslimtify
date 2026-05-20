@@ -6,6 +6,8 @@
 
 #define IC_PRAYERS "src/gui/resources/assets/ic_prayers.png"
 #define IC_PRAYERS_INACTIVE "src/gui/resources/assets/ic_prayers_inactive.png"
+#define IC_PRAYERS_TIME "src/gui/resources/assets/ic_prayer_time.png"
+#define IC_NEXT "src/gui/resources/assets/ic_next.png"
 
 #define IC_LOCATION "src/gui/resources/assets/ic_location.png"
 #define IC_LOCATION_INACTIVE "src/gui/resources/assets/ic_location_inactive.png"
