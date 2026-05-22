@@ -25,4 +25,18 @@
 
 #define IC_CALCULATION_PROFILE "src/gui/resources/assets/ic_calculation_profile.png"
 
+#define IC_FAJR "src/gui/resources/assets/ic_fajr.png"
+#define IC_FAJR_ACTIVE "src/gui/resources/assets/ic_fajr_active.png"
+#define IC_SUNRISE "src/gui/resources/assets/ic_sunrise.png"
+#define IC_SUNRISE_ACTIVE "src/gui/resources/assets/ic_sunrise_active.png"
+#define IC_DHUHR "src/gui/resources/assets/ic_dhuhr.png"
+#define IC_DHUHR_ACTIVE "src/gui/resources/assets/ic_dhuhr_active.png"
+#define IC_ASR "src/gui/resources/assets/ic_asr.png"
+#define IC_ASR_ACTIVE "src/gui/resources/assets/ic_asr_active.png"
+#define IC_MAGHRIB "src/gui/resources/assets/ic_maghrib.png"
+#define IC_MAGHRIB_ACTIVE "src/gui/resources/assets/ic_maghrib_active.png"
+#define IC_ISHA "src/gui/resources/assets/ic_isha.png"
+#define IC_ISHA_ACTIVE "src/gui/resources/assets/ic_isha_active.png"
+#define IC_NEXT_NOTIFICATION "src/gui/resources/assets/ic_next_notification.png"
+
 #endif

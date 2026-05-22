@@ -6,54 +6,51 @@
 
 void SideNavigation(void);
 
-void NavigationLoadImage(void);
-
-void NavigationUnloadImage(void);
-
 #ifdef MUSLIMTIFY_NAVIGATION_IMPLEMENTATION
 
 #include "../themes/app_assets.h"
-#include "../themes/assets.h"
 #include "../themes/colors.h"
 #include "ccompose.h"
 
 typedef struct {
   char *chars;
-  char *icon_path;
-  char *icon_inactive_path;
-  Texture2D icon;
-  Texture2D icon_inactive;
+  char *icon_id;
+  Texture2D *icon;
+  Texture2D *icon_inactive;
 } Navigation;
 
 static bool isExpanded = true;
-static Texture2D iconExpand;
-static Texture2D iconCollapse;
 
 static Navigation NAVIGATION_ITEMS[] = {
     {
         .chars = "Dashboard",
-        .icon_path = IC_DASHBOARD,
-        .icon_inactive_path = IC_DASHBOARD_INACTIVE,
+        .icon_id = "NavIconDashboard",
+        .icon = &g_iconDashboard,
+        .icon_inactive = &g_iconDashboardInactive,
     },
     {
         .chars = "Prayers",
-        .icon_path = IC_PRAYERS,
-        .icon_inactive_path = IC_PRAYERS_INACTIVE,
+        .icon_id = "NavIconPrayers",
+        .icon = &g_iconPrayers,
+        .icon_inactive = &g_iconPrayersInactive,
     },
     {
         .chars = "Location",
-        .icon_path = IC_LOCATION,
-        .icon_inactive_path = IC_LOCATION_INACTIVE,
+        .icon_id = "NavIconLocation",
+        .icon = &g_iconLocation,
+        .icon_inactive = &g_iconLocationInactive,
     },
     {
         .chars = "Notification",
-        .icon_path = IC_NOTIFICATION,
-        .icon_inactive_path = IC_NOTIFICATION_INACTIVE,
+        .icon_id = "NavIconNotification",
+        .icon = &g_iconNotification,
+        .icon_inactive = &g_iconNotificationInactive,
     },
     {
         .chars = "About",
-        .icon_path = IC_ABOUT,
-        .icon_inactive_path = IC_ABOUT_INACTIVE,
+        .icon_id = "NavIconAbout",
+        .icon = &g_iconAbout,
+        .icon_inactive = &g_iconAboutInactive,
     },
 };
 
@@ -78,7 +75,7 @@ static void onNavigationItemSelected(const size_t index) {
 static void NavigationItems(OnNavigationSelectedItem onSelected, bool isMinimized) {
   Column("NavigationItems", .layout = {
                                 .sizing = {.width = Grow(), .height = Grow()},
-                                .padding = Pad(0, 0, 16, 16),
+                                .padding = PadSymmetric(0, 16),
                             }) {
     for (size_t i = 0; i < NAVIGATION_ITEMS_COUNT; i++) {
       if (CC_Clicked(NAVIGATION_ITEMS[i].chars)) {
@@ -88,19 +85,15 @@ static void NavigationItems(OnNavigationSelectedItem onSelected, bool isMinimize
       Button(NAVIGATION_ITEMS[i].chars,
              .layout = {.sizing = {.width = Grow()},
                         .padding = PadAll(16),
-                        .childAlignment = {.x = AlignStart(), .y = AlignMiddle()},
+                        .childAlignment = {.x = AlignXStart(), .y = AlignYCenter()},
                         .childGap = 8},
              .backgroundColor = NavigationButtonColor(i), .cornerRadius = RadiusAll(8)) {
 
         bool selected = i == selectedItem;
 
-        Texture2D *icon;
-        if (selected)
-          icon = &NAVIGATION_ITEMS[i].icon;
-        else
-          icon = &NAVIGATION_ITEMS[i].icon_inactive;
+        Texture2D *icon = selected ? NAVIGATION_ITEMS[i].icon : NAVIGATION_ITEMS[i].icon_inactive;
 
-        Image(NAVIGATION_ITEMS[i].icon_path, ImgFit(icon),
+        Image(NAVIGATION_ITEMS[i].icon_id, ImgFit(icon),
               .layout = {.sizing = {.height = Fixed(20), .width = Fixed(20)}});
 
         if (!isMinimized)
@@ -123,11 +116,7 @@ static void SideNavigationCollapsed(void) {
 
     Button("Minimize", .layout = {.padding = PadAll(8)}, .cornerRadius = RadiusAll(999),
            .backgroundColor = CC_Hovered("Minimize") ? COLOR_ON_PRIMARY : COLOR_SURFACE_VARIANT) {
-      Texture2D *icon;
-      if (isExpanded)
-        icon = &iconExpand;
-      else
-        icon = &iconCollapse;
+      Texture2D *icon = isExpanded ? &g_iconExpand : &g_iconCollapse;
       Image("ExpandedIcon", ImgFit(icon),
             .layout = {.sizing = {.height = Fixed(24), .width = Fixed(24)}});
     }
@@ -142,7 +131,7 @@ static void SideNavigationExpanded(void) {
     Row("LogoAndAction",
         .layout = {
             .sizing = {.width = Grow(), .height = Fit()},
-            .childAlignment = {.x = AlignStart(), .y = AlignMiddle()},
+            .childAlignment = {.x = AlignXStart(), .y = AlignYCenter()},
         }, ) {
 
       Text("Muslimtify", .textColor = COLOR_PRIMARY, .fontSize = 24, .fontId = g_fontManrope);
@@ -153,11 +142,7 @@ static void SideNavigationExpanded(void) {
 
       Button("Minimize", .layout = {.padding = PadAll(8)}, .cornerRadius = RadiusAll(999),
              .backgroundColor = CC_Hovered("Minimize") ? COLOR_ON_PRIMARY : COLOR_SURFACE_VARIANT) {
-        Texture2D *icon;
-        if (isExpanded)
-          icon = &iconExpand;
-        else
-          icon = &iconCollapse;
+        Texture2D *icon = isExpanded ? &g_iconExpand : &g_iconCollapse;
         Image("ExpandedIcon", ImgFit(icon),
               .layout = {.sizing = {.height = Fixed(24), .width = Fixed(24)}});
       }
@@ -172,26 +157,6 @@ void SideNavigation(void) {
     SideNavigationExpanded();
   else
     SideNavigationCollapsed();
-}
-
-void NavigationLoadImage(void) {
-  iconExpand = CC_LoadImage(IC_EXPAND);
-  iconCollapse = CC_LoadImage(IC_COLLAPSE);
-
-  for (size_t i = 0; i < NAVIGATION_ITEMS_COUNT; i++) {
-    NAVIGATION_ITEMS[i].icon = CC_LoadImage(NAVIGATION_ITEMS[i].icon_path);
-    NAVIGATION_ITEMS[i].icon_inactive = CC_LoadImage(NAVIGATION_ITEMS[i].icon_inactive_path);
-  }
-}
-
-void NavigationUnloadImage(void) {
-  for (size_t i = 0; i < NAVIGATION_ITEMS_COUNT; i++) {
-    CC_UnloadImage(NAVIGATION_ITEMS[i].icon);
-    CC_UnloadImage(NAVIGATION_ITEMS[i].icon_inactive);
-  }
-
-  CC_UnloadImage(iconExpand);
-  CC_UnloadImage(iconCollapse);
 }
 
 #endif

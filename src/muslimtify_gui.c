@@ -13,7 +13,6 @@
 
 void App(void) {
   AppAssetsLoad();
-  NavigationLoadImage();
 
   while (CC_Running()) {
     CC_Begin();
@@ -26,7 +25,6 @@ void App(void) {
     CC_End();
   }
 
-  NavigationUnloadImage();
   AppAssetsUnload();
 }
 
@@ -35,7 +33,7 @@ int main(void) {
   CC_SetBackground(COLOR_BACKGROUND);
   CC_Init();
   CC_LoadGlobalFont(FONT_INTER_REGULAR, 48);
-  CC_LoadGlobalFontColor(COLOR_ON_SURFACE);
+  CC_SetGlobalFontColor(COLOR_ON_SURFACE);
 
   App();
 

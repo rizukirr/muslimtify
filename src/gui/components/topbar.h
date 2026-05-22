@@ -15,13 +15,13 @@ void TopBar(void);
 void TopBar(void) {
   Row("TopBar",
       .layout = {.sizing = {.height = Fixed(64), .width = Grow()},
-                 .padding = Pad(42, 42, 16, 16),
+                 .padding = PadSymmetric(42, 16),
                  .childGap = 8},
       .backgroundColor = COLOR_SURFACE_VARIANT) {
     Image("CurrentLocationLogo", ImgFit(&g_iconCurrentLocation),
           .layout = {.sizing = {.height = Fixed(18), .width = Fixed(18)}});
     Column("CurrentLocation", .layout = {.sizing = {.height = Grow(), .width = Grow()},
-                                         .childAlignment = {.y = AlignMiddle()}}) {
+                                         .childAlignment = {.y = AlignYCenter()}}) {
       Text("Jakarta, Indonesia", .fontId = g_fontBold, .textColor = COLOR_PRIMARY,
            .fontSize = FONT_SIZE_TITLE_LARGE);
       Text("6.2088 S, 106.8456 E", .textColor = COLOR_ON_BACKGROUND,
