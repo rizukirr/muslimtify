@@ -230,6 +230,7 @@ int handle_daemon(int argc, char **argv) {
     if (sub)
       return sub->handler(argc - 1, argv + 1);
 
+    fprintf(stderr, "Error: Unknown daemon subcommand '%s'\n", argv[0]);
     fprintf(stderr, "Usage: muslimtify daemon [install|uninstall|status]\n");
     return 1;
   }

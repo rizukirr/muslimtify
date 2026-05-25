@@ -180,9 +180,10 @@ static void test_config(void) {
   printf("  config...\n");
   reset_config();
 
-  // config (no subcommand) → error
+  // config (no subcommand) → defaults to show
   run(2, (char *[]){"m", "config", NULL});
-  check_ret("config bare ret", 1);
+  check_ret("config bare ret", 0);
+  check_contains("config bare out", "Configuration:");
 
   // config show
   run(3, (char *[]){"m", "config", "show", NULL});

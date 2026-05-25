@@ -333,6 +333,7 @@ int handle_location(int argc, char **argv) {
       return sub->handler(argc - 1, argv + 1);
 
     fprintf(stderr, "Error: Unknown location subcommand '%s'\n", argv[0]);
+    fprintf(stderr, "Usage: muslimtify location [show|auto|set|clear|refresh]\n");
     return 1;
   }
 

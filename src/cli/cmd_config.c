@@ -63,9 +63,9 @@ int handle_config(int argc, char **argv) {
       return sub->handler(argc - 1, argv + 1);
 
     fprintf(stderr, "Error: Unknown config subcommand '%s'\n", argv[0]);
+    fprintf(stderr, "Usage: muslimtify config [show|reset|validate]\n");
     return 1;
   }
 
-  fprintf(stderr, "Usage: muslimtify config [show|reset|validate]\n");
-  return 1;
+  return config_show_handler(0, NULL);
 }

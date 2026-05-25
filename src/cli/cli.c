@@ -67,20 +67,27 @@ void cli_print_help(void) {
   printf("  next name         Print next prayer name only (e.g. Ashr)\n");
   printf("  next time         Print next prayer time only (e.g. 12:05)\n");
   printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
-  printf("  config            Show configuration\n");
   printf("  location          Manage location [show|auto|set|clear|refresh]\n");
-  printf("    set <lat> <lon> [--timezone=<iana>] [--city=<name>]\n");
+  printf("    set <lat> <lon> [--timezone=<iana>] [--city=<name>] "
+         "[--country=<iso2>]\n");
   printf("                      Set coordinates manually. Timezone is\n");
   printf("                      auto-derived from the host OS unless overridden.\n");
-  printf("                      City is a cosmetic label; not set unless given.\n");
+  printf("                      City/country are cosmetic labels; not set unless\n");
+  printf("                      given. Country is a 2-letter ISO code (e.g. ID).\n");
   printf("    auto [--city=<name>]\n");
   printf("                      Auto-detect via ipinfo.io. ipinfo's city guess\n");
   printf("                      is ignored; pass --city=<name> to label it.\n");
-  printf("  method            Manage calculation method [show|set|list|madhab]\n");
-  printf("  enable <prayer>   Enable prayer notification\n");
-  printf("  disable <prayer>  Disable prayer notification\n");
+  printf("  config            Manage configuration [show|reset|validate]\n");
+  printf("  method            Manage calculation method "
+         "[show|set|auto|list|madhab]\n");
+  printf("  enable <prayer>   Enable prayer notification (or 'all')\n");
+  printf("  disable <prayer>  Disable prayer notification (or 'all')\n");
   printf("  list              List prayer notification status\n");
   printf("  reminder          Manage prayer reminders\n");
+  printf("    <prayer> <list>   Set reminders (min before), e.g. 30,15,5\n");
+  printf("    <prayer> clear    Clear a prayer's reminders\n");
+  printf("    all <list>        Apply to all enabled prayers\n");
+  printf("    show              Show configured reminders\n");
 #ifdef _WIN32
   printf("  daemon            Manage scheduled task "
          "[install|uninstall|status]\n");
@@ -101,6 +108,9 @@ void cli_print_help(void) {
   printf("                                # Set coords + explicit timezone\n");
   printf("  muslimtify location set -6.21 106.84 --city=Jakarta\n");
   printf("                                # Set coords with a city label\n");
+  printf("  muslimtify location set -6.21 106.84 --country=ID\n");
+  printf("                                # Set coords with a country code\n");
+  printf("  muslimtify method auto        # Detect method from location\n");
   printf("  muslimtify method list        # List available methods\n");
   printf("  muslimtify method set mwl     # Set calculation method\n");
   printf("  muslimtify method madhab hanafi  # Set madhab\n");
