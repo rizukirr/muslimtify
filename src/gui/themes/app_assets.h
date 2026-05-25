@@ -44,7 +44,7 @@ void AppAssetsUnload(void);
 
 #ifdef MUSLIMTIFY_APP_ASSETS_IMPLEMENTATION
 
-#include "assets.h"
+#include "asset_paths.h"
 #include "fonts.h"
 
 int16_t g_fontManrope;

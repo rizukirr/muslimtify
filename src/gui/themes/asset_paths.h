@@ -1,5 +1,5 @@
-#ifndef MUSLIMTIFY_ASSETS_H
-#define MUSLIMTIFY_ASSETS_H
+#ifndef MUSLIMTIFY_ASSET_PATHS_H
+#define MUSLIMTIFY_ASSET_PATHS_H
 
 #define IC_DASHBOARD "src/gui/resources/assets/ic_dashboard.png"
 #define IC_DASHBOARD_INACTIVE "src/gui/resources/assets/ic_dashboard_inactive.png"
@@ -39,4 +39,4 @@
 #define IC_ISHA_ACTIVE "src/gui/resources/assets/ic_isha_active.png"
 #define IC_NEXT_NOTIFICATION "src/gui/resources/assets/ic_next_notification.png"
 
-#endif
+#endif // MUSLIMTIFY_ASSET_PATHS_H
