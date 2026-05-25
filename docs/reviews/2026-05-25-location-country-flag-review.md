@@ -18,7 +18,7 @@
 - None.
 
 ### Warn
-- **Test does not assert the table stays sorted.** `country_is_valid_alpha2` relies on `bsearch`, which silently mis-answers if the table is ever edited out of order. Current tests cover `AD/US/ZW/ID` (head, mid, tail) but not the invariant itself. (`src/core/country.c` table; `tests/test_country.c`). Evidence the risk is currently mitigated: `sort -c` on the codes passed at verify time. Follow-up: a test that walks the table asserting `strcmp(prev,cur) < 0` would catch future regressions.
+- ~~**Test does not assert the table stays sorted.**~~ **RESOLVED in `c3a335d`.** Added `country_table()` accessor (also serves the future name-lookup feature) and `test_table_sorted`, which walks the table asserting `strcmp(prev,cur) < 0` for every adjacent pair. Test suite now 15/15.
 
 ### Nit
 - **`--country` parsing duplicates the `--city` flag idiom** (equals-form + space-form branches) rather than factoring a shared flag parser. This intentionally matches the existing `--timezone`/`--city` style in the same function (cmd_location.c), so consistency wins over DRY here; noting only for completeness.
