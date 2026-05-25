@@ -1,7 +1,7 @@
 ---
 title: GUI restructure — stb-style single-TU → scalable multi-TU layout
 date: 2026-05-25
-status: draft
+status: approved
 ---
 
 # GUI restructure — Design
