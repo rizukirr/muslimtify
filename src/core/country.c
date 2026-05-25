@@ -284,3 +284,9 @@ bool country_is_valid_alpha2(const char *code) {
   return bsearch(key, ISO_3166_1_ALPHA2, ISO_3166_1_ALPHA2_COUNT, sizeof(ISO_3166_1_ALPHA2[0]),
                  country_code_cmp) != NULL;
 }
+
+const Country *country_table(size_t *count) {
+  if (count)
+    *count = ISO_3166_1_ALPHA2_COUNT;
+  return ISO_3166_1_ALPHA2;
+}

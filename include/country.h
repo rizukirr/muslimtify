@@ -2,6 +2,7 @@
 #define COUNTRY_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +26,15 @@ typedef struct {
  * NULL, empty, wrong length, or non-letter input.
  */
 bool country_is_valid_alpha2(const char *code);
+
+/**
+ * Return a pointer to the ISO 3166-1 alpha-2 table, sorted ascending by `code`,
+ * and write the number of entries into `*count` (if non-NULL). The table is
+ * statically allocated and lives for the program's lifetime; callers must not
+ * modify it. Intended for the future name-lookup feature and for invariant
+ * tests (the sorted order that `country_is_valid_alpha2`'s bsearch depends on).
+ */
+const Country *country_table(size_t *count);
 
 #ifdef __cplusplus
 }
