@@ -1,0 +1,6 @@
+#ifndef MUSLIMTIFY_DAILY_SCHEDULE_H
+#define MUSLIMTIFY_DAILY_SCHEDULE_H
+
+void DailySchedule(void);
+
+#endif // MUSLIMTIFY_DAILY_SCHEDULE_H
