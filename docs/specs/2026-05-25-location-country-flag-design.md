@@ -1,7 +1,7 @@
 ---
 title: --country flag for `location set`
 date: 2026-05-25
-status: draft
+status: approved
 ---
 
 # --country flag for `location set` — Design
