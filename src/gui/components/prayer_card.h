@@ -1,0 +1,6 @@
+#ifndef MUSLIMTIFY_PRAYER_CARD_H
+#define MUSLIMTIFY_PRAYER_CARD_H
+
+void PrayerCard(void);
+
+#endif // MUSLIMTIFY_PRAYER_CARD_H
