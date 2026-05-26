@@ -99,6 +99,66 @@ static void test_country_default_method(void) {
   expect_method(NULL, CALC_MWL, "NULL -> mwl");
 }
 
+// Exhaustive coverage of country_default_method over the whole table:
+//   (1) every one of the 249 codes resolves to its table-declared method,
+//   (2) the 29 dedicated (non-MWL) mappings hold by an independent expectation,
+//   (3) exactly 29 entries are non-MWL (guards accidental add/remove).
+static void test_country_default_method_all(void) {
+  printf("test_country_default_method_all\n");
+
+  size_t count = 0;
+  const Country *table = country_table(&count);
+  report_result("table has 249 entries", count == 249);
+
+  // (1) Accessor agrees with the table for every code.
+  bool all_match = true;
+  for (size_t i = 0; i < count; ++i) {
+    if (country_default_method(table[i].code) != table[i].method) {
+      all_match = false;
+      printf("  mismatch for '%s': accessor=%d table=%d\n", table[i].code,
+             country_default_method(table[i].code), table[i].method);
+      break;
+    }
+  }
+  report_result("accessor matches table method for all 249 codes", all_match);
+
+  // (2) Independent expectation for every dedicated (non-MWL) country.
+  struct {
+    const char *code;
+    CalcMethod method;
+  } expected[] = {
+      {"ID", CALC_KEMENAG}, {"MY", CALC_JAKIM},   {"BN", CALC_JAKIM},   {"SG", CALC_SINGAPORE},
+      {"SA", CALC_MAKKAH},  {"YE", CALC_MAKKAH},  {"AE", CALC_DUBAI},   {"QA", CALC_QATAR},
+      {"KW", CALC_KUWAIT},  {"BH", CALC_GULF},    {"OM", CALC_GULF},    {"JO", CALC_JORDAN},
+      {"PS", CALC_JORDAN},  {"EG", CALC_EGYPT},   {"LY", CALC_EGYPT},   {"SD", CALC_EGYPT},
+      {"TN", CALC_TUNISIA}, {"DZ", CALC_ALGERIA}, {"MA", CALC_MOROCCO}, {"TR", CALC_TURKEY},
+      {"US", CALC_ISNA},    {"CA", CALC_ISNA},    {"PK", CALC_KARACHI}, {"IN", CALC_KARACHI},
+      {"BD", CALC_KARACHI}, {"AF", CALC_KARACHI}, {"FR", CALC_FRANCE},  {"PT", CALC_PORTUGAL},
+      {"RU", CALC_RUSSIA},
+  };
+  size_t expected_count = sizeof(expected) / sizeof(expected[0]);
+  report_result("29 dedicated mappings enumerated", expected_count == 29);
+
+  bool dedicated_ok = true;
+  for (size_t i = 0; i < expected_count; ++i) {
+    if (country_default_method(expected[i].code) != expected[i].method) {
+      dedicated_ok = false;
+      printf("  wrong method for '%s': got %d, expected %d\n", expected[i].code,
+             country_default_method(expected[i].code), expected[i].method);
+      break;
+    }
+  }
+  report_result("all 29 dedicated countries map to their method", dedicated_ok);
+
+  // (3) Exactly 29 entries are non-MWL — no mapping silently added or removed.
+  size_t non_mwl = 0;
+  for (size_t i = 0; i < count; ++i) {
+    if (table[i].method != CALC_MWL)
+      non_mwl++;
+  }
+  report_result("exactly 29 non-MWL entries in the table", non_mwl == 29);
+}
+
 int main(void) {
   printf("=== country tests ===\n\n");
 
@@ -107,6 +167,7 @@ int main(void) {
   test_invalid_codes();
   test_table_sorted();
   test_country_default_method();
+  test_country_default_method_all();
 
   printf("\n%d/%d tests passed\n", total - failures, total);
   return failures > 0 ? 1 : 0;
