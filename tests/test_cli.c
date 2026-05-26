@@ -305,7 +305,8 @@ static void test_location(void) {
   }
 
   // location set --city=<name> writes the label
-  run(6, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city=Jakarta", NULL});
+  run(6,
+      (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city=Jakarta", NULL});
   check_ret("location set --city= ret", 0);
   {
     Config cfg;
@@ -333,7 +334,8 @@ static void test_location(void) {
   }
 
   // a timezone-only update leaves the existing city label intact
-  run(6, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city=Bandung", NULL});
+  run(6,
+      (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city=Bandung", NULL});
   check_ret("location set seed-city ret", 0);
   run(4, (char *[]){"m", "location", "set", "--timezone=Asia/Jakarta", NULL});
   check_ret("location set tz-only ret", 0);
@@ -348,8 +350,8 @@ static void test_location(void) {
   check_ret("location set --city missing ret", 1);
 
   // location set combining --timezone and --city
-  run(7, (char *[]){"m", "location", "set", "--lat=31.04", "--long=31.38", "--timezone=Africa/Cairo",
-                    "--city=Mansoura", NULL});
+  run(7, (char *[]){"m", "location", "set", "--lat=31.04", "--long=31.38",
+                    "--timezone=Africa/Cairo", "--city=Mansoura", NULL});
   check_ret("location set --tz+--city ret", 0);
   {
     Config cfg;
