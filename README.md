@@ -12,9 +12,9 @@ Muslimtify supports **21 international calculation methods** including MWL, ISNA
 | ![Linux Screenshot](images/linux-example.png) | ![Windows Screenshot](images/windows-example.png) |
 
 
-## Roadmap
-- Merge command  `location auto` and `method auto` into (only) `config auto` and optimize auto detection per (251) country
-- Add GUI (see branch gui to see a progress)
+> ## Roadmap
+> - Merge command  `location auto` and `method auto` into (only) `config auto` and optimize auto detection per (249) country
+> - Add GUI (see branch gui to see a progress)
 
 ## Installation
 
