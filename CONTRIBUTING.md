@@ -59,7 +59,7 @@ docs/                     # Calculation method documentation
 
 ## Code Style
 
-- C23 standard
+- C11 standard
 - 2-space indentation
 - Opening brace on same line
 - Run `clang-format` before committing (config provided in `.clang-format`)
