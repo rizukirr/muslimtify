@@ -31,7 +31,7 @@ if(WIN32)
     set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
     set(CURL_ENABLE_EXPORT_TARGET OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(curl
-        URL https://github.com/curl/curl/releases/download/curl-8_11_1/curl-8.11.1.tar.xz
+        URL https://github.com/curl/curl/releases/download/curl-8_20_0/curl-8.20.0.tar.xz
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
     set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
