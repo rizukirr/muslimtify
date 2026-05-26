@@ -75,8 +75,8 @@ static int location_refresh_handler(int argc, char **argv) {
 }
 
 static const char *LOCATION_SET_USAGE =
-    "Usage: muslimtify location set <latitude> <longitude> [--timezone=<iana>] "
-    "[--city=<name>] [--country=<iso2>]\n";
+    "Usage: muslimtify location set [--lat=<latitude>] [--long=<longitude>] "
+    "[--timezone=<iana>] [--city=<name>] [--country=<iso2>]\n";
 
 // Returns true if `tz` is one of the canonical UTC aliases (so an offset of 0.0
 // is expected, not a sign of an unrecognized zone).
@@ -86,14 +86,38 @@ static bool is_utc_zone(const char *tz) {
 }
 
 static int location_set_handler(int argc, char **argv) {
+  const char *override_lat = NULL;
+  const char *override_lon = NULL;
   const char *override_tz = NULL;
   const char *override_city = NULL;
   const char *override_country = NULL;
-  const char *positional[2] = {NULL, NULL};
-  int pos_count = 0;
 
   for (int i = 0; i < argc; ++i) {
-    if (strncmp(argv[i], "--timezone=", 11) == 0) {
+    if (strncmp(argv[i], "--lat=", 6) == 0) {
+      override_lat = argv[i] + 6;
+      if (*override_lat == '\0') {
+        fprintf(stderr, "Error: --lat requires a value (e.g. --lat=1.2345)\n");
+        return 1;
+      }
+    } else if (strcmp(argv[i], "--lat") == 0) {
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Error: --lat requires a value (e.g. --lat 1.2345)\n");
+        return 1;
+      }
+      override_lat = argv[++i];
+    } else if (strncmp(argv[i], "--long=", 7) == 0) {
+      override_lon = argv[i] + 7;
+      if (*override_lon == '\0') {
+        fprintf(stderr, "Error: --long requires a value (e.g. --long=1.2345)\n");
+        return 1;
+      }
+    } else if (strcmp(argv[i], "--long") == 0) {
+      if (i + 1 >= argc) {
+        fprintf(stderr, "Error: --long requires a value (e.g. --long 1.2345)\n");
+        return 1;
+      }
+      override_lon = argv[++i];
+    } else if (strncmp(argv[i], "--timezone=", 11) == 0) {
       override_tz = argv[i] + 11;
       if (*override_tz == '\0') {
         fprintf(stderr, "Error: --timezone requires a value (e.g. --timezone=Asia/Jakarta)\n");
@@ -129,15 +153,13 @@ static int location_set_handler(int argc, char **argv) {
         return 1;
       }
       override_country = argv[++i];
-    } else if (pos_count < 2) {
-      positional[pos_count++] = argv[i];
     } else {
       fprintf(stderr, "Error: unexpected argument '%s'\n%s", argv[i], LOCATION_SET_USAGE);
       return 1;
     }
   }
 
-  if (pos_count < 2) {
+  if (!override_lat && !override_lon && !override_tz && !override_city && !override_country) {
     fputs(LOCATION_SET_USAGE, stderr);
     return 1;
   }
@@ -148,26 +170,39 @@ static int location_set_handler(int argc, char **argv) {
     return 1;
   }
 
-  char *end_lat, *end_lon;
-  errno = 0;
-  cfg.latitude = strtod(positional[0], &end_lat);
-  if (end_lat == positional[0] || *end_lat != '\0' || errno == ERANGE) {
-    fprintf(stderr, "Error: Invalid latitude '%s'\n", positional[0]);
-    return 1;
+  if (override_lat) {
+    char *end_lat;
+    errno = 0;
+    double lat = strtod(override_lat, &end_lat);
+    if (end_lat == override_lat || *end_lat != '\0' || errno == ERANGE || lat < -90.0 ||
+        lat > 90.0) {
+      fprintf(stderr, "Error: Invalid latitude '%s'\n", override_lat);
+      return 1;
+    }
+    cfg.latitude = lat;
+    cfg.auto_detect = false;
   }
-  errno = 0;
-  cfg.longitude = strtod(positional[1], &end_lon);
-  if (end_lon == positional[1] || *end_lon != '\0' || errno == ERANGE) {
-    fprintf(stderr, "Error: Invalid longitude '%s'\n", positional[1]);
-    return 1;
-  }
-  cfg.auto_detect = false;
 
-  // The user picked coordinates manually — the previously cached city/country
-  // no longer apply. Clear them, then write the user's --city/--country
-  // overrides if any.
-  cfg.city[0] = '\0';
-  cfg.country[0] = '\0';
+  if (override_lon) {
+    char *end_lon;
+    errno = 0;
+    double lon = strtod(override_lon, &end_lon);
+    if (end_lon == override_lon || *end_lon != '\0' || errno == ERANGE || lon < -180.0 ||
+        lon > 180.0) {
+      fprintf(stderr, "Error: Invalid longitude '%s'\n", override_lon);
+      return 1;
+    }
+    cfg.longitude = lon;
+    cfg.auto_detect = false;
+  }
+
+  // If the user moved the coordinates, the previously cached city/country no
+  // longer apply — clear them. (A timezone- or label-only update leaves the
+  // existing labels intact.) Then write the user's --city/--country overrides.
+  if (override_lat || override_lon) {
+    cfg.city[0] = '\0';
+    cfg.country[0] = '\0';
+  }
   if (override_city)
     set_city(&cfg, override_city);
   if (override_country) {
@@ -211,7 +246,10 @@ static int location_set_handler(int argc, char **argv) {
   }
 
   cache_invalidate();
-  printf("✓ Location set to: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
+
+  printf("✓ Location:\n");
+  printf("  Latitude: %.4f\n", cfg.latitude);
+  printf("  Longitude: %.4f\n", cfg.longitude);
   if (cfg.city[0] != '\0')
     printf("  City: %s\n", cfg.city);
   if (cfg.country[0] != '\0')

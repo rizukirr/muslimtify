@@ -222,8 +222,8 @@ static void test_location(void) {
   check_ret("location show ret", 0);
   check_contains("location show out", "Jakarta");
 
-  // location set <lat> <lon>
-  run(5, (char *[]){"m", "location", "set", "-7.25", "112.75", NULL});
+  // location set --lat=<lat> --long=<lon> (equals form)
+  run(5, (char *[]){"m", "location", "set", "--lat=-7.25", "--long=112.75", NULL});
   check_ret("location set ret", 0);
   {
     Config cfg;
@@ -232,20 +232,37 @@ static void test_location(void) {
     check_bool("location set lon", cfg.longitude > 112.74 && cfg.longitude < 112.76);
   }
 
-  // location set (no args)
+  // location set --lat <lat> --long <lon> (space form)
+  run(7, (char *[]){"m", "location", "set", "--lat", "-7.25", "--long", "112.75", NULL});
+  check_ret("location set space ret", 0);
+
+  // location set (no args) rejected
   run(3, (char *[]){"m", "location", "set", NULL});
   check_ret("location set noargs ret", 1);
 
   // location set (invalid lat)
-  run(5, (char *[]){"m", "location", "set", "abc", "112.75", NULL});
+  run(5, (char *[]){"m", "location", "set", "--lat=abc", "--long=112.75", NULL});
   check_ret("location set bad lat ret", 1);
 
   // location set (invalid lon)
-  run(5, (char *[]){"m", "location", "set", "-7.25", "xyz", NULL});
+  run(5, (char *[]){"m", "location", "set", "--lat=-7.25", "--long=xyz", NULL});
   check_ret("location set bad lon ret", 1);
 
+  // location set out-of-range coordinates rejected
+  run(4, (char *[]){"m", "location", "set", "--lat=91", NULL});
+  check_ret("location set lat>90 ret", 1);
+  run(4, (char *[]){"m", "location", "set", "--long=181", NULL});
+  check_ret("location set lon>180 ret", 1);
+
+  // location set at the equator/prime meridian (0.0 is a valid coordinate)
+  run(5, (char *[]){"m", "location", "set", "--lat=0", "--long=0", NULL});
+  check_ret("location set equator ret", 0);
+  check_contains("location set equator lat shown", "Latitude: 0.0000");
+  check_contains("location set equator lon shown", "Longitude: 0.0000");
+
   // location set --timezone=<iana> (equals form)
-  run(6, (char *[]){"m", "location", "set", "30.0", "31.0", "--timezone=Africa/Cairo", NULL});
+  run(6, (char *[]){"m", "location", "set", "--lat=30.0", "--long=31.0", "--timezone=Africa/Cairo",
+                    NULL});
   check_ret("location set --timezone= ret", 0);
   {
     Config cfg;
@@ -257,7 +274,8 @@ static void test_location(void) {
   }
 
   // location set --timezone <iana> (space form)
-  run(7, (char *[]){"m", "location", "set", "51.5", "-0.1", "--timezone", "Europe/London", NULL});
+  run(7, (char *[]){"m", "location", "set", "--lat=51.5", "--long=-0.1", "--timezone",
+                    "Europe/London", NULL});
   check_ret("location set --timezone space ret", 0);
   {
     Config cfg;
@@ -266,15 +284,17 @@ static void test_location(void) {
   }
 
   // location set --timezone=<bogus> rejected
-  run(6, (char *[]){"m", "location", "set", "30.0", "31.0", "--timezone=Asia/Foobar", NULL});
+  run(6, (char *[]){"m", "location", "set", "--lat=30.0", "--long=31.0", "--timezone=Asia/Foobar",
+                    NULL});
   check_ret("location set --timezone bogus ret", 1);
 
   // location set --timezone (missing value)
-  run(6, (char *[]){"m", "location", "set", "30.0", "31.0", "--timezone", NULL});
+  run(6, (char *[]){"m", "location", "set", "--lat=30.0", "--long=31.0", "--timezone", NULL});
   check_ret("location set --timezone missing ret", 1);
 
-  // location set with --timezone= preceding positionals (flag-order flexibility)
-  run(6, (char *[]){"m", "location", "set", "--timezone=Asia/Tokyo", "35.68", "139.69", NULL});
+  // location set with --timezone= preceding coordinates (flag-order flexibility)
+  run(6, (char *[]){"m", "location", "set", "--timezone=Asia/Tokyo", "--lat=35.68", "--long=139.69",
+                    NULL});
   check_ret("location set --timezone-first ret", 0);
   {
     Config cfg;
@@ -285,7 +305,7 @@ static void test_location(void) {
   }
 
   // location set --city=<name> writes the label
-  run(6, (char *[]){"m", "location", "set", "-6.21", "106.84", "--city=Jakarta", NULL});
+  run(6, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city=Jakarta", NULL});
   check_ret("location set --city= ret", 0);
   {
     Config cfg;
@@ -294,7 +314,8 @@ static void test_location(void) {
   }
 
   // location set --city <name> (space form)
-  run(7, (char *[]){"m", "location", "set", "-6.21", "106.84", "--city", "Surabaya", NULL});
+  run(7, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city", "Surabaya",
+                    NULL});
   check_ret("location set --city space ret", 0);
   {
     Config cfg;
@@ -302,8 +323,8 @@ static void test_location(void) {
     check_bool("location set --city space label", strcmp(cfg.city, "Surabaya") == 0);
   }
 
-  // location set without --city clears any prior city
-  run(5, (char *[]){"m", "location", "set", "-6.21", "106.84", NULL});
+  // changing coordinates clears any prior city label
+  run(5, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", NULL});
   check_ret("location set no-city ret", 0);
   {
     Config cfg;
@@ -311,12 +332,23 @@ static void test_location(void) {
     check_bool("location set no-city clears", cfg.city[0] == '\0');
   }
 
+  // a timezone-only update leaves the existing city label intact
+  run(6, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city=Bandung", NULL});
+  check_ret("location set seed-city ret", 0);
+  run(4, (char *[]){"m", "location", "set", "--timezone=Asia/Jakarta", NULL});
+  check_ret("location set tz-only ret", 0);
+  {
+    Config cfg;
+    config_load(&cfg);
+    check_bool("location set tz-only keeps city", strcmp(cfg.city, "Bandung") == 0);
+  }
+
   // location set --city (missing value)
-  run(6, (char *[]){"m", "location", "set", "-6.21", "106.84", "--city", NULL});
+  run(6, (char *[]){"m", "location", "set", "--lat=-6.21", "--long=106.84", "--city", NULL});
   check_ret("location set --city missing ret", 1);
 
   // location set combining --timezone and --city
-  run(7, (char *[]){"m", "location", "set", "31.04", "31.38", "--timezone=Africa/Cairo",
+  run(7, (char *[]){"m", "location", "set", "--lat=31.04", "--long=31.38", "--timezone=Africa/Cairo",
                     "--city=Mansoura", NULL});
   check_ret("location set --tz+--city ret", 0);
   {

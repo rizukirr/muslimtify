@@ -4,8 +4,7 @@
 #include "version.h"
 #include <stdio.h>
 
-// â”€â”€ top-level dispatch table
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- top-level dispatch table -----------------------
 
 static const CommandEntry top_commands[] = {
     {"show", handle_show},         {"check", handle_check},
@@ -20,8 +19,7 @@ static const CommandEntry top_commands[] = {
     {"-h", handle_help},
 };
 
-// â”€â”€ version / help
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- version / help -----------------------
 
 int handle_version(int argc, char **argv) {
   (void)argc;
@@ -52,71 +50,194 @@ int handle_help(int argc, char **argv) {
   return 0;
 }
 
-// â”€â”€ public API
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- public API -----------------------
 
 void cli_print_help(void) {
-  printf("Muslimtify - Prayer Time Notification Daemon\n\n");
-  printf("Usage: muslimtify [COMMAND] [OPTIONS]\n\n");
-  printf("Commands:\n");
-  printf("  show              Display today's prayer times\n");
-  printf("    --no-header       Plain key=value output (enabled prayers only)\n");
-  printf("    --format json     JSON output\n");
-  printf("  check             Check and send notification if prayer time\n");
-  printf("  next              Show time until next prayer\n");
-  printf("  next name         Print next prayer name only (e.g. Ashr)\n");
-  printf("  next time         Print next prayer time only (e.g. 12:05)\n");
-  printf("  next remaining    Print time remaining only (e.g. 1:23 or 23m)\n");
-  printf("  location          Manage location [show|set|clear|refresh]\n");
-  printf("    set <lat> <lon> [--timezone=<iana>] [--city=<name>] "
-         "[--country=<iso2>]\n");
-  printf("                      Set coordinates manually. Timezone is\n");
-  printf("                      auto-derived from the host OS unless overridden.\n");
-  printf("                      City/country are cosmetic labels; not set unless\n");
-  printf("                      given. Country is a 2-letter ISO code (e.g. ID).\n");
-  printf("  config            Manage configuration [show|reset|validate|auto]\n");
-  printf("    auto [--city=<name>]\n");
-  printf("                      Auto-detect location via ipinfo.io and set the\n");
-  printf("                      calculation method from the country. ipinfo's\n");
-  printf("                      city guess is ignored; pass --city to label it.\n");
-  printf("  method            Manage calculation method "
-         "[show|set|list|madhab]\n");
-  printf("  enable <prayer>   Enable prayer notification (or 'all')\n");
-  printf("  disable <prayer>  Disable prayer notification (or 'all')\n");
-  printf("  list              List prayer notification status\n");
-  printf("  reminder          Manage prayer reminders\n");
-  printf("    <prayer> <list>   Set reminders (min before), e.g. 30,15,5\n");
-  printf("    <prayer> clear    Clear a prayer's reminders\n");
-  printf("    all <list>        Apply to all enabled prayers\n");
-  printf("    show              Show configured reminders\n");
+  printf("Muslimtify - Cross-platform Prayer Time Notification Daemon\n\n");
+
+  printf("Usage:\n");
+  printf("  muslimtify <command> [options]\n\n");
+
+  /*
+   * PRAYER
+   */
+  printf("Prayer Commands:\n");
+
+  printf("  %-30s %s\n", "show", "Display today's prayer times");
+
+  printf("  %-30s %s\n", "show --no-header", "Plain key=value output");
+
+  printf("  %-30s %s\n", "show --format json", "Output prayer times as JSON");
+
+  printf("  %-30s %s\n", "next", "Show next prayer");
+
+  printf("  %-30s %s\n", "next name", "Print next prayer name only");
+
+  printf("  %-30s %s\n", "next time", "Print next prayer time only");
+
+  printf("  %-30s %s\n", "next remaining", "Print remaining time only");
+
+  printf("  %-30s %s\n", "check", "Check and send notifications");
+
+  printf("\n");
+
+  /*
+   * LOCATION
+   */
+  printf("Location Commands:\n");
+
+  printf("  %-30s %s\n", "location show", "Show current location");
+
+  printf("  %-30s %s\n", "location set", "Set coordinates manually");
+
+  printf("  %-30s %s\n", "", "--lat=<latitude>");
+
+  printf("  %-30s %s\n", "", "--long=<longitude>");
+
+  printf("  %-30s %s\n", "", "--timezone=<iana>");
+
+  printf("  %-30s %s\n", "", "--city=<name>");
+
+  printf("  %-30s %s\n", "", "--country=<iso2>");
+
+  printf("  %-30s %s\n", "location refresh", "Refresh auto-detected location");
+
+  printf("  %-30s %s\n", "location clear", "Clear saved location");
+
+  printf("\n");
+
+  /*
+   * CONFIG
+   */
+  printf("Configuration Commands:\n");
+
+  printf("  %-30s %s\n", "config show", "Show current configuration");
+
+  printf("  %-30s %s\n", "config validate", "Validate configuration");
+
+  printf("  %-30s %s\n", "config reset", "Reset configuration");
+
+  printf("  %-30s %s\n", "config auto", "Auto-detect location and method");
+
+  printf("  %-30s %s\n", "", "Uses ipinfo.io for detection");
+
+  printf("\n");
+
+  /*
+   * METHOD
+   */
+  printf("Calculation Method Commands:\n");
+
+  printf("  %-30s %s\n", "method list", "List available methods");
+
+  printf("  %-30s %s\n", "method show", "Show current method");
+
+  printf("  %-30s %s\n", "method set <method>", "Set calculation method");
+
+  printf("  %-30s %s\n", "method madhab <name>", "Set madhab");
+
+  printf("\n");
+
+  /*
+   * NOTIFICATION
+   */
+  printf("Notification Commands:\n");
+
+  printf("  %-30s %s\n", "enable <prayer>", "Enable prayer notification");
+
+  printf("  %-30s %s\n", "disable <prayer>", "Disable prayer notification");
+
+  printf("  %-30s %s\n", "list", "List notification status");
+
+  printf("  %-30s %s\n", "notification test", "Send test notification");
+
+  printf("\n");
+
+  /*
+   * REMINDER
+   */
+  printf("Reminder Commands:\n");
+
+  printf("  %-30s %s\n", "reminder show", "Show configured reminders");
+
+  printf("  %-30s %s\n", "reminder <prayer> <list>", "Set reminders (30,15,5)");
+
+  printf("  %-30s %s\n", "reminder <prayer> clear", "Clear reminders");
+
+  printf("  %-30s %s\n", "reminder all <list>", "Apply reminders to all prayers");
+
+  printf("\n");
+
+  /*
+   * SOUND
+   */
+  printf("Sound Commands:\n");
+
+  printf("  %-30s %s\n", "sound on", "Enable notification sound");
+
+  printf("  %-30s %s\n", "sound off", "Disable notification sound");
+
+  printf("  %-30s %s\n", "sound status", "Show sound status");
+
+  printf("  %-30s %s\n", "sound set", "Set adzan sound");
+
+  printf("  %-30s %s\n", "sound reminder-set", "Set reminder sound");
+
+  printf("\n");
+
+  /*
+   * DAEMON
+   */
 #ifdef _WIN32
-  printf("  daemon            Manage scheduled task "
-         "[install|uninstall|status]\n");
+  printf("Scheduled Task Commands:\n");
 #else
-  printf("  daemon            Manage systemd daemon "
-         "[install|uninstall|status]\n");
+  printf("Daemon Commands:\n");
 #endif
-  printf("  notification test Send a test notification for the next prayer\n");
-  printf("  sound             Manage notification sound "
-         "[on|off|status|set|reminder-set]\n");
-  printf("  version           Show version information\n");
-  printf("  help              Show this help message\n\n");
+
+  printf("  %-30s %s\n", "daemon install", "Install daemon");
+
+  printf("  %-30s %s\n", "daemon uninstall", "Remove daemon");
+
+  printf("  %-30s %s\n", "daemon status", "Show daemon status");
+
+  printf("\n");
+
+  /*
+   * GENERAL
+   */
+  printf("General Commands:\n");
+
+  printf("  %-30s %s\n", "version", "Show version information");
+
+  printf("  %-30s %s\n", "help", "Show help message");
+
+  printf("\n");
+
+  /*
+   * EXAMPLES
+   */
   printf("Examples:\n");
-  printf("  muslimtify                    # Show version and help\n");
-  printf("  muslimtify next               # Show next prayer\n");
-  printf("  muslimtify config auto        # Auto-detect location + method\n");
-  printf("  muslimtify location set -6.21 106.84 --timezone=Asia/Jakarta\n");
-  printf("                                # Set coords + explicit timezone\n");
-  printf("  muslimtify location set -6.21 106.84 --city=Jakarta\n");
-  printf("                                # Set coords with a city label\n");
-  printf("  muslimtify location set -6.21 106.84 --country=ID\n");
-  printf("                                # Set coords with a country code\n");
-  printf("  muslimtify method list        # List available methods\n");
-  printf("  muslimtify method set mwl     # Set calculation method\n");
-  printf("  muslimtify method madhab hanafi  # Set madhab\n");
-  printf("  muslimtify enable fajr        # Enable Fajr notifications\n");
-  printf("  muslimtify reminder fajr 30,15,5  # Set Fajr reminders\n\n");
-  printf("Config file: %s\n", config_get_path());
+
+  printf("  %-55s %s\n", "muslimtify next", "# Show next prayer");
+
+  printf("  %-55s %s\n", "muslimtify config auto", "# Auto detect configuration");
+
+  printf("  %-55s %s\n", "muslimtify method set mwl", "# Set calculation method");
+
+  printf("  %-55s %s\n", "muslimtify method madhab hanafi", "# Set madhab");
+
+  printf("  %-55s %s\n", "muslimtify enable fajr", "# Enable Fajr notification");
+
+  printf("  %-55s %s\n", "muslimtify reminder fajr 30,15,5", "# Set reminders");
+
+  printf("  %-55s %s\n", "muslimtify location set --lat=-6.21 --long=106.84", "# Set coordinates");
+
+  printf("  %-55s %s\n", "muslimtify location set --timezone=Asia/Jakarta", "# Override timezone");
+
+  printf("\n");
+
+  printf("Config File:\n");
+  printf("  %s\n", config_get_path());
 }
 
 int cli_run(int argc, char **argv) {
