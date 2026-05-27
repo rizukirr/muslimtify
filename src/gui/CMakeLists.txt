@@ -10,6 +10,7 @@ add_library(muslimtify_gui_lib OBJECT
     ${CMAKE_SOURCE_DIR}/src/gui/components/daily_schedule.c
     ${CMAKE_SOURCE_DIR}/src/gui/components/dashboard_content.c
     ${CMAKE_SOURCE_DIR}/src/gui/utils/gui_config.c
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/gui_prayer.c
     ${CMAKE_SOURCE_DIR}/src/gui/utils/strfmt.c
     ${CMAKE_SOURCE_DIR}/src/gui/app/app.c)
 muslimtify_set_target_defaults(muslimtify_gui_lib)

@@ -7,10 +7,12 @@
 #include "themes/colors.h"
 #include "themes/fonts.h"
 #include "utils/gui_config.h"
+#include "utils/gui_prayer.h"
 
 static void AppFrame(void) {
   assetsLoad();
   guiLoadConfig();
+  guiLoadPrayer();
 
   while (CC_Running()) {
     CC_Begin();

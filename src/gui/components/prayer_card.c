@@ -2,12 +2,25 @@
 
 #include "app/assets.h"
 #include "ccompose.h"
+#include "prayer_checker.h"
+#include "prayertimes.h"
 #include "themes/colors.h"
 #include "themes/fonts.h"
+#include "utils/gui_prayer.h"
 #include <raylib.h>
 
 void PrayerCard(void) {
   Assets *a = appAssets();
+  const PrayerSnapshot *snap = guiGetPrayer();
+
+  const char *nextName = (snap->next == PRAYER_NONE) ? "No prayer" : prayer_get_name(snap->next);
+  const char *remaining =
+      (snap->next == PRAYER_NONE) ? "—" : TextFormat("in %d minutes", snap->minutes_until);
+
+  char startStr[16] = "--:--";
+  if (snap->next != PRAYER_NONE) {
+    format_time_hm(prayer_get_time(&snap->times, snap->next), startStr, sizeof(startStr));
+  }
 
   Column("PrayerCard",
          .layout = {.sizing = {.height = Fit(), .width = Grow()},
@@ -15,16 +28,16 @@ void PrayerCard(void) {
                     .childGap = 16},
          .cornerRadius = RadiusAll(16), .backgroundColor = COLOR_PRIMARY) {
     Text("UPCOMING PRAYER", .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_TITLE_MEDIUM);
-    Text("Duhr", .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_DISPLAY_LARGE,
+    Text(nextName, .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_DISPLAY_LARGE,
          .fontId = a->fontManrope);
-    Text("in 45 minutes", .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_TITLE_LARGE);
+    Text(remaining, .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_TITLE_LARGE);
     VSpacer();
     Row("PrayerCardButtons", .layout = {.sizing = {.width = Grow()},
                                         .childGap = 16,
                                         .childAlignment = {.y = AlignYCenter()}}) {
       Column("startAt") {
         Text("Starts at", .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_TITLE_MEDIUM);
-        Text("12:00 AM", .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_HEADLINE_LARGE,
+        Text(startStr, .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_HEADLINE_LARGE,
              .fontId = a->fontBold);
       }
       VDivider(.length = 48, .color = COLOR_ON_PRIMARY);
