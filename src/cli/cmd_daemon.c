@@ -140,19 +140,23 @@ static int daemon_install_handler(int argc, char **argv) {
   printf("✓ Created %s\n", service_path);
   printf("✓ Created %s\n", timer_path);
 
-  /* Auto-detect location and calculation method */
+  /* Auto-detect location, but only fill fields the saved config leaves empty,
+     so re-running daemon install on upgrade never clobbers a saved location. */
   Config cfg;
   if (config_load(&cfg) != 0) {
     fprintf(stderr, "Warning: Failed to load config, skipping auto-detect\n");
   } else {
     printf("Detecting location...\n");
-    if (config_auto_detect(&cfg) != 0) {
+    Config detected = cfg;
+    if (config_auto_detect(&detected) != 0) {
       fprintf(stderr, "Warning: Failed to detect location, skipping auto-detect\n");
     } else {
+      config_fill_missing(&cfg, &detected);
+
       if (cfg.city[0] != '\0') {
-        printf("✓ Location detected: %s, %s\n", cfg.city, cfg.country);
+        printf("✓ Location: %s, %s\n", cfg.city, cfg.country);
       } else {
-        printf("✓ Location detected: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
+        printf("✓ Location: %.4f, %.4f\n", cfg.latitude, cfg.longitude);
       }
 
       if (config_save(&cfg) != 0) {
@@ -160,7 +164,7 @@ static int daemon_install_handler(int argc, char **argv) {
       } else {
         CalcMethod m = method_from_string(cfg.calculation_method);
         const MethodParams *p = method_params_get(m);
-        printf("✓ Method auto-detected: %s", cfg.calculation_method);
+        printf("✓ Method: %s", cfg.calculation_method);
         if (p)
           printf(" (%s)", p->name);
         printf("\n");

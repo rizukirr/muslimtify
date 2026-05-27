@@ -3,6 +3,8 @@
 #include "lib/json.h"
 #include "platform.h"
 #include "string_util.h"
+#include "country.h"
+#include <math.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -652,4 +654,47 @@ MethodParams method_params_from_config(const Config *cfg) {
   }
 
   return params;
+}
+
+void config_fill_missing(Config *dst, const Config *detected) {
+  if (!dst || !detected)
+    return;
+
+  // Coordinates: (0,0) is treated as unset (matches location_prepare). Pair.
+  if (fabs(dst->latitude) < 1e-6 && fabs(dst->longitude) < 1e-6) {
+    dst->latitude = detected->latitude;
+    dst->longitude = detected->longitude;
+  }
+
+  // Country: fill if empty; remember so method can follow a freshly-set country.
+  bool country_was_empty = (dst->country[0] == '\0');
+  if (country_was_empty) {
+    if (!copy_string(dst->country, sizeof(dst->country), detected->country)) {
+      log_truncation("country");
+    }
+  }
+
+  // Timezone: empty or the "UTC" default counts as unset. Fill offset with it.
+  if (dst->timezone[0] == '\0' || strcmp(dst->timezone, "UTC") == 0) {
+    if (!copy_string(dst->timezone, sizeof(dst->timezone), detected->timezone)) {
+      log_truncation("timezone");
+    }
+    dst->timezone_offset = detected->timezone_offset;
+  }
+
+  // City: fill if empty (detected city is normally empty -> usually a no-op).
+  if (dst->city[0] == '\0') {
+    if (!copy_string(dst->city, sizeof(dst->city), detected->city)) {
+      log_truncation("city");
+    }
+  }
+
+  // Method: derive from country only when we just filled a previously-empty
+  // country; otherwise the existing method is preserved.
+  if (country_was_empty && dst->country[0] != '\0') {
+    if (!copy_string(dst->calculation_method, sizeof(dst->calculation_method),
+                     method_to_string(country_default_method(dst->country)))) {
+      log_truncation("calculation_method");
+    }
+  }
 }

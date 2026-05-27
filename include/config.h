@@ -64,6 +64,20 @@ int config_load(Config *cfg);
 int config_save(const Config *cfg);
 
 /**
+ * Fill empty/unset fields of *dst from *detected, preserving fields already set.
+ * Pure in-memory: performs no file or network I/O.
+ *
+ * "Unset" per field:
+ *   - latitude+longitude: both within 1e-6 of 0 (filled together)
+ *   - country:            empty string
+ *   - timezone+offset:    timezone empty or equal to the "UTC" default (filled together)
+ *   - city:               empty string
+ *   - calculation_method: derived from country only when a previously-empty
+ *                         country was just filled; otherwise preserved
+ */
+void config_fill_missing(Config *dst, const Config *detected);
+
+/**
  * Get default config with sunrise/dhuha disabled
  */
 Config config_default(void);
