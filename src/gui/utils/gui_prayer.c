@@ -8,6 +8,7 @@
 static PrayerSnapshot g_guiPrayer;
 
 const PrayerSnapshot *guiGetPrayer(void) {
+  prayer_helper_refresh_minute_until(&g_guiPrayer);
   return &g_guiPrayer;
 }
 

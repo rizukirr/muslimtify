@@ -36,6 +36,14 @@ typedef enum {
 void prayer_helper_compute(const Config *cfg, const struct tm *now, PrayerSnapshot *out);
 
 /**
+ * Recompute `snap->minutes_until` from the current wall-clock time, reusing the
+ * already-computed `snap->next` and `snap->times`. Cheap to call repeatedly (e.g.
+ * on a 1s/1min GUI tick) without redoing the full prayer-time calculation.
+ * No-op when `snap->next == PRAYER_NONE`.
+ */
+void prayer_helper_refresh_minute_until(PrayerSnapshot *snap);
+
+/**
  * Convenience for silent callers (GUI, tests): config_load + location_prepare
  * + localtime(today) + prayer_helper_compute. Quiet — uses location_prepare, never the
  * interactive ensure_location. Returns PRAYER_HELPER_OK or an error code.

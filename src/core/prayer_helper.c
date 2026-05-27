@@ -5,6 +5,24 @@
 
 #include <time.h>
 
+void prayer_helper_refresh_minute_until(PrayerSnapshot *snap) {
+  if (snap->next == PRAYER_NONE)
+    return;
+
+  time_t now = time(NULL);
+  struct tm tm_buf;
+  platform_localtime(&now, &tm_buf);
+
+  double current_time = tm_buf.tm_hour + tm_buf.tm_min / 60.0;
+  double diff_hours = prayer_get_time(&snap->times, snap->next) - current_time;
+
+  // next prayer has passed for today -> it's tomorrow, wrap around
+  if (diff_hours < 0)
+    diff_hours += 24.0;
+
+  snap->minutes_until = (int)(diff_hours * 60.0);
+}
+
 void prayer_helper_compute(const Config *cfg, const struct tm *now, PrayerSnapshot *out) {
   out->config = *cfg;
   out->date = *now;
