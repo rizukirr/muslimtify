@@ -110,6 +110,7 @@ add_library(muslimtify_core OBJECT
     src/core/prayer_checker.c
     src/core/check_cycle.c
     src/core/display.c
+    src/core/prayer_helper.c
     src/core/sanitizer_options.c
     $<IF:$<BOOL:${WIN32}>,src/platform/windows/notification_win.c,src/platform/linux/notification.c>
     $<IF:$<BOOL:${WIN32}>,src/platform/windows/platform_win.c,src/platform/linux/platform_linux.c>
@@ -214,6 +215,18 @@ if(BUILD_TESTING)
         target_link_libraries(test_location muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
     endif()
     add_test(NAME location COMMAND test_location)
+
+    # test_prayer_helper is cross-platform; prayer_helper.c lives in muslimtify_core.
+    add_executable(test_prayer_helper tests/test_prayer_helper.c)
+    muslimtify_set_target_defaults(test_prayer_helper)
+    if(WIN32)
+        target_include_directories(test_prayer_helper PRIVATE ${curl_SOURCE_DIR}/include)
+        target_link_libraries(test_prayer_helper muslimtify_core CURL::libcurl ole32 runtimeobject)
+    else()
+        target_include_directories(test_prayer_helper PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
+        target_link_libraries(test_prayer_helper muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+    endif()
+    add_test(NAME prayer_helper COMMAND test_prayer_helper)
 
     # Cross-platform tests (no POSIX dependencies)
     add_executable(test_platform
