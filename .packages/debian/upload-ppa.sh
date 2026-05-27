@@ -58,36 +58,53 @@ apt-get install -y --no-install-recommends \
     libnotify-dev libcurl4-openssl-dev \
     devscripts fakeroot dpkg-dev
 
-# Create working copy
+# Prepare the source tree + orig tarball.
+#
+# The orig (upstream) tarball is IMMUTABLE on Launchpad: once a given upstream
+# version (e.g. 0.2.3) is accepted, every later Debian revision must reference
+# the exact same orig bytes. Regenerating it with 'tar' yields a different
+# checksum (non-reproducible gzip + any source drift), so the upload is rejected
+# with 'orig.tar.gz already exists ... but uploaded version has different
+# contents'. Therefore:
+#   * rev -1 (new upstream): build orig from the working tree, upload with -sa.
+#   * rev -2, -3, ...:       REUSE the accepted orig (must already be present in
+#                            .packages/debian/), extract it as the source tree so
+#                            upstream matches byte-for-byte, overlay debian/, -sd.
 cd /tmp
-rm -rf ${PKG_NAME}-build
-mkdir -p ${PKG_NAME}-${PKG_VERSION}
+rm -rf ${PKG_NAME}-${PKG_VERSION} ${PKG_NAME}-build
+ORIG_TARBALL=${PKG_NAME}_${PKG_VERSION}.orig.tar.gz
 
-# Copy source (exclude .git, build dirs, .packages)
-cd /build
-tar --exclude=.git --exclude=build --exclude=build-release \
-    --exclude=.packages --exclude=.cache \
-    -cf - . | tar -xf - -C /tmp/${PKG_NAME}-${PKG_VERSION}/
+if [ \"${PKG_DEBIAN_REV}\" != \"1\" ]; then
+    if [ ! -f /build/.packages/debian/\${ORIG_TARBALL} ]; then
+        echo \"ERROR: Debian rev > 1 requires the accepted orig at\" >&2
+        echo \"       .packages/debian/\${ORIG_TARBALL}\" >&2
+        echo \"       It is immutable on Launchpad; download the exact accepted\" >&2
+        echo \"       tarball and place it there before re-running.\" >&2
+        exit 1
+    fi
+    echo '==> Debian rev > 1: reusing accepted orig tarball as the source tree'
+    cp /build/.packages/debian/\${ORIG_TARBALL} /tmp/\${ORIG_TARBALL}
+    tar xzf /tmp/\${ORIG_TARBALL}
+    ORIG_FLAG=\"-sd\"
+else
+    echo '==> Debian rev 1: building orig tarball from the working tree'
+    mkdir -p ${PKG_NAME}-${PKG_VERSION}
+    cd /build
+    tar --exclude=.git --exclude=build --exclude=build-release \
+        --exclude=.packages --exclude=.cache \
+        -cf - . | tar -xf - -C /tmp/${PKG_NAME}-${PKG_VERSION}/
+    cd /tmp
+    tar czf \${ORIG_TARBALL} ${PKG_NAME}-${PKG_VERSION}
+    ORIG_FLAG=\"-sa\"
+fi
 
-# Create orig tarball
-cd /tmp
-tar czf ${PKG_NAME}_${PKG_VERSION}.orig.tar.gz ${PKG_NAME}-${PKG_VERSION}
-
-# Add debian/ directory
+# Add debian/ directory (packaging only; never part of the orig)
 cp -a /build/.packages/debian/debian ${PKG_NAME}-${PKG_VERSION}/
 
 # Update changelog target to ${DISTRO}
 sed -i '1s/unstable/${DISTRO}/' ${PKG_NAME}-${PKG_VERSION}/debian/changelog
 
 # Build unsigned source package
-# -sa for first revision (-1): include orig tarball (new upstream version).
-# -sd for later revisions (-2, -3, ...): omit orig, reuse the one Launchpad
-#     already accepted — re-uploading orig is rejected as a checksum conflict.
-if [ \"${PKG_DEBIAN_REV}\" = \"1\" ]; then
-    ORIG_FLAG=\"-sa\"
-else
-    ORIG_FLAG=\"-sd\"
-fi
 cd ${PKG_NAME}-${PKG_VERSION}
 dpkg-buildpackage -S \${ORIG_FLAG} -us -uc -d
 
