@@ -289,6 +289,71 @@ static void test_round_trip(void) {
   check_bool("rt madhab", strcmp(in.madhab, "shafi") == 0);
 }
 
+// -- config_fill_missing tests -----------------------------------------------
+
+static void test_fill_missing(void) {
+  printf("  fill_missing...\n");
+
+  // Detected payload used across cases: coords + country + non-UTC timezone.
+  Config detected = config_default();
+  detected.latitude = -6.2088;
+  detected.longitude = 106.8456;
+  strncpy(detected.timezone, "Asia/Jakarta", sizeof(detected.timezone) - 1);
+  detected.timezone_offset = 7.0;
+  strncpy(detected.country, "ID", sizeof(detected.country) - 1);
+
+  // Case 1: existing country set, coords empty -> keep country, fill coords.
+  Config a = config_default();
+  strncpy(a.country, "SG", sizeof(a.country) - 1);
+  config_fill_missing(&a, &detected);
+  check_bool("fill keeps set country", strcmp(a.country, "SG") == 0);
+  check_bool("fill sets empty lat", fabs(a.latitude - (-6.2088)) < 0.001);
+  check_bool("fill sets empty lon", fabs(a.longitude - 106.8456) < 0.001);
+
+  // Case 2: fresh default -> take all detected values + method from country.
+  Config b = config_default();
+  config_fill_missing(&b, &detected);
+  check_bool("fill fresh country", strcmp(b.country, "ID") == 0);
+  check_bool("fill fresh lat", fabs(b.latitude - (-6.2088)) < 0.001);
+  check_bool("fill fresh tz", strcmp(b.timezone, "Asia/Jakarta") == 0);
+  check_bool("fill fresh tz offset", fabs(b.timezone_offset - 7.0) < 0.1);
+  check_bool("fill fresh method kemenag", strcmp(b.calculation_method, "kemenag") == 0);
+
+  // Case 3: fully set config -> nothing changes.
+  Config c = config_default();
+  c.latitude = 51.5;
+  c.longitude = -0.12;
+  strncpy(c.timezone, "Europe/London", sizeof(c.timezone) - 1);
+  c.timezone_offset = 0.0;
+  strncpy(c.country, "GB", sizeof(c.country) - 1);
+  strncpy(c.calculation_method, "mwl", sizeof(c.calculation_method) - 1);
+  config_fill_missing(&c, &detected);
+  check_bool("fill set lat unchanged", fabs(c.latitude - 51.5) < 0.001);
+  check_bool("fill set country unchanged", strcmp(c.country, "GB") == 0);
+  check_bool("fill set tz unchanged", strcmp(c.timezone, "Europe/London") == 0);
+  check_bool("fill set method unchanged", strcmp(c.calculation_method, "mwl") == 0);
+
+  // Case 4: timezone default "UTC" is treated as unset.
+  Config d = config_default(); // timezone == "UTC"
+  d.latitude = 1.0; // non-zero so coords are not refilled
+  d.longitude = 1.0;
+  strncpy(d.country, "ID", sizeof(d.country) - 1);
+  config_fill_missing(&d, &detected);
+  check_bool("fill UTC tz replaced", strcmp(d.timezone, "Asia/Jakarta") == 0);
+  check_bool("fill UTC tz offset", fabs(d.timezone_offset - 7.0) < 0.1);
+
+  // Case 5: existing city preserved (detected city is empty).
+  Config e = config_default();
+  strncpy(e.city, "Jakarta", sizeof(e.city) - 1);
+  config_fill_missing(&e, &detected);
+  check_bool("fill keeps city", strcmp(e.city, "Jakarta") == 0);
+
+  // NULL safety.
+  config_fill_missing(NULL, &detected); // must not crash
+  config_fill_missing(&a, NULL);        // must not crash
+  check_bool("fill null-safe", true);
+}
+
 // -- main ---------------------------------------------------------------------
 
 int main(void) {
@@ -302,6 +367,7 @@ int main(void) {
   test_default();
   test_path_resolution();
   test_round_trip();
+  test_fill_missing();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);
   teardown();
