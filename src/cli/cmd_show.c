@@ -1,32 +1,13 @@
 #include "check_cycle.h"
-#include "config.h"
+#include "cli_internal.h"
 #include "display.h"
-#include "location.h"
-#include "platform.h"
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
 int handle_show(int argc, char **argv) {
-  Config cfg;
-  if (config_load(&cfg) != 0) {
-    fprintf(stderr, "Error: Failed to load config\n");
+  PrayerSnapshot snap;
+  if (cli_load_snapshot(&snap))
     return 1;
-  }
-
-  if (ensure_location(&cfg) != 0) {
-    return 1;
-  }
-
-  time_t now = time(NULL);
-  struct tm tm_buf;
-  platform_localtime(&now, &tm_buf);
-  struct tm *tm_now = &tm_buf;
-
-  MethodParams params = method_params_from_config(&cfg);
-  struct PrayerTimes times =
-      calculate_prayer_times(tm_now->tm_year + 1900, tm_now->tm_mon + 1, tm_now->tm_mday,
-                             cfg.latitude, cfg.longitude, cfg.timezone_offset, &params);
 
   bool json_format = false;
   bool no_header = false;
@@ -42,11 +23,11 @@ int handle_show(int argc, char **argv) {
   }
 
   if (json_format) {
-    display_prayer_times_json(&times, &cfg, tm_now);
+    display_prayer_times_json(&snap);
   } else if (no_header) {
-    display_prayer_times_plain(&times, &cfg, tm_now);
+    display_prayer_times_plain(&snap);
   } else {
-    display_prayer_times_table(&times, &cfg, tm_now);
+    display_prayer_times_table(&snap);
   }
 
   return 0;

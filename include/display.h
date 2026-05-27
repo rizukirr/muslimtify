@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "prayertimes.h"
+#include "prayer_helper.h"
 #include <time.h>
 
 #ifdef __cplusplus
@@ -12,25 +13,22 @@ extern "C" {
 /**
  * Display prayer times in table format
  */
-void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
-                                struct tm *date);
+void display_prayer_times_table(const PrayerSnapshot *snap);
 
 /**
  * Display prayer times in plain key=value format (only enabled prayers)
  */
-void display_prayer_times_plain(const struct PrayerTimes *times, const Config *cfg,
-                                struct tm *date);
+void display_prayer_times_plain(const PrayerSnapshot *snap);
 
 /**
  * Display prayer times in JSON format
  */
-void display_prayer_times_json(const struct PrayerTimes *times, const Config *cfg, struct tm *date);
+void display_prayer_times_json(const PrayerSnapshot *snap);
 
 /**
  * Display next prayer info
  */
-void display_next_prayer(const struct PrayerTimes *times, const Config *cfg,
-                         struct tm *current_time);
+void display_next_prayer(const PrayerSnapshot *snap);
 
 /**
  * Display location info

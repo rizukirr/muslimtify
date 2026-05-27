@@ -2,6 +2,7 @@
 #define CLI_INTERNAL_H
 
 #include "config.h"
+#include "prayer_helper.h"
 #include <string.h>
 
 typedef int (*HandlerFn)(int argc, char **argv);
@@ -37,5 +38,12 @@ int handle_sound(int argc, char **argv);
 int handle_method(int argc, char **argv);
 int handle_version(int argc, char **argv);
 int handle_help(int argc, char **argv);
+
+/**
+ * Load today's prayer snapshot for CLI commands: config_load + ensure_location
+ * (interactive status output preserved) + localtime + prayer_helper_compute.
+ * Returns 0 on success, 1 on failure (message already printed to stderr).
+ */
+int cli_load_snapshot(PrayerSnapshot *out);
 
 #endif // CLI_INTERNAL_H

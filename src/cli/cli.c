@@ -1,8 +1,11 @@
 #include "cli.h"
 #include "cli_internal.h"
+#include "location.h"
+#include "platform.h"
 #include "prayertimes.h"
 #include "version.h"
 #include <stdio.h>
+#include <time.h>
 
 // --- top-level dispatch table -----------------------
 
@@ -18,6 +21,23 @@ static const CommandEntry top_commands[] = {
     {"help", handle_help},         {"--help", handle_help},
     {"-h", handle_help},
 };
+
+int cli_load_snapshot(PrayerSnapshot *out) {
+  Config cfg;
+  if (config_load(&cfg) != 0) {
+    fprintf(stderr, "Error: Failed to load config\n");
+    return 1;
+  }
+  if (ensure_location(&cfg) != 0)
+    return 1;
+
+  time_t now = time(NULL);
+  struct tm tm_buf;
+  platform_localtime(&now, &tm_buf);
+
+  prayer_helper_compute(&cfg, &tm_buf, out);
+  return 0;
+}
 
 // --- version / help -----------------------
 

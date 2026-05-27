@@ -82,10 +82,10 @@ static void print_horizontal_line(char pos) {
   printf("%s\n", right);
 }
 
-void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
-                                struct tm *date) {
-  // Copy the caller's date to avoid clobbering it when platform_localtime() is called below
-  struct tm date_copy = *date;
+void display_prayer_times_table(const PrayerSnapshot *snap) {
+  const struct PrayerTimes *times = &snap->times;
+  const Config *cfg = &snap->config;
+  struct tm date_copy = snap->date;
 
   const char *days[] = {"Sunday",   "Monday", "Tuesday", "Wednesday",
                         "Thursday", "Friday", "Saturday"};
@@ -108,22 +108,13 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
   PrayerType types[] = {PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA, PRAYER_DHUHR,
                         PRAYER_ASR,  PRAYER_MAGHRIB, PRAYER_ISHA};
 
-  // Find the next upcoming prayer for today
+  // Next prayer comes from the snapshot — single source of truth.
   int next_idx = -1;
-  {
-    time_t now_t = time(NULL);
-    struct tm now_buf;
-    platform_localtime(&now_t, &now_buf);
-    struct tm *now_tm = &now_buf;
-    if (date_copy.tm_year == now_tm->tm_year && date_copy.tm_mon == now_tm->tm_mon &&
-        date_copy.tm_mday == now_tm->tm_mday) {
-      int dummy;
-      PrayerType next = prayer_get_next(cfg, now_tm, (struct PrayerTimes *)times, &dummy);
-      for (int i = 0; i < 7; i++) {
-        if (types[i] == next) {
-          next_idx = i;
-          break;
-        }
+  if (snap->next != PRAYER_NONE) {
+    for (int i = 0; i < 7; i++) {
+      if (types[i] == snap->next) {
+        next_idx = i;
+        break;
       }
     }
   }
@@ -185,30 +176,21 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
   printf("\n");
 }
 
-void display_prayer_times_plain(const struct PrayerTimes *times, const Config *cfg,
-                                struct tm *date) {
-  struct tm date_copy = *date;
+void display_prayer_times_plain(const PrayerSnapshot *snap) {
+  const struct PrayerTimes *times = &snap->times;
+  const Config *cfg = &snap->config;
 
   const char *prayer_names[] = {"Fajr", "Sunrise", "Dhuha", "Dhuhr", "Asr", "Maghrib", "Isha"};
   PrayerType types[] = {PRAYER_FAJR, PRAYER_SUNRISE, PRAYER_DHUHA, PRAYER_DHUHR,
                         PRAYER_ASR,  PRAYER_MAGHRIB, PRAYER_ISHA};
 
-  // Find the next upcoming prayer for today
+  // Next prayer comes from the snapshot — single source of truth.
   int next_idx = -1;
-  {
-    time_t now_t = time(NULL);
-    struct tm now_buf;
-    platform_localtime(&now_t, &now_buf);
-    struct tm *now_tm = &now_buf;
-    if (date_copy.tm_year == now_tm->tm_year && date_copy.tm_mon == now_tm->tm_mon &&
-        date_copy.tm_mday == now_tm->tm_mday) {
-      int dummy;
-      PrayerType next = prayer_get_next(cfg, now_tm, (struct PrayerTimes *)times, &dummy);
-      for (int i = 0; i < 7; i++) {
-        if (types[i] == next) {
-          next_idx = i;
-          break;
-        }
+  if (snap->next != PRAYER_NONE) {
+    for (int i = 0; i < 7; i++) {
+      if (types[i] == snap->next) {
+        next_idx = i;
+        break;
       }
     }
   }
@@ -268,8 +250,11 @@ static void json_print_escaped(const char *s) {
   putchar('"');
 }
 
-void display_prayer_times_json(const struct PrayerTimes *times, const Config *cfg,
-                               struct tm *date) {
+void display_prayer_times_json(const PrayerSnapshot *snap) {
+  const struct PrayerTimes *times = &snap->times;
+  const Config *cfg = &snap->config;
+  const struct tm *date = &snap->date;
+
   printf("{\n");
   printf("  \"date\": \"%04d-%02d-%02d\",\n", date->tm_year + 1900, date->tm_mon + 1,
          date->tm_mday);
@@ -313,25 +298,21 @@ void display_prayer_times_json(const struct PrayerTimes *times, const Config *cf
   printf("}\n");
 }
 
-void display_next_prayer(const struct PrayerTimes *times, const Config *cfg,
-                         struct tm *current_time) {
-  int minutes_until = 0;
-  PrayerType next = prayer_get_next(cfg, current_time, (struct PrayerTimes *)times, &minutes_until);
-
-  if (next == PRAYER_NONE) {
+void display_next_prayer(const PrayerSnapshot *snap) {
+  if (snap->next == PRAYER_NONE) {
     printf("No upcoming prayers enabled.\n");
     return;
   }
 
-  double prayer_time = prayer_get_time(times, next);
+  double prayer_time = prayer_get_time(&snap->times, snap->next);
   char time_str[16];
   format_time_hm(prayer_time, time_str, sizeof(time_str));
 
-  printf("\nNext Prayer: %s\n", prayer_get_name(next));
+  printf("\nNext Prayer: %s\n", prayer_get_name(snap->next));
   printf("Time: %s\n", time_str);
 
-  int hours = minutes_until / 60;
-  int mins = minutes_until % 60;
+  int hours = snap->minutes_until / 60;
+  int mins = snap->minutes_until % 60;
 
   if (hours > 0) {
     printf("Remaining: %d hour%s %d minute%s\n\n", hours, hours == 1 ? "" : "s", mins,
