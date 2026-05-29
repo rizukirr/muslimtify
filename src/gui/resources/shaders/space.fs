@@ -66,13 +66,18 @@ void main() {
     // sits on top and the glow reads as a ring around it.
     float halo = smoothstep(pr * 2.4, pr, pd) * 0.06;
     col += vec3(0.45, 0.85, 0.78) * halo;
-    // solid planet body: filled disc with a crisp anti-aliased edge and a
-    // gentle directional terminator for a little depth.
+    // solid planet body: filled disc with a crisp anti-aliased edge.
     float body = smoothstep(pr, pr - 0.006, pd);
-    vec2 ldir = normalize(vec2(-0.4, -0.5));
-    float shade = clamp(dot(normalize(pc - planet + 1e-5), ldir) * 0.5 + 0.5,
-                        0.0, 1.0);
-    vec3 planetCol = mix(vec3(0.28, 0.58, 0.52), vec3(0.58, 0.95, 0.86), shade);
+    // Shade it as a sphere using a real surface normal. This is smooth
+    // everywhere — including the centre, where the normal points straight at
+    // the viewer — so there is no angular singularity / bright spike.
+    vec2 rel = (pc - planet) / pr;                 // -1..1 across the disc
+    float z = sqrt(max(0.0, 1.0 - dot(rel, rel))); // hemisphere height
+    vec3 normal = vec3(rel, z);
+    vec3 lightDir = normalize(vec3(-0.45, -0.55, 0.85));
+    float lambert = clamp(dot(normal, lightDir), 0.0, 1.0);
+    float shade = 0.45 + 0.55 * lambert;
+    vec3 planetCol = mix(vec3(0.22, 0.48, 0.44), vec3(0.58, 0.95, 0.86), shade);
     col = mix(col, planetCol, body);
 
     // --- rounded-rect alpha mask (keeps the card's 16px corners) ---
