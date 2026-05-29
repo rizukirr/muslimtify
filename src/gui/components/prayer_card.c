@@ -33,7 +33,7 @@ void PrayerCard(void) {
   }
 
   Column("PrayerCard",
-         .layout = {.sizing = {.height = Fit(), .width = Grow()},
+         .layout = {.sizing = {.height = Grow(), .width = Grow()},
                     .padding = PadAll(48),
                     .childGap = 16},
          .cornerRadius = RadiusAll(16), .backgroundColor = COLOR_PRIMARY) {
@@ -55,6 +55,7 @@ void PrayerCard(void) {
         Text(remaining, .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_HEADLINE_LARGE,
              .fontId = a->fontBold);
       }
+      HSpacer();
       Row("CurrentTime",
           .layout = {.sizing = {.width = Fixed(160), .height = Fit()},
                      .childGap = 8,
