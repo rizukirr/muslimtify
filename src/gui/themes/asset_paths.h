@@ -39,4 +39,6 @@
 #define IC_ISHA_ACTIVE "src/gui/resources/assets/ic_isha_active.png"
 #define IC_NEXT_NOTIFICATION "src/gui/resources/assets/ic_next_notification.png"
 
+#define SH_SPACE "src/gui/resources/shaders/space.fs"
+
 #endif // MUSLIMTIFY_ASSET_PATHS_H

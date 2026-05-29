@@ -2,6 +2,7 @@
 #define MUSLIMTIFY_APP_ASSETS_STRUCT_H
 
 #include <raylib.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct {
@@ -41,6 +42,15 @@ typedef struct {
   Texture2D collapse;
 
   Texture2D nextNotification;
+
+  Shader spaceShader;
+  bool spaceShaderReady;
+  int spaceLocTime;
+  int spaceLocResolution;
+  int spaceLocCardRect;
+  int spaceLocRadius;
+  int spaceLocColorTop;
+  int spaceLocColorDeep;
 } Assets;
 
 void assetsLoad(void);

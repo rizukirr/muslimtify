@@ -47,6 +47,21 @@ void assetsLoad(void) {
   g_assets.collapse = CC_LoadImage(IC_COLLAPSE);
 
   g_assets.nextNotification = CC_LoadImage(IC_NEXT_NOTIFICATION);
+
+  g_assets.spaceShader = LoadShader(0, SH_SPACE);
+  g_assets.spaceShaderReady = IsShaderValid(g_assets.spaceShader);
+  if (g_assets.spaceShaderReady) {
+    g_assets.spaceLocTime = GetShaderLocation(g_assets.spaceShader, "uTime");
+    g_assets.spaceLocResolution =
+        GetShaderLocation(g_assets.spaceShader, "uResolution");
+    g_assets.spaceLocCardRect =
+        GetShaderLocation(g_assets.spaceShader, "uCardRect");
+    g_assets.spaceLocRadius = GetShaderLocation(g_assets.spaceShader, "uRadius");
+    g_assets.spaceLocColorTop =
+        GetShaderLocation(g_assets.spaceShader, "uColorTop");
+    g_assets.spaceLocColorDeep =
+        GetShaderLocation(g_assets.spaceShader, "uColorDeep");
+  }
 }
 
 void assetsUnload(void) {
@@ -81,4 +96,9 @@ void assetsUnload(void) {
   CC_UnloadImage(g_assets.expand);
   CC_UnloadImage(g_assets.collapse);
   CC_UnloadImage(g_assets.nextNotification);
+
+  if (g_assets.spaceShaderReady) {
+    UnloadShader(g_assets.spaceShader);
+    g_assets.spaceShaderReady = false;
+  }
 }
