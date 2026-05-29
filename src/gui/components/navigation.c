@@ -105,7 +105,6 @@ static void SideNavigationCollapsed(void) {
          .layout = {.sizing = {.height = Grow(), .width = Fixed(80)}, .padding = PadAll(16)},
          .backgroundColor = COLOR_SURFACE_VARIANT) {
 
-    VSpacer();
     if (CC_Clicked("Minimize")) {
       isExpanded = !isExpanded;
     }

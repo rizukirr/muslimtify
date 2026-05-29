@@ -44,10 +44,10 @@ static void ModifySettingsCard(void) {
 
 void CalculationProfileCard(void) {
   Assets *a = appAssets();
-  Column("CalculationProfileCard", .layout = {.padding = PadAll(16), .childGap = 16},
-         .cornerRadius = RadiusAll(16), .backgroundColor = COLOR_ON_PRIMARY) {
+  Column("CalculationProfileCard", .layout = {.padding = PadAll(16)}, .cornerRadius = RadiusAll(16),
+         .backgroundColor = COLOR_ON_PRIMARY) {
     Row("CalculationProfileTitle", .layout = {.sizing = {.width = Grow()},
-                                              .padding = PadAll(16),
+                                              .padding = PadOnly(8, 8, 0, 8),
                                               .childGap = 8,
                                               .childAlignment = {.y = AlignYCenter()}}) {
       Box("CalculationProfileIconBox",
@@ -63,6 +63,7 @@ void CalculationProfileCard(void) {
       Text("Calculation Profile", .fontId = a->fontManrope, .fontSize = FONT_SIZE_TITLE_LARGE);
     }
     CalculationMethodCard();
+    Spacer(.height = 16);
     ModifySettingsCard();
   }
 }
