@@ -9,6 +9,7 @@ add_library(muslimtify_gui_lib OBJECT
     ${CMAKE_SOURCE_DIR}/src/gui/components/dashboard/calculation_profile_card.c
     ${CMAKE_SOURCE_DIR}/src/gui/components/dashboard/daily_schedule.c
     ${CMAKE_SOURCE_DIR}/src/gui/components/dashboard/dashboard_content.c
+    ${CMAKE_SOURCE_DIR}/src/gui/components/settings/prayer_setting.c
     ${CMAKE_SOURCE_DIR}/src/gui/utils/gui_config.c
     ${CMAKE_SOURCE_DIR}/src/gui/utils/gui_prayer.c
     ${CMAKE_SOURCE_DIR}/src/gui/utils/strfmt.c

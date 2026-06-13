@@ -1,4 +1,6 @@
 #ifndef MUSLIMTIFY_PRAYER_SETTING_H
 #define MUSLIMTIFY_PRAYER_SETTING_H
 
+void PrayerSetting(void);
+
 #endif // MUSLIMTIFY_PRAYER_SETTING_H

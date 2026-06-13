@@ -4,6 +4,7 @@
 #include "ccompose.h"
 #include "components/dashboard/dashboard_content.h"
 #include "components/navigation.h"
+#include "components/settings/prayer_setting.h"
 #include "themes/colors.h"
 #include "themes/fonts.h"
 #include "utils/gui_config.h"
@@ -13,6 +14,9 @@ void Content(int index) {
   switch (index) {
   case 0:
     DashboardContent();
+    break;
+  case 1:
+    PrayerSetting();
     break;
   default:
     break;
