@@ -20,8 +20,8 @@ echo "==> Creating COPR project: ${COPR_PROJECT}"
 
 copr-cli create muslimtify \
     --chroot fedora-rawhide-x86_64 \
+    --chroot fedora-44-x86_64 \
     --chroot fedora-43-x86_64 \
-    --chroot fedora-42-x86_64 \
     --description "Prayer time notifier for the desktop" \
     --instructions 'sudo dnf copr enable rizukirr/muslimtify && sudo dnf install muslimtify'
 
