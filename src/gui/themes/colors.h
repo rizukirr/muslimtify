@@ -4,6 +4,7 @@
 #include "ccompose.h"
 
 #define COLOR_PRIMARY ColorHex(0xFF004F45)
+#define COLOR_PRIMARY_ALPHA10 ColorHexA(0xFF004F4526)
 #define COLOR_ON_PRIMARY ColorHex(0xFFFFFFFF)
 
 #define COLOR_BACKGROUND ColorHex(0xFFF8FAFA)

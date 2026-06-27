@@ -63,6 +63,7 @@ void PrayerCard(void) {
                         .padding = PadAll(48),
                         .childGap = 16},
              .cornerRadius = RadiusAll(16), .backgroundColor = COLOR_PRIMARY) {
+
     Text("UPCOMING PRAYER", .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_TITLE_MEDIUM);
     Text(nextName, .textColor = COLOR_ON_PRIMARY, .fontSize = FONT_SIZE_DISPLAY_LARGE,
          .fontId = a->fontManrope);

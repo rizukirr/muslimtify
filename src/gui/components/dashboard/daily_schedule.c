@@ -27,7 +27,7 @@ static void DailyScheduleCard(DailyScheduleItem item, int index) {
     if (item.isCurrent)
       Box(TextFormat("shadow_%d", index),
           .floating = {.attachTo = CC_ATTACH_TO_PARENT, .offset = {6, 8}, .zIndex = -3},
-          .layout = {.sizing = SizingAll(Grow())}, .backgroundColor = Color(0, 0, 0, 20),
+          .layout = {.sizing = SizingAll(Grow())}, .backgroundColor = COLOR_PRIMARY,
           .cornerRadius = RadiusAll(16), ) {}
 
     Row(TextFormat("DailyScheduleCardStatus_%d", index),

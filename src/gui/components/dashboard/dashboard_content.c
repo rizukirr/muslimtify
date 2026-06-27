@@ -10,7 +10,7 @@ void DashboardContent(void) {
   Column("Body", .layout = {.sizing = {.height = Grow(), .width = Grow()}}) {
 
     TopBar("Dashboard");
-    Column("ContentContainer", .layout = {.sizing = {.height = Grow(), .width = Grow()}}) {
+    Column("ContentContainer", .layout = {.sizing = {.height = Grow(), .width = Grow()}}, ) {
       Row("Containter1",
           .layout = {.sizing = {.width = Grow()},
                      .childGap = 16,
