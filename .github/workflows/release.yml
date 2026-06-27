@@ -9,8 +9,14 @@ permissions:
 
 jobs:
   linux:
-    name: Build Linux tarball
-    runs-on: ubuntu-latest
+    name: Build Linux tarball (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-latest, arch: x86_64 }
+          - { runner: ubuntu-24.04-arm, arch: aarch64 }
     steps:
       - uses: actions/checkout@v4
 
@@ -31,24 +37,30 @@ jobs:
 
       - name: Stage install tree
         env:
-          STAGE: muslimtify-${{ steps.ver.outputs.version }}-linux-x86_64
+          STAGE: muslimtify-${{ steps.ver.outputs.version }}-linux-${{ matrix.arch }}
         run: |
           cmake --install build --prefix "dist/${STAGE}"
           cp LICENSE README.md "dist/${STAGE}/"
 
       - name: Package tarball
         env:
-          STAGE: muslimtify-${{ steps.ver.outputs.version }}-linux-x86_64
+          STAGE: muslimtify-${{ steps.ver.outputs.version }}-linux-${{ matrix.arch }}
         run: tar czf "${STAGE}.tar.gz" -C dist "${STAGE}"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux
-          path: muslimtify-*-linux-x86_64.tar.gz
+          name: linux-${{ matrix.arch }}
+          path: muslimtify-*-linux-${{ matrix.arch }}.tar.gz
 
   windows:
-    name: Build Windows installer
+    name: Build Windows installer (${{ matrix.arch }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x64, cmakeArch: x64 }
+          - { arch: arm64, cmakeArch: ARM64 }
     steps:
       - uses: actions/checkout@v4
 
@@ -58,7 +70,7 @@ jobs:
         run: "echo \"version=$($env:GITHUB_REF_NAME.TrimStart('v'))\" >> $env:GITHUB_OUTPUT"
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+        run: cmake -B build -A ${{ matrix.cmakeArch }} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 
       - name: Build
         run: cmake --build build --config Release
@@ -74,12 +86,13 @@ jobs:
         run: |
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
             "/DMyAppVersion=${{ steps.ver.outputs.version }}" `
+            "/DArch=${{ matrix.arch }}" `
             .packages\winget\muslimtify.iss
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: dist/muslimtify-*-setup.exe
+          name: windows-${{ matrix.arch }}
+          path: dist/muslimtify-*-setup-${{ matrix.arch }}.exe
 
   release:
     name: Publish release
@@ -91,6 +104,12 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum muslimtify-* > SHA256SUMS
+          cat SHA256SUMS
+
       - name: Upload assets to release
         uses: softprops/action-gh-release@v2
         with:
@@ -99,8 +118,15 @@ jobs:
           body: |
             Prebuilt binaries for ${{ github.ref_name }}.
 
-            - **Linux (x86_64)** — `muslimtify-*-linux-x86_64.tar.gz`. Dynamically
-              linked: install `libnotify` and `libcurl` from your distro first.
-            - **Windows** — run `muslimtify-*-setup.exe`.
+            **Linux** (dynamically linked — install `libnotify` and `libcurl`
+            from your distro first):
+            - **x86_64** — `muslimtify-*-linux-x86_64.tar.gz`
+            - **aarch64** — `muslimtify-*-linux-aarch64.tar.gz`
+
+            **Windows** — run the installer for your architecture:
+            - **x64** — `muslimtify-*-setup-x64.exe`
+            - **arm64** — `muslimtify-*-setup-arm64.exe`
+
+            Verify downloads with `sha256sum -c SHA256SUMS`.
 
             For distro-native installs (Fedora COPR, Debian `.deb`, winget) see the README.
