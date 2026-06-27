@@ -17,7 +17,7 @@ Requires:       libcurl
 %description
 Muslimtify is a lightweight CLI tool that sends desktop notifications
 for Islamic prayer times with customizable reminders. It integrates
-with systemd user timers and supports per-prayer configuration.
+with a systemd user service and supports per-prayer configuration.
 
 %prep
 %autosetup -n %{name}-%{version}
@@ -47,7 +47,6 @@ fi
 %{_datadir}/icons/hicolor/128x128/apps/muslimtify.png
 %{_datadir}/pixmaps/muslimtify.png
 %{_prefix}/lib/systemd/user/muslimtify.service
-%{_prefix}/lib/systemd/user/muslimtify.timer
 
 %changelog
 * Thu Jun 18 2026 Rizki Rakasiwi <rizkirr.xyz@gmail.com> - 0.2.3-3

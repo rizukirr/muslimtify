@@ -80,48 +80,22 @@ BINARY_PATH="$INSTALL_PREFIX/bin/muslimtify"
 mkdir -p "$SYSTEMD_DIR"
 chown "$REAL_USER" "$SYSTEMD_DIR"
 
-cat > "$SYSTEMD_DIR/muslimtify.service" <<EOF
-[Unit]
-Description=Prayer Time Notification Check
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=$BINARY_PATH check
-StandardOutput=journal
-StandardError=journal
-EOF
-
-cat > "$SYSTEMD_DIR/muslimtify.timer" <<EOF
-[Unit]
-Description=Check prayer times every minute
-After=network-online.target
-
-[Timer]
-OnCalendar=*:*:00
-Persistent=true
-AccuracySec=1s
-
-[Install]
-WantedBy=timers.target
-EOF
-
-chown "$REAL_USER" "$SYSTEMD_DIR/muslimtify.service" "$SYSTEMD_DIR/muslimtify.timer"
+sed "s|@CMAKE_INSTALL_FULL_BINDIR@|$INSTALL_PREFIX/bin|" \
+    "$SCRIPT_DIR/systemd/muslimtify.service.in" > "$SYSTEMD_DIR/muslimtify.service"
+chown "$REAL_USER" "$SYSTEMD_DIR/muslimtify.service"
 ok "Created $SYSTEMD_DIR/muslimtify.service"
-ok "Created $SYSTEMD_DIR/muslimtify.timer"
 
-# -- step 4: enable and start timer -------------------------------------------
+# -- step 4: enable and start service -----------------------------------------
 
-step 4 "Enabling systemd timer..."
+step 4 "Enabling systemd service..."
 
 if [ ! -d "$XDG_RT" ]; then
     warn "XDG_RUNTIME_DIR $XDG_RT not found — user session may not be active."
-    warn "After logging in run: systemctl --user enable --now muslimtify.timer"
+    warn "After logging in run: systemctl --user enable --now muslimtify.service"
 else
     run_as_user systemctl --user daemon-reload
-    run_as_user systemctl --user enable muslimtify.timer
-    run_as_user systemctl --user start  muslimtify.timer
-    ok "Timer enabled and started"
+    run_as_user systemctl --user enable --now muslimtify.service
+    ok "Service enabled and started"
 fi
 
 # -- done ---------------------------------------------------------------------
@@ -138,7 +112,7 @@ echo "  muslimtify location auto     # auto-detect location"
 echo "  muslimtify next              # time until next prayer"
 echo ""
 echo "Systemd:"
-echo "  systemctl --user status muslimtify.timer"
+echo "  systemctl --user status muslimtify.service"
 echo "  journalctl --user -u muslimtify -f"
 echo ""
 echo "To uninstall:"

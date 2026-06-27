@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
+#include "cmd_daemon.h"
 #include "cli_internal.h"
+#include "daemon_loop.h"
 #include "platform.h"
 #include <errno.h>
 #include <linux/limits.h>
@@ -10,8 +12,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
 #include "location.h"
 #include "prayertimes.h"
+#endif
 
 // -- helpers -----------------------------------------------------------------
 
@@ -69,6 +73,30 @@ static const char *get_home(void) {
   return home;
 }
 
+int build_service_unit(const char *binary_path, char *buffer, size_t buffer_size) {
+  if (!binary_path || !buffer || buffer_size == 0)
+    return -1;
+
+  int written = snprintf(buffer, buffer_size,
+                         "[Unit]\n"
+                         "Description=Muslimtify prayer notification daemon\n"
+                         "After=network-online.target\n"
+                         "\n"
+                         "[Service]\n"
+                         "Type=simple\n"
+                         "ExecStart=%s daemon run\n"
+                         "Restart=on-failure\n"
+                         "RestartSec=5\n"
+                         "\n"
+                         "[Install]\n"
+                         "WantedBy=default.target\n",
+                         binary_path);
+
+  if (written < 0 || (size_t)written >= buffer_size)
+    return -1;
+  return written;
+}
+
 // -- sub-handlers ------------------------------------------------------------
 
 static int daemon_install_handler(int argc, char **argv) {
@@ -93,53 +121,26 @@ static int daemon_install_handler(int argc, char **argv) {
 
   char service_path[PATH_MAX + 32];
   snprintf(service_path, sizeof(service_path), "%s/muslimtify.service", systemd_dir);
+
+  char unit[DAEMON_UNIT_MAX];
+  if (build_service_unit(binary_path, unit, sizeof(unit)) < 0) {
+    fprintf(stderr, "Error: Failed to render service unit\n");
+    return 1;
+  }
+
   FILE *f = fopen(service_path, "w");
   if (!f) {
     fprintf(stderr, "Error: Cannot write %s: %s\n", service_path, strerror(errno));
     return 1;
   }
-  fprintf(f,
-          "[Unit]\n"
-          "Description=Prayer Time Notification Check\n"
-          "After=network-online.target\n"
-          "\n"
-          "[Service]\n"
-          "Type=oneshot\n"
-          "ExecStart=%s check\n"
-          "StandardOutput=journal\n"
-          "StandardError=journal\n",
-          binary_path);
+  fputs(unit, f);
   if (ferror(f) || fclose(f) != 0) {
     fprintf(stderr, "Error: Failed to write %s: %s\n", service_path, strerror(errno));
     return 1;
   }
-
-  char timer_path[PATH_MAX + 32];
-  snprintf(timer_path, sizeof(timer_path), "%s/muslimtify.timer", systemd_dir);
-  f = fopen(timer_path, "w");
-  if (!f) {
-    fprintf(stderr, "Error: Cannot write %s: %s\n", timer_path, strerror(errno));
-    return 1;
-  }
-  fprintf(f, "[Unit]\n"
-             "Description=Check prayer times every minute\n"
-             "After=network-online.target\n"
-             "\n"
-             "[Timer]\n"
-             "OnCalendar=*:*:00\n"
-             "Persistent=true\n"
-             "AccuracySec=1s\n"
-             "\n"
-             "[Install]\n"
-             "WantedBy=timers.target\n");
-  if (ferror(f) || fclose(f) != 0) {
-    fprintf(stderr, "Error: Failed to write %s: %s\n", timer_path, strerror(errno));
-    return 1;
-  }
-
   printf("✓ Created %s\n", service_path);
-  printf("✓ Created %s\n", timer_path);
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
   /* Auto-detect location and calculation method */
   Config cfg;
   if (config_load(&cfg) != 0) {
@@ -167,6 +168,7 @@ static int daemon_install_handler(int argc, char **argv) {
       }
     }
   }
+#endif
 
   if (systemctl_user((const char *[]){"daemon-reload", NULL}) != 0) {
     fprintf(stderr, "Error: systemctl daemon-reload failed\n");
@@ -174,17 +176,11 @@ static int daemon_install_handler(int argc, char **argv) {
   }
   printf("✓ Reloaded systemd\n");
 
-  if (systemctl_user((const char *[]){"enable", "muslimtify.timer", NULL}) != 0) {
-    fprintf(stderr, "Error: Failed to enable muslimtify.timer\n");
+  if (systemctl_user((const char *[]){"enable", "--now", "muslimtify.service", NULL}) != 0) {
+    fprintf(stderr, "Error: Failed to enable muslimtify.service\n");
     return 1;
   }
-  printf("✓ Enabled muslimtify.timer\n");
-
-  if (systemctl_user((const char *[]){"start", "muslimtify.timer", NULL}) != 0) {
-    fprintf(stderr, "Error: Failed to start muslimtify.timer\n");
-    return 1;
-  }
-  printf("✓ Started muslimtify.timer\n");
+  printf("✓ Enabled and started muslimtify.service\n");
 
   printf("\nDaemon installed. Binary: %s\n", binary_path);
   printf("Run 'muslimtify daemon status' to verify.\n");
@@ -195,14 +191,14 @@ static int daemon_uninstall_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  if (systemctl_user((const char *[]){"is-active", "--quiet", "muslimtify.timer", NULL}) == 0) {
-    systemctl_user((const char *[]){"stop", "muslimtify.timer", NULL});
-    printf("✓ Stopped muslimtify.timer\n");
+  if (systemctl_user((const char *[]){"is-active", "--quiet", "muslimtify.service", NULL}) == 0) {
+    systemctl_user((const char *[]){"stop", "muslimtify.service", NULL});
+    printf("✓ Stopped muslimtify.service\n");
   }
 
-  if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.timer", NULL}) == 0) {
-    systemctl_user((const char *[]){"disable", "muslimtify.timer", NULL});
-    printf("✓ Disabled muslimtify.timer\n");
+  if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.service", NULL}) == 0) {
+    systemctl_user((const char *[]){"disable", "muslimtify.service", NULL});
+    printf("✓ Disabled muslimtify.service\n");
   }
 
   const char *home = get_home();
@@ -213,9 +209,9 @@ static int daemon_uninstall_handler(int argc, char **argv) {
 
   char path[PATH_MAX];
   int removed = 0;
+  const char *units[] = {"muslimtify.service", "muslimtify.timer"};
   for (int i = 0; i < 2; i++) {
-    snprintf(path, sizeof(path), "%s/.config/systemd/user/%s", home,
-             i == 0 ? "muslimtify.service" : "muslimtify.timer");
+    snprintf(path, sizeof(path), "%s/.config/systemd/user/%s", home, units[i]);
     if (remove(path) == 0) {
       printf("✓ Removed %s\n", path);
       removed++;
@@ -237,18 +233,26 @@ static int daemon_status_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  printf("=== Timer ===\n");
-  systemctl_user((const char *[]){"status", "muslimtify.timer", "--no-pager", NULL});
-
-  printf("\n=== Next trigger ===\n");
-  systemctl_user((const char *[]){"list-timers", "muslimtify", "--no-pager", NULL});
+  printf("=== Service ===\n");
+  systemctl_user((const char *[]){"status", "muslimtify.service", "--no-pager", NULL});
   return 0;
 }
+
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
+static int daemon_run_handler(int argc, char **argv) {
+  (void)argc;
+  (void)argv;
+  return run_daemon_loop();
+}
+#endif
 
 static const CommandEntry daemon_commands[] = {
     {"install", daemon_install_handler},
     {"uninstall", daemon_uninstall_handler},
     {"status", daemon_status_handler},
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
+    {"run", daemon_run_handler},
+#endif
 };
 
 int handle_daemon(int argc, char **argv) {
@@ -259,7 +263,7 @@ int handle_daemon(int argc, char **argv) {
       return sub->handler(argc - 1, argv + 1);
 
     fprintf(stderr, "Error: Unknown daemon subcommand '%s'\n", argv[0]);
-    fprintf(stderr, "Usage: muslimtify daemon [install|uninstall|status]\n");
+    fprintf(stderr, "Usage: muslimtify daemon [install|uninstall|status|run]\n");
     return 1;
   }
 

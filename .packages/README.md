@@ -621,7 +621,7 @@ sudo dnf install muslimtify
 To uninstall:
 
 ```bash
-muslimtify daemon uninstall            # remove the systemd timer first
+muslimtify daemon uninstall            # stop & remove the daemon service first
 sudo dnf remove muslimtify
 sudo dnf copr disable <YOUR_USERNAME>/muslimtify
 ```

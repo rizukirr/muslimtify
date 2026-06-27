@@ -57,6 +57,7 @@ endif()
 # -- Generated version header -------------------------------------------------
 
 configure_file(src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h @ONLY)
+configure_file(systemd/muslimtify.service.in ${CMAKE_BINARY_DIR}/systemd/muslimtify.service @ONLY)
 
 # -- Helper function ----------------------------------------------------------
 
@@ -94,6 +95,9 @@ add_library(muslimtify_core OBJECT
     src/core/country.c
     src/core/prayer_checker.c
     src/core/check_cycle.c
+    # daemon_loop.c is POSIX-only (sigaction/nanosleep); Windows uses the
+    # Task Scheduler path in cmd_daemon_win.c and never calls run_daemon_loop.
+    $<$<NOT:$<BOOL:${WIN32}>>:src/core/daemon_loop.c>
     src/core/display.c
     $<IF:$<BOOL:${WIN32}>,src/platform/windows/notification_win.c,src/platform/linux/notification.c>
     $<IF:$<BOOL:${WIN32}>,src/platform/windows/platform_win.c,src/platform/linux/platform_linux.c>
@@ -178,6 +182,24 @@ if(BUILD_TESTING)
         target_include_directories(test_cache PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
         target_link_libraries(test_cache muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
         add_test(NAME cache COMMAND test_cache)
+
+        add_executable(test_cmd_daemon
+            tests/test_cmd_daemon.c
+            src/cli/cmd_daemon.c
+            src/platform/linux/platform_linux.c
+        )
+        muslimtify_set_target_defaults(test_cmd_daemon)
+        target_include_directories(test_cmd_daemon PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
+        target_compile_definitions(test_cmd_daemon PRIVATE MUSLIMTIFY_CMD_DAEMON_TEST)
+        add_test(NAME cmd_daemon COMMAND test_cmd_daemon)
+
+        add_executable(test_daemon_loop
+            tests/test_daemon_loop.c
+            src/core/daemon_loop.c
+        )
+        muslimtify_set_target_defaults(test_daemon_loop)
+        target_compile_definitions(test_daemon_loop PRIVATE MUSLIMTIFY_DAEMON_LOOP_TEST)
+        add_test(NAME daemon_loop COMMAND test_daemon_loop)
     endif()
 
     # test_location is cross-platform; its parse_timezone_offset target lives
@@ -258,7 +280,7 @@ if(WIN32)
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/)
 endif()
 
-install(FILES systemd/muslimtify.service systemd/muslimtify.timer
+install(FILES ${CMAKE_BINARY_DIR}/systemd/muslimtify.service
     DESTINATION lib/systemd/user/)
 
 if(WIN32)
