@@ -4,8 +4,9 @@ on:
   push:
     tags: ['v*']
 
+# Least privilege by default; only the publish job is granted write below.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   linux:
@@ -98,6 +99,8 @@ jobs:
     name: Publish release
     needs: [linux, windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to upload assets to the GitHub Release
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -111,7 +114,7 @@ jobs:
           cat SHA256SUMS
 
       - name: Upload assets to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: artifacts/*
           generate_release_notes: true
