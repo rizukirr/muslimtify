@@ -2,6 +2,7 @@
 #include "cli_internal.h"
 #include "platform.h"
 #include "daemon_loop.h"
+#include "cmd_daemon.h"
 #include <errno.h>
 #include <linux/limits.h>
 #include <pwd.h>
@@ -11,8 +12,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
 #include "location.h"
 #include "prayertimes.h"
+#endif
 
 // -- helpers -----------------------------------------------------------------
 
@@ -68,6 +71,30 @@ static const char *get_home(void) {
       home = pw->pw_dir;
   }
   return home;
+}
+
+int build_service_unit(const char *binary_path, char *buffer, size_t buffer_size) {
+  if (!binary_path || !buffer || buffer_size == 0)
+    return -1;
+
+  int written = snprintf(buffer, buffer_size,
+                         "[Unit]\n"
+                         "Description=Muslimtify prayer notification daemon\n"
+                         "After=network-online.target\n"
+                         "\n"
+                         "[Service]\n"
+                         "Type=simple\n"
+                         "ExecStart=%s daemon run\n"
+                         "Restart=on-failure\n"
+                         "RestartSec=5\n"
+                         "\n"
+                         "[Install]\n"
+                         "WantedBy=default.target\n",
+                         binary_path);
+
+  if (written < 0 || (size_t)written >= buffer_size)
+    return -1;
+  return written;
 }
 
 // -- sub-handlers ------------------------------------------------------------
@@ -141,6 +168,7 @@ static int daemon_install_handler(int argc, char **argv) {
   printf("✓ Created %s\n", service_path);
   printf("✓ Created %s\n", timer_path);
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
   /* Auto-detect location and calculation method */
   Config cfg;
   if (config_load(&cfg) != 0) {
@@ -168,6 +196,7 @@ static int daemon_install_handler(int argc, char **argv) {
       }
     }
   }
+#endif
 
   if (systemctl_user((const char *[]){"daemon-reload", NULL}) != 0) {
     fprintf(stderr, "Error: systemctl daemon-reload failed\n");
@@ -246,17 +275,21 @@ static int daemon_status_handler(int argc, char **argv) {
   return 0;
 }
 
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
 static int daemon_run_handler(int argc, char **argv) {
   (void)argc;
   (void)argv;
   return run_daemon_loop();
 }
+#endif
 
 static const CommandEntry daemon_commands[] = {
     {"install", daemon_install_handler},
     {"uninstall", daemon_uninstall_handler},
     {"status", daemon_status_handler},
+#ifndef MUSLIMTIFY_CMD_DAEMON_TEST
     {"run", daemon_run_handler},
+#endif
 };
 
 int handle_daemon(int argc, char **argv) {

@@ -179,6 +179,16 @@ if(BUILD_TESTING)
         target_include_directories(test_cache PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
         target_link_libraries(test_cache muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
         add_test(NAME cache COMMAND test_cache)
+
+        add_executable(test_cmd_daemon
+            tests/test_cmd_daemon.c
+            src/cli/cmd_daemon.c
+            src/platform/linux/platform_linux.c
+        )
+        muslimtify_set_target_defaults(test_cmd_daemon)
+        target_include_directories(test_cmd_daemon PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
+        target_compile_definitions(test_cmd_daemon PRIVATE MUSLIMTIFY_CMD_DAEMON_TEST)
+        add_test(NAME cmd_daemon COMMAND test_cmd_daemon)
     endif()
 
     # test_location is cross-platform; its parse_timezone_offset target lives
