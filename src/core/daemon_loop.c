@@ -1,11 +1,19 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "daemon_loop.h"
+
+#include <time.h>
+
+int seconds_until_next_minute(time_t now) {
+  return (int)(60 - now % 60);
+}
+
+#ifndef MUSLIMTIFY_DAEMON_LOOP_TEST
+
 #include "check_cycle.h"
 
 #include <signal.h>
 #include <stdio.h>
-#include <time.h>
 
 static volatile sig_atomic_t g_stop = 0;
 
@@ -18,9 +26,7 @@ static void handle_stop_signal(int signum) {
  * a signal interrupts the sleep. Bounds each nap so suspend/resume or a clock
  * jump cannot overshoot, and keeps fires aligned to :00 like the old timer. */
 static void sleep_to_next_minute(void) {
-  time_t now = time(NULL);
-  long secs = 60 - (long)(now % 60);
-  struct timespec req = {.tv_sec = secs, .tv_nsec = 0};
+  struct timespec req = {.tv_sec = seconds_until_next_minute(time(NULL)), .tv_nsec = 0};
   nanosleep(&req, NULL); /* EINTR on signal: return early; loop re-checks g_stop */
 }
 
@@ -48,3 +54,5 @@ int run_daemon_loop(void) {
   fflush(stdout);
   return 0;
 }
+
+#endif /* MUSLIMTIFY_DAEMON_LOOP_TEST */

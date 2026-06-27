@@ -189,6 +189,14 @@ if(BUILD_TESTING)
         target_include_directories(test_cmd_daemon PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
         target_compile_definitions(test_cmd_daemon PRIVATE MUSLIMTIFY_CMD_DAEMON_TEST)
         add_test(NAME cmd_daemon COMMAND test_cmd_daemon)
+
+        add_executable(test_daemon_loop
+            tests/test_daemon_loop.c
+            src/core/daemon_loop.c
+        )
+        muslimtify_set_target_defaults(test_daemon_loop)
+        target_compile_definitions(test_daemon_loop PRIVATE MUSLIMTIFY_DAEMON_LOOP_TEST)
+        add_test(NAME daemon_loop COMMAND test_daemon_loop)
     endif()
 
     # test_location is cross-platform; its parse_timezone_offset target lives
