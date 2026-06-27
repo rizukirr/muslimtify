@@ -1,6 +1,6 @@
 #!/bin/bash
 # Muslimtify — full installer
-# Builds in release mode, installs the binary, and sets up the systemd user timer.
+# Builds in release mode, installs the binary, and sets up the systemd user service.
 #
 # Usage: sudo ./install.sh
 
@@ -85,6 +85,9 @@ sed "s|@CMAKE_INSTALL_FULL_BINDIR@|$INSTALL_PREFIX/bin|" \
 chown "$REAL_USER" "$SYSTEMD_DIR/muslimtify.service"
 ok "Created $SYSTEMD_DIR/muslimtify.service"
 
+# Remove a stale timer left by an older (timer-based) source install.
+rm -f "$INSTALL_PREFIX/lib/systemd/user/muslimtify.timer"
+
 # -- step 4: enable and start service -----------------------------------------
 
 step 4 "Enabling systemd service..."
@@ -94,6 +97,7 @@ if [ ! -d "$XDG_RT" ]; then
     warn "After logging in run: systemctl --user enable --now muslimtify.service"
 else
     run_as_user systemctl --user daemon-reload
+    run_as_user systemctl --user disable --now muslimtify.timer 2>/dev/null || true
     run_as_user systemctl --user enable --now muslimtify.service
     ok "Service enabled and started"
 fi

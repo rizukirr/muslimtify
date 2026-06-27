@@ -140,6 +140,16 @@ static int daemon_install_handler(int argc, char **argv) {
   }
   printf("✓ Created %s\n", service_path);
 
+  /* Heal upgrades from the timer era: a pre-loop version may have left
+   * muslimtify.timer enabled. Best-effort — silent on a clean install. */
+  if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.timer", NULL}) == 0) {
+    systemctl_user((const char *[]){"disable", "--now", "muslimtify.timer", NULL});
+    printf("✓ Disabled legacy muslimtify.timer\n");
+  }
+  char timer_path[PATH_MAX + 32];
+  snprintf(timer_path, sizeof(timer_path), "%s/muslimtify.timer", systemd_dir);
+  remove(timer_path);
+
 #ifndef MUSLIMTIFY_CMD_DAEMON_TEST
   /* Auto-detect location and calculation method */
   Config cfg;
@@ -199,6 +209,11 @@ static int daemon_uninstall_handler(int argc, char **argv) {
   if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.service", NULL}) == 0) {
     systemctl_user((const char *[]){"disable", "muslimtify.service", NULL});
     printf("✓ Disabled muslimtify.service\n");
+  }
+
+  if (systemctl_user((const char *[]){"is-enabled", "--quiet", "muslimtify.timer", NULL}) == 0) {
+    systemctl_user((const char *[]){"disable", "--now", "muslimtify.timer", NULL});
+    printf("✓ Disabled muslimtify.timer\n");
   }
 
   const char *home = get_home();
