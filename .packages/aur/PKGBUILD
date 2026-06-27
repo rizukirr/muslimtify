@@ -10,7 +10,7 @@ depends=('libnotify' 'curl')
 makedepends=('cmake' 'pkgconf')
 install=$pkgname.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('64c58caf0abe90fc3ec7d0f9f6c5747753b6439ff2136ac66cb0531a7e390ae2')
+sha256sums=('a1d154ef0cd87f66a6a1f38a2e1e1d2a05e2acfaec5179623e98f10586ea6e3c')
 
 build() {
     cmake -B build -S "$pkgname-$pkgver" \
