@@ -11,6 +11,6 @@ pkgbase = muslimtify
 	depends = libnotify
 	depends = curl
 	source = muslimtify-0.2.4.tar.gz::https://github.com/rizukirr/muslimtify/archive/v0.2.4.tar.gz
-	sha256sums = 64c58caf0abe90fc3ec7d0f9f6c5747753b6439ff2136ac66cb0531a7e390ae2
+	sha256sums = a1d154ef0cd87f66a6a1f38a2e1e1d2a05e2acfaec5179623e98f10586ea6e3c
 
 pkgname = muslimtify
