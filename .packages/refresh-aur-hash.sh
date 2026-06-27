@@ -7,14 +7,11 @@
 # the tag is pushed. Run this then: it updates PKGBUILD's sha256sums and
 # regenerates .SRCINFO.
 #
-# NOTE: the AUR packaging (.packages/muslimtify/) is gitignored in this repo and
-# kept locally / in the AUR git repo; this script operates on those local files.
-#
 # Usage (after 'git push --tags'):
 #   ./.packages/refresh-aur-hash.sh
 set -euo pipefail
 
-AUR_DIR="$(cd "$(dirname "$0")/muslimtify" && pwd)"
+AUR_DIR="$(cd "$(dirname "$0")/aur" && pwd)"
 cd "$AUR_DIR"
 
 PKGVER="$(grep -oP '^pkgver=\K[0-9.]+' PKGBUILD)"

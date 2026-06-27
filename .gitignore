@@ -31,7 +31,6 @@ installer/staging/
 dist/
 /.cache/clangd/index
 /publish
-/.packages/aur
 Testing/
 external
 docs/superpowers/
