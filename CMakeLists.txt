@@ -57,6 +57,7 @@ endif()
 # -- Generated version header -------------------------------------------------
 
 configure_file(src/version.h.in ${CMAKE_BINARY_DIR}/generated/version.h @ONLY)
+configure_file(systemd/muslimtify.service.in ${CMAKE_BINARY_DIR}/systemd/muslimtify.service @ONLY)
 
 # -- Helper function ----------------------------------------------------------
 
@@ -277,7 +278,7 @@ if(WIN32)
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/)
 endif()
 
-install(FILES systemd/muslimtify.service
+install(FILES ${CMAKE_BINARY_DIR}/systemd/muslimtify.service
     DESTINATION lib/systemd/user/)
 
 if(WIN32)

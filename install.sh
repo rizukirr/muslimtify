@@ -80,21 +80,8 @@ BINARY_PATH="$INSTALL_PREFIX/bin/muslimtify"
 mkdir -p "$SYSTEMD_DIR"
 chown "$REAL_USER" "$SYSTEMD_DIR"
 
-cat > "$SYSTEMD_DIR/muslimtify.service" <<EOF
-[Unit]
-Description=Muslimtify prayer notification daemon
-After=network-online.target
-
-[Service]
-Type=simple
-ExecStart=$BINARY_PATH daemon run
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-EOF
-
+sed "s|@CMAKE_INSTALL_FULL_BINDIR@|$INSTALL_PREFIX/bin|" \
+    "$SCRIPT_DIR/systemd/muslimtify.service.in" > "$SYSTEMD_DIR/muslimtify.service"
 chown "$REAL_USER" "$SYSTEMD_DIR/muslimtify.service"
 ok "Created $SYSTEMD_DIR/muslimtify.service"
 
