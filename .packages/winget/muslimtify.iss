@@ -59,8 +59,11 @@ Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; \
   ValueData: "{olddata};{app}\bin"; Check: NeedsAddPath(ExpandConstant('{app}\bin'))
 
 [Run]
+; nowait: never block setup on the post-install command. Even if the launched
+; exe stalls or fails to start, the installer still completes -- a missing
+; runtime dependency must never hang unattended installs (winget validation).
 Filename: "{app}\bin\{#MyAppExeName}"; Parameters: "daemon install"; \
-  StatusMsg: "Registering scheduled task..."; Flags: runhidden waituntilterminated
+  StatusMsg: "Registering scheduled task..."; Flags: runhidden nowait
 
 [UninstallRun]
 Filename: "{app}\bin\{#MyAppExeName}"; Parameters: "daemon uninstall"; \

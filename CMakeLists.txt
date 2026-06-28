@@ -25,6 +25,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 include(GNUInstallDirs)
 include(FetchContent)
 
+# -- MSVC runtime --------------------------------------------------------------
+# Statically link the MSVC C runtime so the binaries are self-contained and run
+# on a clean Windows install WITHOUT the VC++ Redistributable. With the default
+# dynamic runtime the exe imports vcruntime140.dll, which is absent on a fresh
+# machine/VM -- the installer's [Run] step then launches muslimtify.exe, Windows
+# raises a blocking "missing DLL" dialog, and the unattended install hangs until
+# it times out (winget's Validation-Unattended-Failed). Must be set before any
+# target (incl. the FetchContent curl build) is created. Requires CMP0091 (NEW
+# since CMake 3.15, satisfied by our 3.22 minimum).
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # -- Dependencies --------------------------------------------------------------
 
 if(WIN32)
