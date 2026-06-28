@@ -70,10 +70,22 @@ static int run_schtasks(const char *args) {
     goto cleanup;
   }
 
-  WaitForSingleObject(pi.hProcess, INFINITE);
+  /* Bounded wait: never block the installer indefinitely. schtasks should
+     return in well under a second; if it stalls (e.g. waiting on input that
+     can never arrive in an unattended context), terminate it rather than hang.
+     A 60s ceiling is generous for a local schtasks call yet far below any
+     installer/validation timeout. */
+  DWORD wait_status = WaitForSingleObject(pi.hProcess, 60000);
 
   DWORD exit_code;
-  GetExitCodeProcess(pi.hProcess, &exit_code);
+  if (wait_status == WAIT_TIMEOUT) {
+    fprintf(stderr, "Error: schtasks did not complete within 60 seconds\n");
+    TerminateProcess(pi.hProcess, 1);
+    WaitForSingleObject(pi.hProcess, 5000);
+    exit_code = 1;
+  } else {
+    GetExitCodeProcess(pi.hProcess, &exit_code);
+  }
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
   result = (int)exit_code;
@@ -146,8 +158,15 @@ static int daemon_install_handler(int argc, char **argv) {
     return 1;
   }
 
+  /* /it (interactive token) registers the task to run only while the user is
+     logged on and, crucially, WITHOUT a stored password. Without it schtasks
+     prompts "Enter the run as password for user ..." and, in a non-interactive
+     context (e.g. winget's unattended-install validation VM), blocks on stdin
+     forever -- hanging the installer until it times out. Interactive-only is
+     also the correct mode for a notification daemon, which needs a logged-on
+     session to show toasts. */
   char args[DAEMON_TASK_ACTION_MAX + 128];
-  snprintf(args, sizeof(args), "/create /tn \"muslimtify\" /tr %s /sc minute /mo 1 /f",
+  snprintf(args, sizeof(args), "/create /tn \"muslimtify\" /tr %s /sc minute /mo 1 /it /f",
            task_action);
 
   int result = run_schtasks(args);
