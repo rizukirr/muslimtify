@@ -15,7 +15,7 @@ Muslimtify supports **21 international calculation methods** including MWL, ISNA
 > ## Roadmap
 > - ~Merge command  `location auto` and `method auto` into (only) `config auto` and optimize auto detection per (249) country~
 > - ~Refactor from timer-driven into a portable long-running loop~
-> - Add custom adzan sound notifications
+> - ***Add custom adzan sound notifications*** (on progress)
 > - Distribute to Flatpak
 > - Add GUI (see branch gui to see a progress)
 > - MacOS support (have no device yet)
@@ -290,6 +290,7 @@ for details.
 
 ## Support
 
+This project is available for Linux and Windows users, but not yet for Mac users because we need a Mac device to make Muslimtify run on macOS. We are looking for brothers and sisters who have a Mac and experience in low-level C programming to contribute to the project and help bring Muslimtify to macOS. Alternatively, you can support me via GitHub Sponsors or Ko-fi in the sponsor section.
+
 - Bugs and feature requests: [GitHub Issues](https://github.com/rizukirr/muslimtify/issues)
 - Questions and discussion: [GitHub Discussions](https://github.com/rizukirr/muslimtify/discussions)
-- Or buy me a ☕ [Ko-fi](https://ko-fi.com/rizukirr)
