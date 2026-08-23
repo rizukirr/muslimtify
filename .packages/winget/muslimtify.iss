@@ -9,7 +9,7 @@
   #define Arch "x64"
 #endif
 #define MyAppPublisher "rizukirr"
-#define MyAppURL "https://github.com/rizukirr/muslimtify"
+#define MyAppURL "https://github.com/muslimtify-org/muslimtify"
 #define MyAppExeName "muslimtify.exe"
 #define StagingDir "..\..\installer\staging"
 
