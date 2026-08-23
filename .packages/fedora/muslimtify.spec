@@ -3,7 +3,7 @@ Version:        0.4.1
 Release:        1%{?dist}
 Summary:        An Islamic prayer time notification daemon for Linux
 License:        MIT
-URL:            https://github.com/rizukirr/muslimtify
+URL:            https://github.com/muslimtify-org/muslimtify
 Source0:        %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  cmake >= 3.22

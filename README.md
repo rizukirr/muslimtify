@@ -32,7 +32,7 @@ Muslimtify supports **21 international calculation methods** including MWL, ISNA
 ### Prebuilt Binaries (GitHub Releases)
 
 Every release ships ready-to-run binaries for Linux and Windows on the
-[Releases page](https://github.com/rizukirr/muslimtify/releases/latest).
+[Releases page](https://github.com/muslimtify-org/muslimtify/releases/latest).
 
 **Linux** (`x86_64` or `aarch64`): the binaries are dynamically linked, so
 install the runtime libraries first, then extract and install:
@@ -114,7 +114,7 @@ sudo pacman -S gpsd
 Clone, install, and enable background checks:
 
 ```bash
-git clone https://github.com/rizukirr/muslimtify.git
+git clone https://github.com/muslimtify-org/muslimtify.git
 cd muslimtify
 sudo ./install.sh
 muslimtify daemon install
@@ -138,7 +138,7 @@ Building on Windows requires MSVC. The build stops with an explicit message if
 another compiler is used.
 
 ```powershell
-git clone https://github.com/rizukirr/muslimtify.git
+git clone https://github.com/muslimtify-org/muslimtify.git
 cd muslimtify
 .\install.ps1
 muslimtify daemon install
@@ -383,5 +383,5 @@ for details.
 
 ## Support
 
-- Bugs and feature requests: [GitHub Issues](https://github.com/rizukirr/muslimtify/issues)
-- Questions and discussion: [GitHub Discussions](https://github.com/rizukirr/muslimtify/discussions)
+- Bugs and feature requests: [GitHub Issues](https://github.com/muslimtify-org/muslimtify/issues)
+- Questions and discussion: [GitHub Discussions](https://github.com/muslimtify-org/muslimtify/discussions)
