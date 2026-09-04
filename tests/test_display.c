@@ -1,3 +1,86 @@
+// Mutation record for Task 5 of the day-offset-visible plan.
+//
+// Each mutant below was applied to the committed source, built with
+// cmake --build build -j, and run with
+// ctest --test-dir build -R display --output-on-failure
+// then the source file was restored with git checkout -- <file> and
+// git status --porcelain was confirmed empty before the next mutant.
+//
+// Mutant one: src/core/display.c, format_time_hm_day. Changed
+//   snprintf(outBuffer, bufSize, "%s%s", hm, day > 0 ? "+" : (day < 0 ? "-" : ""));
+// to always pass the empty string for the marker.
+// This mutant bit. Exit code 8. Verbatim tail of the run:
+//
+// FAIL [+ marker at or above 24:00]
+// (repeated 172 times)
+// FAIL [marker is + for next day]
+// (repeated 1801 times)
+// FAIL [marker is - for previous day]
+// (repeated 1800 times)
+// FAIL [- marker below 0:00]
+// Running display tests...
+//   day offset helper...
+//   no misordered row...
+//   marker matches raw value...
+//   cache triggers unchanged...
+//
+// Results: 18661 passed, 3774 failed
+//
+// 0% tests passed, 1 tests failed out of 1
+//
+// Mutant two: src/core/cache.c, cache_build_triggers. Deleted the wrap
+//   if (pt < 0.0)
+//     pt += 24.0;
+//   else if (pt >= 24.0)
+//     pt -= 24.0;
+// that sits immediately before int prayer_min = (int)ceil(pt * 60.0).
+// This mutant bit. Exit code 8. Verbatim tail of the run:
+//
+// FAIL [trigger minute in [0, 1440)]
+// FAIL [trigger minute in [0, 1440)]
+// Running display tests...
+//   day offset helper...
+//   no misordered row...
+//   marker matches raw value...
+//   cache triggers unchanged...
+//
+// Results: 22433 passed, 2 failed
+//
+// 0% tests passed, 1 tests failed out of 1
+//
+// Mutant three: src/core/config.c, prayer_times_for_config. Restored the
+// original defect by putting a wrap back inside the per-prayer offset loop
+//   for (int i = 0; i < PRAYER_COUNT; i++) {
+//     *fields[i] += pcfgs[i]->offset / 60.0;
+//     if (*fields[i] < 0.0)
+//       *fields[i] += 24.0;
+//     else if (*fields[i] >= 24.0)
+//       *fields[i] -= 24.0;
+//   }
+// which discards the day offset at the source, before display or cache ever
+// see it.
+// This mutant bit. Exit code 8. Verbatim tail of the run:
+//
+// FAIL [Reykjavik: no misordered rows]
+// FAIL [Anchorage: no misordered rows]
+// FAIL [Murmansk: no misordered rows]
+// FAIL [Tromso: no misordered rows]
+// FAIL [found a Reykjavik day with isha >= 24]
+// Running display tests...
+//   day offset helper...
+//   no misordered row...
+//   marker matches raw value...
+//   cache triggers unchanged...
+//
+// Results: 22409 passed, 5 failed
+//
+// 0% tests passed, 1 tests failed out of 1
+//
+// All three mutants were detected by the display suite. None left it green.
+// src/core/display.c, src/core/cache.c and src/core/config.c were restored
+// to their committed state with git checkout -- after each mutant and
+// verified byte-identical before the next one was applied.
+
 #define _GNU_SOURCE
 #include "cache.h"
 #include "config.h"
