@@ -143,7 +143,7 @@ static void test_day_offset_helper(void) {
 
   for (double h = -30.0; h <= 54.0; h += (1.0 / 60.0)) {
     long total = (long)ceil(h * 60.0);
-    int expected_offset = total < 0 ? -1 : (total >= 24 * 60 ? 1 : 0);
+    int expected_offset = total < 0 ? -1 : (total >= 24L * 60 ? 1 : 0);
 
     int offset = prayer_time_day_offset(h);
     check_bool("day offset matches minute-rounded rule", offset == expected_offset);
@@ -243,8 +243,8 @@ static void test_marker_matches_raw_value(void) {
       int y, m, d;
       mt_civil_from_days(z, &y, &m, &d);
 
-      struct PrayerTimes t = calculate_prayer_times(y, m, d, cfg.latitude, cfg.longitude,
-                                                     cfg.timezone_offset, &mp);
+      struct PrayerTimes t =
+          calculate_prayer_times(y, m, d, cfg.latitude, cfg.longitude, cfg.timezone_offset, &mp);
       double values[5] = {t.fajr, t.dhuhr, t.asr, t.maghrib, t.isha};
 
       for (int i = 0; i < 5; i++) {
@@ -260,7 +260,7 @@ static void test_marker_matches_raw_value(void) {
         // counts as next day), so the threshold here is applied after the same
         // ceil-to-the-minute step rather than to the raw double.
         long total_minutes = (long)ceil(values[i] * 60.0);
-        if (total_minutes >= 24 * 60) {
+        if (total_minutes >= 24L * 60) {
           check_bool("+ marker at or above 24:00", marker == '+');
           seen_plus++;
         } else if (total_minutes < 0) {

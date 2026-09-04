@@ -105,7 +105,7 @@ int prayer_time_day_offset(double hours) {
   long total = (long)ceil(hours * 60.0);
   if (total < 0)
     return -1;
-  if (total >= 24 * 60)
+  if (total >= 24L * 60)
     return 1;
   return 0;
 }
@@ -448,7 +448,7 @@ static bool next_prayer_info(const struct PrayerTimes *times, const Config *cfg,
   }
 
   format_time_hm_day(next_time, time_str, time_cap);
-  // format_time_hm renders a non-finite time as "--:--" already. The countdown
+  // format_time_hm_day renders a non-finite time as "--:--" already. The countdown
   // has to be guarded separately, because (int) of a non-finite double is
   // undefined behaviour and would print a field like "-35791394:-8".
   if (isfinite(next_time)) {

@@ -41,8 +41,7 @@ int main(void) {
       for (int method = 0; method < CALC_COUNT; method++) {
         const MethodParams *params = method_params_get((CalcMethod)method);
 
-        struct PrayerTimes t =
-            calculate_prayer_times(y, m, d, latitude, 0.0, 0.0, params);
+        struct PrayerTimes t = calculate_prayer_times(y, m, d, latitude, 0.0, 0.0, params);
 
         double fields[5] = {t.fajr, t.dhuhr, t.asr, t.maghrib, t.isha};
 
