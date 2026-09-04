@@ -239,6 +239,12 @@ if(BUILD_TESTING)
         target_link_libraries(test_check_cycle muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
         add_test(NAME check_cycle COMMAND test_check_cycle)
 
+        add_executable(test_display tests/test_display.c)
+        muslimtify_set_target_defaults(test_display)
+        target_include_directories(test_display PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
+        target_link_libraries(test_display muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+        add_test(NAME display COMMAND test_display)
+
         add_executable(test_cmd_daemon
             tests/test_cmd_daemon.c
             src/cli/cmd_daemon.c
