@@ -698,6 +698,30 @@ static bool has_time_marker(const char *s) {
 // Markers are matched as a short "HH:MM+"/"HH:MM-" substring instead of a
 // whole table row, since the row's column padding is incidental but the
 // digits-colon-digits-marker shape is what the feature promises.
+//
+// Mutation record. Each mutant below was applied to src/core/display.c by
+// hand, built, run against `ctest --test-dir build -R cli --output-on-failure`,
+// then reverted with `git checkout -- src/core/display.c` before the next one.
+// git status was confirmed empty after each revert. All three were caught.
+//
+// Mutant 1: print_day_marker_legend() made to print the next-day line
+// unconditionally, dropping the `if (any_next)` guard. Caught by the Jakarta
+// no-legend check. Output:
+//   FAIL [markers jakarta no legend]
+//
+// Mutant 2: both `if (day != 0)` guards on the headless `_day_offset` key
+// removed (single-day and range headless paths), so the key is always
+// emitted. Caught by the Jakarta headless check. Output:
+//   FAIL [markers jakarta headless no day_offset]
+//
+// Mutant 3: print_day_marker_legend() made to never print the previous-day
+// line, dropping the `if (any_prev)` branch entirely. Caught by the Eureka
+// legend check. Output:
+//   FAIL [markers eureka legend]: output missing "  - falls before midnight, on the previous day"
+//   got: +----------------------------------------------------------+
+//   | Date       | Fajr   | Dhuhr  | Asr    | Maghrib | Isha   |
+//   +----------------------------------------------------------+
+//   | 2026-02-25 | 00...
 static void test_day_markers(void) {
   printf("  day markers...\n");
 
