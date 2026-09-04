@@ -126,6 +126,17 @@ void format_time_hm_day(double hours, char *outBuffer, size_t bufSize) {
   snprintf(outBuffer, bufSize, "%s%s", hm, day > 0 ? "+" : (day < 0 ? "-" : ""));
 }
 
+/* Prints the legend for the day markers that were actually rendered, and
+   nothing at all when none were. The marker is a single character and cannot
+   carry what it means, so the table says it in words rather than relying on
+   the reader knowing. */
+static void print_day_marker_legend(bool any_next, bool any_prev) {
+  if (any_next)
+    printf("  + falls after midnight, on the next day\n");
+  if (any_prev)
+    printf("  - falls before midnight, on the previous day\n");
+}
+
 void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
                                 struct tm *date) {
   // Copy the caller's date to avoid clobbering it when platform_localtime() is called below
@@ -161,6 +172,9 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
          C(COL_RESET), BOX_V, C(COL_BOLD), "Reminders", C(COL_RESET), BOX_V);
   print_horizontal_line('m');
 
+  bool any_next = false;
+  bool any_prev = false;
+
   for (int i = 0; i < PRAYER_COUNT; i++) {
     double prayer_time = prayer_get_time(times, types[i]);
     char time_str[16];
@@ -168,6 +182,14 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
 
     const PrayerConfig *pcfg = prayer_get_config(cfg, types[i]);
     bool enabled = pcfg->enabled;
+
+    if (enabled) {
+      int day = prayer_time_day_offset(prayer_time);
+      if (day > 0)
+        any_next = true;
+      else if (day < 0)
+        any_prev = true;
+    }
 
     // Buffer sized for: MAX_REMINDERS * "1440, " + " min before" = 10*6+11 = 71
     char reminders[80] = "";
@@ -208,6 +230,7 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
   }
 
   print_horizontal_line('b');
+  print_day_marker_legend(any_next, any_prev);
   printf("\n");
 }
 
@@ -370,22 +393,25 @@ void display_prayer_times_range_table(const Config *cfg, int sy, int sm, int sd,
   // the minimum column width matches what actually gets printed instead of
   // always leaving room for a marker that never appears. The range is capped
   // at MAX_RANGE_DAYS by the caller (cmd_show.c), so this second pass is bounded.
-  bool has_marker = false;
+  bool any_next = false;
+  bool any_prev = false;
   {
     long mstart = mt_days_from_civil(sy, sm, sd);
     long mend = mt_days_from_civil(ey, em, ed);
-    for (long z = mstart; z <= mend && !has_marker; z++) {
+    for (long z = mstart; z <= mend; z++) {
       int y, m, d;
       mt_civil_from_days(z, &y, &m, &d);
       struct PrayerTimes t = prayer_times_for_config(cfg, y, m, d);
       for (int c = 0; c < ncol; c++) {
-        if (prayer_time_day_offset(prayer_get_time(&t, types[col[c]])) != 0) {
-          has_marker = true;
-          break;
-        }
+        int day = prayer_time_day_offset(prayer_get_time(&t, types[col[c]]));
+        if (day > 0)
+          any_next = true;
+        else if (day < 0)
+          any_prev = true;
       }
     }
   }
+  bool has_marker = any_next || any_prev;
 
   // Column widths: Date is "YYYY-MM-DD" (10); each prayer is max(name, "HH:MM"=5,
   // or 6 when a day marker can appear in this range).
@@ -425,6 +451,7 @@ void display_prayer_times_range_table(const Config *cfg, int sy, int sm, int sd,
     printf("|\n");
   }
   range_hrule(row_len - 2);
+  print_day_marker_legend(any_next, any_prev);
 }
 
 // Resolve the next upcoming prayer and format its fields. Returns false (and
