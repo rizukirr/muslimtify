@@ -492,8 +492,8 @@ static bool next_prayer_info(const struct PrayerTimes *times, const Config *cfg,
     minutes_until = isfinite(next_time) ? (int)((next_time + 24.0 - now_dec) * 60.0) : 0;
   }
 
-  format_time_hm_day(next_time, time_str, time_cap);
-  // format_time_hm_day renders a non-finite time as "--:--" already. The countdown
+  format_time_hm(next_time, time_str, time_cap);
+  // format_time_hm renders a non-finite time as "--:--" already. The countdown
   // has to be guarded separately, because (int) of a non-finite double is
   // undefined behaviour and would print a field like "-35791394:-8".
   if (isfinite(next_time)) {

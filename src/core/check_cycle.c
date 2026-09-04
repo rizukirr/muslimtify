@@ -2,7 +2,6 @@
 
 #include "cache.h"
 #include "config.h"
-#include "display.h"
 #include "location.h"
 #include "notification.h"
 #include "platform.h"
@@ -90,7 +89,7 @@ int run_check_cycle(void) {
       }
 
       char time_str[16];
-      format_time_hm_day(cache.triggers[i].prayer_time, time_str, sizeof(time_str));
+      format_time_hm(cache.triggers[i].prayer_time, time_str, sizeof(time_str));
 
       if (cache.triggers[i].minutes_before == 0 && cache.triggers[i].adhan_enabled) {
         notify_adhan(cache.triggers[i].prayer, time_str, cache.triggers[i].adhan);
