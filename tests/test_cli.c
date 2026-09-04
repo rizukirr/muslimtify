@@ -6,6 +6,7 @@
 #include "country.h"
 #include "display.h"
 #include "prayertimes.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -669,6 +670,121 @@ static void test_show_range(void) {
   check_contains("range help range", "<start> [end]");
 }
 
+// A "marked" time is HH:MM immediately followed by + or -, e.g. "00:06+".
+// That suffix is the day marker: format_time_hm_day() appends it, and only
+// the two show tables (single-day and range) call format_time_hm_day().
+// Every other surface calls plain format_time_hm() and prints the bare
+// HH:MM, so this scans for the marker shape rather than a fixed time.
+static bool has_time_marker(const char *s) {
+  for (const char *p = s; *p; p++) {
+    if (isdigit((unsigned char)p[0]) && isdigit((unsigned char)p[1]) && p[2] == ':' &&
+        isdigit((unsigned char)p[3]) && isdigit((unsigned char)p[4]) &&
+        (p[5] == '+' || p[5] == '-')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Goal 6 (only the two tables carry the marker, nothing else does) is
+// checked by grep in Task 4 step 4, since a C test cannot count call sites.
+// What this function adds is the observable half: the assertions below say
+// that both tables actually mark and render the legend, and that every
+// other surface (--next, its headless form, and notification) does not,
+// which is what that call-site count is a proxy for.
+//
+// Legend text is matched as a whole line, since the brief gives the exact
+// printed strings and a whole line is no less stable than a fragment of one.
+// Markers are matched as a short "HH:MM+"/"HH:MM-" substring instead of a
+// whole table row, since the row's column padding is incidental but the
+// digits-colon-digits-marker shape is what the feature promises.
+static void test_day_markers(void) {
+  printf("  day markers...\n");
+
+  // Step 2: legend present. At Reykjavik, Isha on 2026-04-07 falls just
+  // after midnight, so the range table marks it and prints the next-day
+  // legend.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", NULL});
+  check_ret("markers reykjavik range ret", 0);
+  check_contains("markers reykjavik has marker", "00:06+");
+  check_contains("markers reykjavik legend", "  + falls after midnight, on the next day");
+
+  // Step 3: legend absent. Jakarta has no midnight crossing on the same
+  // dates, so the range table has neither a marker nor the legend.
+  run(7, (char *[]){"m", "location", "set", "--lat=-6.2088", "--long=106.8456",
+                    "--timezone=Asia/Jakarta", "--country=ID", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", NULL});
+  check_ret("markers jakarta range ret", 0);
+  check_contains("markers jakarta has output", "2026-04-07");
+  check_bool("markers jakarta no legend", strstr(captured, "falls after midnight") == NULL &&
+                                              strstr(captured, "falls before midnight") == NULL);
+  check_bool("markers jakarta no marker", !has_time_marker(captured));
+
+  // Step 4: the previous-day legend. Eureka, Nunavut sits far enough east of
+  // its America/Edmonton zone meridian that Fajr falls just before midnight
+  // on the clock. Derived by scanning all of 2026 through the built binary
+  // in headless mode rather than pasted: the previous-day legend fires
+  // exactly twice in the year, both for Fajr, on 2026-02-27 (23:54) and
+  // 2026-08-30 (23:55). A full year does not fit in the 16384-byte
+  // `captured` buffer (see the 366-day note in test_show_date_bounds), so
+  // this renders a narrow range around only the first of those two dates.
+  run(7, (char *[]){"m", "location", "set", "--lat=79.9889", "--long=-85.9408",
+                    "--timezone=America/Edmonton", "--country=CA", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-02-25", "2026-03-01", NULL});
+  check_ret("markers eureka range ret", 0);
+  check_contains("markers eureka has marker", "23:54-");
+  check_contains("markers eureka legend", "  - falls before midnight, on the previous day");
+
+  // Step 5: headless keys. At Reykjavik, the headless isha key prints the
+  // bare time (the marker character is a table-only device) plus a separate
+  // _day_offset line.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "--headless", NULL});
+  check_ret("markers reykjavik headless ret", 0);
+  check_contains("markers reykjavik headless isha bare", "isha=00:06\n");
+  check_contains("markers reykjavik headless offset", "isha_day_offset=1");
+
+  // Jakarta never crosses midnight on this date, so no _day_offset key
+  // appears at all.
+  run(7, (char *[]){"m", "location", "set", "--lat=-6.2088", "--long=106.8456",
+                    "--timezone=Asia/Jakarta", "--country=ID", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "--headless", NULL});
+  check_ret("markers jakarta headless ret", 0);
+  check_contains("markers jakarta headless has isha", "isha=19:01");
+  check_bool("markers jakarta headless no day_offset", strstr(captured, "_day_offset") == NULL);
+
+  // Step 6: no other surface carries the marker. Reuse Reykjavik, a
+  // location the table above proves does mark, and check `show --next`,
+  // its headless form, and the notification settings view already
+  // exercised near test_notification.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+
+  run(3, (char *[]){"m", "show", "--next", NULL});
+  check_ret("markers next ret", 0);
+  check_contains("markers next has output", "Remaining");
+  check_bool("markers next no marker", !has_time_marker(captured));
+
+  run(4, (char *[]){"m", "show", "--next", "--headless", NULL});
+  check_ret("markers next headless ret", 0);
+  check_contains("markers next headless has output", "remaining=");
+  check_bool("markers next headless no marker", !has_time_marker(captured));
+
+  run(2, (char *[]){"m", "notification", NULL});
+  check_ret("markers notification ret", 0);
+  check_contains("markers notification has output", "fajr");
+  check_bool("markers notification no marker", !has_time_marker(captured));
+}
+
 static void test_next(void) {
   printf("  show --next...\n");
   reset_config();
@@ -1197,6 +1313,7 @@ int main(void) {
   test_show();
   test_show_date_bounds();
   test_show_range();
+  test_day_markers();
   test_next();
   test_next_after_isha();
   test_method();
