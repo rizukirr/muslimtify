@@ -524,10 +524,13 @@ int config_load(Config *cfg) {
     }
     char *fajr_angle_str = get_value(ctx, "fajr_angle", calculation);
     char *isha_angle_str = get_value(ctx, "isha_angle", calculation);
+    /* A failed conversion yields 0, which is the documented sentinel for
+     * falling back to the calculation method's own angle, so the result
+     * is never checked here. */
     if (fajr_angle_str)
-      cfg->fajr_angle = atof(fajr_angle_str);
+      cfg->fajr_angle = strtod(fajr_angle_str, NULL);
     if (isha_angle_str)
-      cfg->isha_angle = atof(isha_angle_str);
+      cfg->isha_angle = strtod(isha_angle_str, NULL);
   }
 
   json_end(ctx);
