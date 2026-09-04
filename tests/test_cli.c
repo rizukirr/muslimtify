@@ -1358,6 +1358,40 @@ static void test_location_set_timezone_validation(void) {
 // assertion in this file is a substring check_contains, and a trailing
 // comma does not disturb a substring match, so none of them would have
 // caught it. This test runs a real JSON syntax check instead.
+//
+// Mutation record. Each mutant below was applied by hand, built with
+// `cmake --build build -j`, run against
+// `ctest --test-dir build -R cli --output-on-failure`, then reverted with
+// `git checkout -- <path>` before the next one. git status --porcelain was
+// confirmed empty after each revert. All three were caught.
+//
+// Mutant 1: src/core/display.c:315, inside print_prayer_entries, changed
+// `i + 1 < PRAYER_COUNT` back to `i < 6`. Caught by the show and show --date
+// checks for both fixtures. Output:
+//   FAIL [jakarta show json no trailing comma]
+//   FAIL [jakarta show date json no trailing comma]
+//   FAIL [reykjavik show json no trailing comma]
+//   FAIL [reykjavik show date json no trailing comma]
+//   Results: 357 passed, 4 failed
+//
+// Mutant 2: src/core/display.c:727, inside
+// display_notification_settings_json, changed `i + 1 < PRAYER_COUNT` back to
+// `i < 6`, leaving mutant 1's site fixed. A scan covering only the show
+// commands would have passed this mutant. Caught by the notification check
+// for both fixtures. Output:
+//   FAIL [jakarta notification json no trailing comma]
+//   FAIL [reykjavik notification json no trailing comma]
+//   Results: 359 passed, 2 failed
+//
+// Mutant 3: tests/test_cli.c has_trailing_comma() made to return false
+// unconditionally. This checks the scanner is load bearing rather than
+// decorative. As expected, it did not fail any of the five command checks,
+// since a scanner that always returns false trivially satisfies an
+// assertion of absence. It failed the scanner's own self-checks instead.
+// Output:
+//   FAIL [scanner true before brace]
+//   FAIL [scanner true before bracket]
+//   Results: 359 passed, 2 failed
 static void test_json_no_trailing_comma(void) {
   printf("  json no trailing comma...\n");
 
