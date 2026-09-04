@@ -57,6 +57,14 @@ static void lower_copy(char *dst, size_t cap, const char *src) {
 static void print_horizontal_line(char pos) {
   const char *left, *mid, *right, *horiz;
 
+  // The three branches below are semantically distinct: top uses
+  // BOX_TL/BOX_HD/BOX_TR, middle uses BOX_VR/BOX_VH/BOX_VL, bottom uses
+  // BOX_BL/BOX_HU/BOX_BR.
+  // They only look identical here because the ASCII fallback above maps
+  // every BOX_* macro to "+" for Windows code page portability.
+  // They diverge again the moment those macros carry real box-drawing
+  // characters, so do not collapse this switch.
+  // NOLINTBEGIN(bugprone-branch-clone)
   switch (pos) {
   case 't': // top
     left = BOX_TL;
@@ -79,6 +87,7 @@ static void print_horizontal_line(char pos) {
   default:
     return;
   }
+  // NOLINTEND(bugprone-branch-clone)
 
   printf("%s", left);
   for (int i = 0; i < 12; i++)
