@@ -95,6 +95,28 @@ static void print_horizontal_line(char pos) {
   printf("%s\n", right);
 }
 
+int prayer_time_day_offset(double hours) {
+  if (!isfinite(hours))
+    return 0;
+  // Rounded to the minute the same way format_time_hm rounds, so the day is
+  // derived from the value that actually gets printed rather than from the raw
+  // double. Deriving it from the raw double disagrees with the string whenever
+  // rounding up carries past midnight.
+  long total = (long)ceil(hours * 60.0);
+  if (total < 0)
+    return -1;
+  if (total >= 24 * 60)
+    return 1;
+  return 0;
+}
+
+void format_time_hm_day(double hours, char *outBuffer, size_t bufSize) {
+  char hm[6];
+  format_time_hm(hours, hm, sizeof(hm));
+  int day = prayer_time_day_offset(hours);
+  snprintf(outBuffer, bufSize, "%s%s", hm, day > 0 ? "+" : (day < 0 ? "-" : ""));
+}
+
 void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
                                 struct tm *date) {
   // Copy the caller's date to avoid clobbering it when platform_localtime() is called below
@@ -133,7 +155,7 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
   for (int i = 0; i < PRAYER_COUNT; i++) {
     double prayer_time = prayer_get_time(times, types[i]);
     char time_str[16];
-    format_time_hm(prayer_time, time_str, sizeof(time_str));
+    format_time_hm_day(prayer_time, time_str, sizeof(time_str));
 
     const PrayerConfig *pcfg = prayer_get_config(cfg, types[i]);
     bool enabled = pcfg->enabled;
@@ -214,7 +236,7 @@ void display_prayer_times_plain(const struct PrayerTimes *times, const Config *c
 
     double prayer_time = prayer_get_time(times, types[i]);
     char time_str[16];
-    format_time_hm(prayer_time, time_str, sizeof(time_str));
+    format_time_hm_day(prayer_time, time_str, sizeof(time_str));
 
     if (i == next_idx) {
       printf("%s%s%s=%s%s\n", C(COL_BOLD COL_YELLOW), prayer_names[i],
@@ -243,6 +265,7 @@ static void print_prayer_entries(const struct PrayerTimes *times, const Config *
 
     printf("%s\"%s\": {\n", pad, prayer_names[i]);
     printf("%s  \"time\": \"%s\",\n", pad, time_str);
+    printf("%s  \"day_offset\": %d,\n", pad, prayer_time_day_offset(prayer_time));
     printf("%s  \"enabled\": %s,\n", pad, pcfg->enabled ? "true" : "false");
     printf("%s  \"reminders\": [", pad);
     for (int j = 0; j < pcfg->reminder_count; j++) {
@@ -305,7 +328,7 @@ void display_prayer_times_range_plain(const Config *cfg, int sy, int sm, int sd,
       if (!pcfg->enabled)
         continue;
       char time_str[16];
-      format_time_hm(prayer_get_time(&t, types[i]), time_str, sizeof(time_str));
+      format_time_hm_day(prayer_get_time(&t, types[i]), time_str, sizeof(time_str));
       printf("%s=%s\n", prayer_names[i], time_str);
     }
     if (z < end)
@@ -334,12 +357,35 @@ void display_prayer_times_range_table(const Config *cfg, int sy, int sm, int sd,
       col[ncol++] = i;
   }
 
-  // Column widths: Date is "YYYY-MM-DD" (10); each prayer is max(name, "HH:MM"=5).
+  // Walk the range once to see whether any cell will carry a day marker, so
+  // the minimum column width matches what actually gets printed instead of
+  // always leaving room for a marker that never appears. The range is capped
+  // at MAX_RANGE_DAYS by the caller (cmd_show.c), so this second pass is bounded.
+  bool has_marker = false;
+  {
+    long mstart = mt_days_from_civil(sy, sm, sd);
+    long mend = mt_days_from_civil(ey, em, ed);
+    for (long z = mstart; z <= mend && !has_marker; z++) {
+      int y, m, d;
+      mt_civil_from_days(z, &y, &m, &d);
+      struct PrayerTimes t = prayer_times_for_config(cfg, y, m, d);
+      for (int c = 0; c < ncol; c++) {
+        if (prayer_time_day_offset(prayer_get_time(&t, types[col[c]])) != 0) {
+          has_marker = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Column widths: Date is "YYYY-MM-DD" (10); each prayer is max(name, "HH:MM"=5,
+  // or 6 when a day marker can appear in this range).
   const int date_w = 10;
+  const int min_col_w = has_marker ? 6 : 5;
   int col_w[PRAYER_COUNT];
   for (int c = 0; c < ncol; c++) {
     int len = (int)strlen(prayer_names[col[c]]);
-    col_w[c] = len > 5 ? len : 5;
+    col_w[c] = len > min_col_w ? len : min_col_w;
   }
 
   // Total printed row length, for an unbroken border spanning the whole table.
@@ -364,7 +410,7 @@ void display_prayer_times_range_table(const Config *cfg, int sy, int sm, int sd,
     printf("| %04d-%02d-%02d ", y, m, d);
     for (int c = 0; c < ncol; c++) {
       char time_str[16];
-      format_time_hm(prayer_get_time(&t, types[col[c]]), time_str, sizeof(time_str));
+      format_time_hm_day(prayer_get_time(&t, types[col[c]]), time_str, sizeof(time_str));
       printf("| %-*s ", col_w[c], time_str);
     }
     printf("|\n");
@@ -401,7 +447,7 @@ static bool next_prayer_info(const struct PrayerTimes *times, const Config *cfg,
     minutes_until = isfinite(next_time) ? (int)((next_time + 24.0 - now_dec) * 60.0) : 0;
   }
 
-  format_time_hm(next_time, time_str, time_cap);
+  format_time_hm_day(next_time, time_str, time_cap);
   // format_time_hm renders a non-finite time as "--:--" already. The countdown
   // has to be guarded separately, because (int) of a non-finite double is
   // undefined behaviour and would print a field like "-35791394:-8".
