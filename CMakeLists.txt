@@ -245,6 +245,12 @@ if(BUILD_TESTING)
         target_link_libraries(test_display muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
         add_test(NAME display COMMAND test_display)
 
+        add_executable(test_offset_bound tests/test_offset_bound.c)
+        muslimtify_set_target_defaults(test_offset_bound)
+        target_include_directories(test_offset_bound PRIVATE ${LIBNOTIFY_INCLUDE_DIRS} ${LIBCURL_INCLUDE_DIRS})
+        target_link_libraries(test_offset_bound muslimtify_core ${LIBNOTIFY_LIBRARIES} ${LIBCURL_LIBRARIES} m)
+        add_test(NAME offset_bound COMMAND test_offset_bound)
+
         add_executable(test_cmd_daemon
             tests/test_cmd_daemon.c
             src/cli/cmd_daemon.c
