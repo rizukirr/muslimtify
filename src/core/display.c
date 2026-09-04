@@ -268,7 +268,7 @@ void display_prayer_times_plain(const struct PrayerTimes *times, const Config *c
 
     double prayer_time = prayer_get_time(times, types[i]);
     char time_str[16];
-    format_time_hm_day(prayer_time, time_str, sizeof(time_str));
+    format_time_hm(prayer_time, time_str, sizeof(time_str));
 
     if (i == next_idx) {
       printf("%s%s%s=%s%s\n", C(COL_BOLD COL_YELLOW), prayer_names[i],
@@ -276,6 +276,10 @@ void display_prayer_times_plain(const struct PrayerTimes *times, const Config *c
     } else {
       printf("%s=%s\n", prayer_names[i], time_str);
     }
+
+    int day = prayer_time_day_offset(prayer_time);
+    if (day != 0)
+      printf("%s_day_offset=%d\n", prayer_names[i], day);
   }
 }
 
@@ -359,9 +363,14 @@ void display_prayer_times_range_plain(const Config *cfg, int sy, int sm, int sd,
       const PrayerConfig *pcfg = prayer_get_config(cfg, types[i]);
       if (!pcfg->enabled)
         continue;
+      double prayer_time = prayer_get_time(&t, types[i]);
       char time_str[16];
-      format_time_hm_day(prayer_get_time(&t, types[i]), time_str, sizeof(time_str));
+      format_time_hm(prayer_time, time_str, sizeof(time_str));
       printf("%s=%s\n", prayer_names[i], time_str);
+
+      int day = prayer_time_day_offset(prayer_time);
+      if (day != 0)
+        printf("%s_day_offset=%d\n", prayer_names[i], day);
     }
     if (z < end)
       printf("\n");
