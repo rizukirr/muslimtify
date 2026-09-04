@@ -700,16 +700,6 @@ MethodParams method_params_from_config(const Config *cfg) {
   return params;
 }
 
-// Normalize an hour-of-day into [0, 24). An offset of at most +/-60 min shifts a
-// base time in [0, 24) into (-1, 25), so a single wrap suffices.
-static double offset_wrap_day(double hours) {
-  if (hours < 0.0)
-    return hours + 24.0;
-  if (hours >= 24.0)
-    return hours - 24.0;
-  return hours;
-}
-
 double effective_tz_offset(const Config *cfg, int year, int month, int day) {
   if (!timezone_exists(cfg->timezone))
     return cfg->timezone_offset;
@@ -726,13 +716,16 @@ struct PrayerTimes prayer_times_for_config(const Config *cfg, int year, int mont
       calculate_prayer_times(year, month, day, cfg->latitude, cfg->longitude,
                              effective_tz_offset(cfg, year, month, day), &params);
 
-  // Apply each prayer's offset to the RESULT and re-normalize into [0, 24) so a
-  // prayer pushed across midnight stays a valid minute-of-day for the cache,
-  // the checker, and format_time_hm (they otherwise diverge on an unwrapped time).
+  // Apply each prayer's offset to the RESULT and keep the whole value. A value
+  // at or above 24 means the event falls on the next calendar day and one below
+  // 0 means the previous one, which is the only place that fact is carried.
+  // Reducing it here would discard the day, so the wrap lives in
+  // cache_build_triggers instead, which is the one consumer that needs a
+  // minute-of-day rather than an instant.
   double *fields[] = {&t.fajr, &t.dhuhr, &t.asr, &t.maghrib, &t.isha};
   const PrayerConfig *pcfgs[] = {&cfg->fajr, &cfg->dhuhr, &cfg->asr, &cfg->maghrib, &cfg->isha};
   for (int i = 0; i < PRAYER_COUNT; i++) {
-    *fields[i] = offset_wrap_day(*fields[i] + pcfgs[i]->offset / 60.0);
+    *fields[i] += pcfgs[i]->offset / 60.0;
   }
 
   return t;

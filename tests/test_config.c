@@ -348,8 +348,8 @@ static void test_offset_apply(void) {
   check_bool("offset dhuhr 0 identity", fabs(adj.dhuhr - raw.dhuhr) < 1e-9);
 }
 
-static void test_offset_wrap(void) {
-  printf("  offset midnight wrap...\n");
+static void test_offset_keeps_day(void) {
+  printf("  offset keeps day...\n");
 
   // London in June: high-latitude late Isha, near the midnight boundary.
   Config cfg = config_default();
@@ -366,16 +366,17 @@ static void test_offset_wrap(void) {
   cfg.isha.offset = 60; // push Isha up to an hour later
   struct PrayerTimes adj = prayer_times_for_config(&cfg, y, m, d);
 
+  // The wrap this test used to require moved out of prayer_times_for_config
+  // and into cache_build_triggers (task: move the wrap from the shared
+  // boundary into the cache), because only the trigger cache needs a
+  // minute-of-day. Every other consumer, including this function's result,
+  // now keeps the day the offset carried instead of losing it to a reduction.
   double expected = raw.isha + 1.0;
-  if (expected >= 24.0)
-    expected -= 24.0;
-  else if (expected < 0.0)
-    expected += 24.0;
 
-  // Every field must stay a valid minute-of-day so the cache/checker/formatter agree.
-  check_bool("wrap isha in [0,24)", adj.isha >= 0.0 && adj.isha < 24.0);
-  check_bool("wrap isha value", fabs(adj.isha - expected) < 1e-9);
-  check_bool("wrap fajr in [0,24)", adj.fajr >= 0.0 && adj.fajr < 24.0);
+  check_bool("isha keeps day: no reduction applied", fabs(adj.isha - expected) < 1e-9);
+  check_bool("isha allowed to sit at or above 24, not forced below it",
+             expected < 24.0 ? adj.isha < 24.0 : adj.isha >= 24.0);
+  check_bool("fajr untouched, no offset configured", fabs(adj.fajr - raw.fajr) < 1e-9);
 }
 
 static void test_offset_clamp_on_load(void) {
@@ -590,7 +591,7 @@ int main(void) {
   test_round_trip();
   test_sound_migration();
   test_offset_apply();
-  test_offset_wrap();
+  test_offset_keeps_day();
   test_offset_clamp_on_load();
   test_config_size_cap();
   test_config_perms();
