@@ -10,6 +10,25 @@ extern "C" {
 #endif
 
 /**
+ * Day the event falls on relative to the date it was computed for: +1 when the
+ * clock time is on the next calendar day, -1 when it is on the previous one,
+ * and 0 otherwise. A non-finite time has no day, so it returns 0.
+ *
+ * The rounding matches format_time_hm, which rounds the minute up, so the day
+ * and the clock string this returns a day for can never disagree. A time of
+ * 23.999 rounds up to 24:00, which is the next day, and this reports it as one.
+ */
+int prayer_time_day_offset(double hours);
+
+/**
+ * Format a decimal-hours time into "HH:MM" followed by '+' when the event falls
+ * on the next calendar day and '-' when it falls on the previous one, so that a
+ * row of five prayers reads in the order they occur. A non-finite time renders
+ * as "--:--" with no marker. Seven bytes are enough for either.
+ */
+void format_time_hm_day(double hours, char *outBuffer, size_t bufSize);
+
+/**
  * Display prayer times in table format
  */
 void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,

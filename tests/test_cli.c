@@ -6,6 +6,7 @@
 #include "country.h"
 #include "display.h"
 #include "prayertimes.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -127,6 +128,35 @@ static void check_bool(const char *test, bool cond) {
     failed++;
     fprintf(stderr, "FAIL [%s]\n", test);
   }
+}
+
+/* Returns true when `s` contains a comma whose next non-whitespace character
+   closes an object or an array, which is the trailing comma a strict JSON
+   parser rejects. Commas inside string literals are skipped, so a city name
+   containing one cannot raise a false alarm. */
+static bool has_trailing_comma(const char *s) {
+  bool in_string = false;
+  for (const char *p = s; *p; p++) {
+    if (in_string) {
+      if (*p == '\\' && p[1])
+        p++;
+      else if (*p == '"')
+        in_string = false;
+      continue;
+    }
+    if (*p == '"') {
+      in_string = true;
+      continue;
+    }
+    if (*p != ',')
+      continue;
+    const char *q = p + 1;
+    while (*q == ' ' || *q == '\t' || *q == '\n' || *q == '\r')
+      q++;
+    if (*q == '}' || *q == ']')
+      return true;
+  }
+  return false;
 }
 
 // -- test groups --------------------------------------------------------------
@@ -669,6 +699,145 @@ static void test_show_range(void) {
   check_contains("range help range", "<start> [end]");
 }
 
+// A "marked" time is HH:MM immediately followed by + or -, e.g. "00:06+".
+// That suffix is the day marker: format_time_hm_day() appends it, and only
+// the two show tables (single-day and range) call format_time_hm_day().
+// Every other surface calls plain format_time_hm() and prints the bare
+// HH:MM, so this scans for the marker shape rather than a fixed time.
+static bool has_time_marker(const char *s) {
+  for (const char *p = s; *p; p++) {
+    if (isdigit((unsigned char)p[0]) && isdigit((unsigned char)p[1]) && p[2] == ':' &&
+        isdigit((unsigned char)p[3]) && isdigit((unsigned char)p[4]) &&
+        (p[5] == '+' || p[5] == '-')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Goal 6 (only the two tables carry the marker, nothing else does) is
+// checked by grep in Task 4 step 4, since a C test cannot count call sites.
+// What this function adds is the observable half: the assertions below say
+// that both tables actually mark and render the legend, and that every
+// other surface (--next, its headless form, and notification) does not,
+// which is what that call-site count is a proxy for.
+//
+// Legend text is matched as a whole line, since the brief gives the exact
+// printed strings and a whole line is no less stable than a fragment of one.
+// Markers are matched as a short "HH:MM+"/"HH:MM-" substring instead of a
+// whole table row, since the row's column padding is incidental but the
+// digits-colon-digits-marker shape is what the feature promises.
+//
+// Mutation record. Each mutant below was applied to src/core/display.c by
+// hand, built, run against `ctest --test-dir build -R cli --output-on-failure`,
+// then reverted with `git checkout -- src/core/display.c` before the next one.
+// git status was confirmed empty after each revert. All three were caught.
+//
+// Mutant 1: print_day_marker_legend() made to print the next-day line
+// unconditionally, dropping the `if (any_next)` guard. Caught by the Jakarta
+// no-legend check. Output:
+//   FAIL [markers jakarta no legend]
+//
+// Mutant 2: both `if (day != 0)` guards on the headless `_day_offset` key
+// removed (single-day and range headless paths), so the key is always
+// emitted. Caught by the Jakarta headless check. Output:
+//   FAIL [markers jakarta headless no day_offset]
+//
+// Mutant 3: print_day_marker_legend() made to never print the previous-day
+// line, dropping the `if (any_prev)` branch entirely. Caught by the Eureka
+// legend check. Output:
+//   FAIL [markers eureka legend]: output missing "  - falls before midnight, on the previous day"
+//   got: +----------------------------------------------------------+
+//   | Date       | Fajr   | Dhuhr  | Asr    | Maghrib | Isha   |
+//   +----------------------------------------------------------+
+//   | 2026-02-25 | 00...
+static void test_day_markers(void) {
+  printf("  day markers...\n");
+
+  // Step 2: legend present. At Reykjavik, Isha on 2026-04-07 falls just
+  // after midnight, so the range table marks it and prints the next-day
+  // legend.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", NULL});
+  check_ret("markers reykjavik range ret", 0);
+  check_contains("markers reykjavik has marker", "00:06+");
+  check_contains("markers reykjavik legend", "  + falls after midnight, on the next day");
+
+  // Step 3: legend absent. Jakarta has no midnight crossing on the same
+  // dates, so the range table has neither a marker nor the legend.
+  run(7, (char *[]){"m", "location", "set", "--lat=-6.2088", "--long=106.8456",
+                    "--timezone=Asia/Jakarta", "--country=ID", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", NULL});
+  check_ret("markers jakarta range ret", 0);
+  check_contains("markers jakarta has output", "2026-04-07");
+  check_bool("markers jakarta no legend", strstr(captured, "falls after midnight") == NULL &&
+                                              strstr(captured, "falls before midnight") == NULL);
+  check_bool("markers jakarta no marker", !has_time_marker(captured));
+
+  // Step 4: the previous-day legend. Eureka, Nunavut sits far enough east of
+  // its America/Edmonton zone meridian that Fajr falls just before midnight
+  // on the clock. Derived by scanning all of 2026 through the built binary
+  // in headless mode rather than pasted: the previous-day legend fires
+  // exactly twice in the year, both for Fajr, on 2026-02-27 (23:54) and
+  // 2026-08-30 (23:55). A full year does not fit in the 16384-byte
+  // `captured` buffer (see the 366-day note in test_show_date_bounds), so
+  // this renders a narrow range around only the first of those two dates.
+  run(7, (char *[]){"m", "location", "set", "--lat=79.9889", "--long=-85.9408",
+                    "--timezone=America/Edmonton", "--country=CA", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-02-25", "2026-03-01", NULL});
+  check_ret("markers eureka range ret", 0);
+  check_contains("markers eureka has marker", "23:54-");
+  check_contains("markers eureka legend", "  - falls before midnight, on the previous day");
+
+  // Step 5: headless keys. At Reykjavik, the headless isha key prints the
+  // bare time (the marker character is a table-only device) plus a separate
+  // _day_offset line.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "--headless", NULL});
+  check_ret("markers reykjavik headless ret", 0);
+  check_contains("markers reykjavik headless isha bare", "isha=00:06\n");
+  check_contains("markers reykjavik headless offset", "isha_day_offset=1");
+
+  // Jakarta never crosses midnight on this date, so no _day_offset key
+  // appears at all.
+  run(7, (char *[]){"m", "location", "set", "--lat=-6.2088", "--long=106.8456",
+                    "--timezone=Asia/Jakarta", "--country=ID", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+  run(5, (char *[]){"m", "show", "--date", "2026-04-07", "--headless", NULL});
+  check_ret("markers jakarta headless ret", 0);
+  check_contains("markers jakarta headless has isha", "isha=19:01");
+  check_bool("markers jakarta headless no day_offset", strstr(captured, "_day_offset") == NULL);
+
+  // Step 6: no other surface carries the marker. Reuse Reykjavik, a
+  // location the table above proves does mark, and check `show --next`,
+  // its headless form, and the notification settings view already
+  // exercised near test_notification.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+
+  run(3, (char *[]){"m", "show", "--next", NULL});
+  check_ret("markers next ret", 0);
+  check_contains("markers next has output", "Remaining");
+  check_bool("markers next no marker", !has_time_marker(captured));
+
+  run(4, (char *[]){"m", "show", "--next", "--headless", NULL});
+  check_ret("markers next headless ret", 0);
+  check_contains("markers next headless has output", "remaining=");
+  check_bool("markers next headless no marker", !has_time_marker(captured));
+
+  run(2, (char *[]){"m", "notification", NULL});
+  check_ret("markers notification ret", 0);
+  check_contains("markers notification has output", "fajr");
+  check_bool("markers notification no marker", !has_time_marker(captured));
+}
+
 static void test_next(void) {
   printf("  show --next...\n");
   reset_config();
@@ -1184,6 +1353,105 @@ static void test_location_set_timezone_validation(void) {
   check_contains("nonexistent zone error", "Unknown timezone");
 }
 
+// Regression coverage for the trailing comma the prayer count drop from
+// seven to five left behind (fixed in commit 7a5b631). Every other JSON
+// assertion in this file is a substring check_contains, and a trailing
+// comma does not disturb a substring match, so none of them would have
+// caught it. This test runs a real JSON syntax check instead.
+//
+// Mutation record. Each mutant below was applied by hand, built with
+// `cmake --build build -j`, run against
+// `ctest --test-dir build -R cli --output-on-failure`, then reverted with
+// `git checkout -- <path>` before the next one. git status --porcelain was
+// confirmed empty after each revert. All three were caught.
+//
+// Mutant 1: src/core/display.c:315, inside print_prayer_entries, changed
+// `i + 1 < PRAYER_COUNT` back to `i < 6`. Caught by the show and show --date
+// checks for both fixtures. Output:
+//   FAIL [jakarta show json no trailing comma]
+//   FAIL [jakarta show date json no trailing comma]
+//   FAIL [reykjavik show json no trailing comma]
+//   FAIL [reykjavik show date json no trailing comma]
+//   Results: 357 passed, 4 failed
+//
+// Mutant 2: src/core/display.c:727, inside
+// display_notification_settings_json, changed `i + 1 < PRAYER_COUNT` back to
+// `i < 6`, leaving mutant 1's site fixed. A scan covering only the show
+// commands would have passed this mutant. Caught by the notification check
+// for both fixtures. Output:
+//   FAIL [jakarta notification json no trailing comma]
+//   FAIL [reykjavik notification json no trailing comma]
+//   Results: 359 passed, 2 failed
+//
+// Mutant 3: tests/test_cli.c has_trailing_comma() made to return false
+// unconditionally. This checks the scanner is load bearing rather than
+// decorative. As expected, it did not fail any of the five command checks,
+// since a scanner that always returns false trivially satisfies an
+// assertion of absence. It failed the scanner's own self-checks instead.
+// Output:
+//   FAIL [scanner true before brace]
+//   FAIL [scanner true before bracket]
+//   Results: 359 passed, 2 failed
+static void test_json_no_trailing_comma(void) {
+  printf("  json no trailing comma...\n");
+
+  // Step 2: prove the scanner itself fires and does not fire on the wrong
+  // things, before trusting it to grade real CLI output.
+  check_bool("scanner true before brace", has_trailing_comma("{\"a\": 1,}"));
+  check_bool("scanner true before bracket", has_trailing_comma("[1, 2,]"));
+  check_bool("scanner false well formed", !has_trailing_comma("{\"a\": 1}"));
+  check_bool("scanner false comma in string", !has_trailing_comma("{\"a\": \"Jakarta, ID\"}"));
+
+  // Step 3: Jakarta, over all five JSON-emitting commands.
+  reset_config();
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+
+  run(3, (char *[]){"m", "show", "--json", NULL});
+  check_contains("jakarta show json has output", "{");
+  check_bool("jakarta show json no trailing comma", !has_trailing_comma(captured));
+
+  run(4, (char *[]){"m", "show", "--next", "--json", NULL});
+  check_contains("jakarta show next json has output", "{");
+  check_bool("jakarta show next json no trailing comma", !has_trailing_comma(captured));
+
+  run(6, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", "--json", NULL});
+  check_contains("jakarta show date json has output", "{");
+  check_bool("jakarta show date json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "location", "--json", NULL});
+  check_contains("jakarta location json has output", "{");
+  check_bool("jakarta location json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "notification", "--json", NULL});
+  check_contains("jakarta notification json has output", "{");
+  check_bool("jakarta notification json no trailing comma", !has_trailing_comma(captured));
+
+  // Step 4: Reykjavik, which puts a day_offset field into the show JSON.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+
+  run(3, (char *[]){"m", "show", "--json", NULL});
+  check_contains("reykjavik show json has output", "{");
+  check_bool("reykjavik show json no trailing comma", !has_trailing_comma(captured));
+
+  run(4, (char *[]){"m", "show", "--next", "--json", NULL});
+  check_contains("reykjavik show next json has output", "{");
+  check_bool("reykjavik show next json no trailing comma", !has_trailing_comma(captured));
+
+  run(6, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", "--json", NULL});
+  check_contains("reykjavik show date json has output", "{");
+  check_bool("reykjavik show date json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "location", "--json", NULL});
+  check_contains("reykjavik location json has output", "{");
+  check_bool("reykjavik location json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "notification", "--json", NULL});
+  check_contains("reykjavik notification json has output", "{");
+  check_bool("reykjavik notification json no trailing comma", !has_trailing_comma(captured));
+}
+
 // -- main ---------------------------------------------------------------------
 
 int main(void) {
@@ -1197,6 +1465,7 @@ int main(void) {
   test_show();
   test_show_date_bounds();
   test_show_range();
+  test_day_markers();
   test_next();
   test_next_after_isha();
   test_method();
@@ -1205,6 +1474,7 @@ int main(void) {
   test_daemon_errors();
   test_offset();
   test_location_set_timezone_validation();
+  test_json_no_trailing_comma();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);
   teardown();

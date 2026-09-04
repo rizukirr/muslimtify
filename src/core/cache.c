@@ -322,6 +322,14 @@ int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct Pra
     // Relying on that is not a guard, so this is.
     if (!isfinite(pt))
       continue;
+    // A trigger is a minute of the day, so the day offset a prayer time may
+    // carry has to be dropped here rather than at the source. A single wrap is
+    // enough: the library's own value stays inside (-24, 48) and a configured
+    // per-prayer offset adds at most an hour either way.
+    if (pt < 0.0)
+      pt += 24.0;
+    else if (pt >= 24.0)
+      pt -= 24.0;
     int prayer_min = (int)ceil(pt * 60.0);
     const char *name = prayer_get_name(type);
     const PrayerConfig *pcfg = prayer_get_config(cfg, type);

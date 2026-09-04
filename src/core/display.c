@@ -57,6 +57,14 @@ static void lower_copy(char *dst, size_t cap, const char *src) {
 static void print_horizontal_line(char pos) {
   const char *left, *mid, *right, *horiz;
 
+  // The three branches below are semantically distinct: top uses
+  // BOX_TL/BOX_HD/BOX_TR, middle uses BOX_VR/BOX_VH/BOX_VL, bottom uses
+  // BOX_BL/BOX_HU/BOX_BR.
+  // They only look identical here because the ASCII fallback above maps
+  // every BOX_* macro to "+" for Windows code page portability.
+  // They diverge again the moment those macros carry real box-drawing
+  // characters, so do not collapse this switch.
+  // NOLINTBEGIN(bugprone-branch-clone)
   switch (pos) {
   case 't': // top
     left = BOX_TL;
@@ -79,6 +87,7 @@ static void print_horizontal_line(char pos) {
   default:
     return;
   }
+  // NOLINTEND(bugprone-branch-clone)
 
   printf("%s", left);
   for (int i = 0; i < 12; i++)
@@ -93,6 +102,39 @@ static void print_horizontal_line(char pos) {
   for (int i = 0; i < 23; i++)
     printf("%s", horiz);
   printf("%s\n", right);
+}
+
+int prayer_time_day_offset(double hours) {
+  if (!isfinite(hours))
+    return 0;
+  // Rounded to the minute the same way format_time_hm rounds, so the day is
+  // derived from the value that actually gets printed rather than from the raw
+  // double. Deriving it from the raw double disagrees with the string whenever
+  // rounding up carries past midnight.
+  long total = (long)ceil(hours * 60.0);
+  if (total < 0)
+    return -1;
+  if (total >= 24L * 60)
+    return 1;
+  return 0;
+}
+
+void format_time_hm_day(double hours, char *outBuffer, size_t bufSize) {
+  char hm[6];
+  format_time_hm(hours, hm, sizeof(hm));
+  int day = prayer_time_day_offset(hours);
+  snprintf(outBuffer, bufSize, "%s%s", hm, day > 0 ? "+" : (day < 0 ? "-" : ""));
+}
+
+/* Prints the legend for the day markers that were actually rendered, and
+   nothing at all when none were. The marker is a single character and cannot
+   carry what it means, so the table says it in words rather than relying on
+   the reader knowing. */
+static void print_day_marker_legend(bool any_next, bool any_prev) {
+  if (any_next)
+    printf("  + falls after midnight, on the next day\n");
+  if (any_prev)
+    printf("  - falls before midnight, on the previous day\n");
 }
 
 void display_prayer_times_table(const struct PrayerTimes *times, const Config *cfg,
@@ -130,13 +172,24 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
          C(COL_RESET), BOX_V, C(COL_BOLD), "Reminders", C(COL_RESET), BOX_V);
   print_horizontal_line('m');
 
+  bool any_next = false;
+  bool any_prev = false;
+
   for (int i = 0; i < PRAYER_COUNT; i++) {
     double prayer_time = prayer_get_time(times, types[i]);
     char time_str[16];
-    format_time_hm(prayer_time, time_str, sizeof(time_str));
+    format_time_hm_day(prayer_time, time_str, sizeof(time_str));
 
     const PrayerConfig *pcfg = prayer_get_config(cfg, types[i]);
     bool enabled = pcfg->enabled;
+
+    if (enabled) {
+      int day = prayer_time_day_offset(prayer_time);
+      if (day > 0)
+        any_next = true;
+      else if (day < 0)
+        any_prev = true;
+    }
 
     // Buffer sized for: MAX_REMINDERS * "1440, " + " min before" = 10*6+11 = 71
     char reminders[80] = "";
@@ -177,6 +230,7 @@ void display_prayer_times_table(const struct PrayerTimes *times, const Config *c
   }
 
   print_horizontal_line('b');
+  print_day_marker_legend(any_next, any_prev);
   printf("\n");
 }
 
@@ -222,6 +276,10 @@ void display_prayer_times_plain(const struct PrayerTimes *times, const Config *c
     } else {
       printf("%s=%s\n", prayer_names[i], time_str);
     }
+
+    int day = prayer_time_day_offset(prayer_time);
+    if (day != 0)
+      printf("%s_day_offset=%d\n", prayer_names[i], day);
   }
 }
 
@@ -243,6 +301,7 @@ static void print_prayer_entries(const struct PrayerTimes *times, const Config *
 
     printf("%s\"%s\": {\n", pad, prayer_names[i]);
     printf("%s  \"time\": \"%s\",\n", pad, time_str);
+    printf("%s  \"day_offset\": %d,\n", pad, prayer_time_day_offset(prayer_time));
     printf("%s  \"enabled\": %s,\n", pad, pcfg->enabled ? "true" : "false");
     printf("%s  \"reminders\": [", pad);
     for (int j = 0; j < pcfg->reminder_count; j++) {
@@ -251,7 +310,9 @@ static void print_prayer_entries(const struct PrayerTimes *times, const Config *
         printf(", ");
     }
     printf("]\n");
-    printf("%s}%s\n", pad, i < 6 ? "," : "");
+    /* Separator derives from the loop bound, not a literal, because a literal is what broke
+       here when the prayer count changed from seven to five. */
+    printf("%s}%s\n", pad, i + 1 < PRAYER_COUNT ? "," : "");
   }
 }
 
@@ -304,9 +365,14 @@ void display_prayer_times_range_plain(const Config *cfg, int sy, int sm, int sd,
       const PrayerConfig *pcfg = prayer_get_config(cfg, types[i]);
       if (!pcfg->enabled)
         continue;
+      double prayer_time = prayer_get_time(&t, types[i]);
       char time_str[16];
-      format_time_hm(prayer_get_time(&t, types[i]), time_str, sizeof(time_str));
+      format_time_hm(prayer_time, time_str, sizeof(time_str));
       printf("%s=%s\n", prayer_names[i], time_str);
+
+      int day = prayer_time_day_offset(prayer_time);
+      if (day != 0)
+        printf("%s_day_offset=%d\n", prayer_names[i], day);
     }
     if (z < end)
       printf("\n");
@@ -334,12 +400,38 @@ void display_prayer_times_range_table(const Config *cfg, int sy, int sm, int sd,
       col[ncol++] = i;
   }
 
-  // Column widths: Date is "YYYY-MM-DD" (10); each prayer is max(name, "HH:MM"=5).
+  // Walk the range once to see whether any cell will carry a day marker, so
+  // the minimum column width matches what actually gets printed instead of
+  // always leaving room for a marker that never appears. The range is capped
+  // at MAX_RANGE_DAYS by the caller (cmd_show.c), so this second pass is bounded.
+  bool any_next = false;
+  bool any_prev = false;
+  {
+    long mstart = mt_days_from_civil(sy, sm, sd);
+    long mend = mt_days_from_civil(ey, em, ed);
+    for (long z = mstart; z <= mend; z++) {
+      int y, m, d;
+      mt_civil_from_days(z, &y, &m, &d);
+      struct PrayerTimes t = prayer_times_for_config(cfg, y, m, d);
+      for (int c = 0; c < ncol; c++) {
+        int day = prayer_time_day_offset(prayer_get_time(&t, types[col[c]]));
+        if (day > 0)
+          any_next = true;
+        else if (day < 0)
+          any_prev = true;
+      }
+    }
+  }
+  bool has_marker = any_next || any_prev;
+
+  // Column widths: Date is "YYYY-MM-DD" (10); each prayer is max(name, "HH:MM"=5,
+  // or 6 when a day marker can appear in this range).
   const int date_w = 10;
+  const int min_col_w = has_marker ? 6 : 5;
   int col_w[PRAYER_COUNT];
   for (int c = 0; c < ncol; c++) {
     int len = (int)strlen(prayer_names[col[c]]);
-    col_w[c] = len > 5 ? len : 5;
+    col_w[c] = len > min_col_w ? len : min_col_w;
   }
 
   // Total printed row length, for an unbroken border spanning the whole table.
@@ -364,12 +456,13 @@ void display_prayer_times_range_table(const Config *cfg, int sy, int sm, int sd,
     printf("| %04d-%02d-%02d ", y, m, d);
     for (int c = 0; c < ncol; c++) {
       char time_str[16];
-      format_time_hm(prayer_get_time(&t, types[col[c]]), time_str, sizeof(time_str));
+      format_time_hm_day(prayer_get_time(&t, types[col[c]]), time_str, sizeof(time_str));
       printf("| %-*s ", col_w[c], time_str);
     }
     printf("|\n");
   }
   range_hrule(row_len - 2);
+  print_day_marker_legend(any_next, any_prev);
 }
 
 // Resolve the next upcoming prayer and format its fields. Returns false (and
@@ -629,7 +722,9 @@ void display_notification_settings_json(const Config *cfg) {
       if (j < pc[i]->reminder_count - 1)
         printf(", ");
     }
-    printf("], \"adhan\": %s }%s\n", pc[i]->adhan_enabled ? "true" : "false", i < 6 ? "," : "");
+    /* Separator derives from the loop bound, not a literal, for the same reason as above. */
+    printf("], \"adhan\": %s }%s\n", pc[i]->adhan_enabled ? "true" : "false",
+           i + 1 < PRAYER_COUNT ? "," : "");
   }
   printf("  }\n");
   printf("}\n");
