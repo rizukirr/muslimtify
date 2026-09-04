@@ -130,6 +130,35 @@ static void check_bool(const char *test, bool cond) {
   }
 }
 
+/* Returns true when `s` contains a comma whose next non-whitespace character
+   closes an object or an array, which is the trailing comma a strict JSON
+   parser rejects. Commas inside string literals are skipped, so a city name
+   containing one cannot raise a false alarm. */
+static bool has_trailing_comma(const char *s) {
+  bool in_string = false;
+  for (const char *p = s; *p; p++) {
+    if (in_string) {
+      if (*p == '\\' && p[1])
+        p++;
+      else if (*p == '"')
+        in_string = false;
+      continue;
+    }
+    if (*p == '"') {
+      in_string = true;
+      continue;
+    }
+    if (*p != ',')
+      continue;
+    const char *q = p + 1;
+    while (*q == ' ' || *q == '\t' || *q == '\n' || *q == '\r')
+      q++;
+    if (*q == '}' || *q == ']')
+      return true;
+  }
+  return false;
+}
+
 // -- test groups --------------------------------------------------------------
 
 static void test_version_and_help(void) {
@@ -1324,6 +1353,71 @@ static void test_location_set_timezone_validation(void) {
   check_contains("nonexistent zone error", "Unknown timezone");
 }
 
+// Regression coverage for the trailing comma the prayer count drop from
+// seven to five left behind (fixed in commit 7a5b631). Every other JSON
+// assertion in this file is a substring check_contains, and a trailing
+// comma does not disturb a substring match, so none of them would have
+// caught it. This test runs a real JSON syntax check instead.
+static void test_json_no_trailing_comma(void) {
+  printf("  json no trailing comma...\n");
+
+  // Step 2: prove the scanner itself fires and does not fire on the wrong
+  // things, before trusting it to grade real CLI output.
+  check_bool("scanner true before brace", has_trailing_comma("{\"a\": 1,}"));
+  check_bool("scanner true before bracket", has_trailing_comma("[1, 2,]"));
+  check_bool("scanner false well formed", !has_trailing_comma("{\"a\": 1}"));
+  check_bool("scanner false comma in string", !has_trailing_comma("{\"a\": \"Jakarta, ID\"}"));
+
+  // Step 3: Jakarta, over all five JSON-emitting commands.
+  reset_config();
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+
+  run(3, (char *[]){"m", "show", "--json", NULL});
+  check_contains("jakarta show json has output", "{");
+  check_bool("jakarta show json no trailing comma", !has_trailing_comma(captured));
+
+  run(4, (char *[]){"m", "show", "--next", "--json", NULL});
+  check_contains("jakarta show next json has output", "{");
+  check_bool("jakarta show next json no trailing comma", !has_trailing_comma(captured));
+
+  run(6, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", "--json", NULL});
+  check_contains("jakarta show date json has output", "{");
+  check_bool("jakarta show date json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "location", "--json", NULL});
+  check_contains("jakarta location json has output", "{");
+  check_bool("jakarta location json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "notification", "--json", NULL});
+  check_contains("jakarta notification json has output", "{");
+  check_bool("jakarta notification json no trailing comma", !has_trailing_comma(captured));
+
+  // Step 4: Reykjavik, which puts a day_offset field into the show JSON.
+  run(7, (char *[]){"m", "location", "set", "--lat=64.1466", "--long=-21.9426",
+                    "--timezone=Atlantic/Reykjavik", "--country=IS", NULL});
+  run(3, (char *[]){"m", "method", "mwl", NULL});
+
+  run(3, (char *[]){"m", "show", "--json", NULL});
+  check_contains("reykjavik show json has output", "{");
+  check_bool("reykjavik show json no trailing comma", !has_trailing_comma(captured));
+
+  run(4, (char *[]){"m", "show", "--next", "--json", NULL});
+  check_contains("reykjavik show next json has output", "{");
+  check_bool("reykjavik show next json no trailing comma", !has_trailing_comma(captured));
+
+  run(6, (char *[]){"m", "show", "--date", "2026-04-07", "2026-04-08", "--json", NULL});
+  check_contains("reykjavik show date json has output", "{");
+  check_bool("reykjavik show date json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "location", "--json", NULL});
+  check_contains("reykjavik location json has output", "{");
+  check_bool("reykjavik location json no trailing comma", !has_trailing_comma(captured));
+
+  run(3, (char *[]){"m", "notification", "--json", NULL});
+  check_contains("reykjavik notification json has output", "{");
+  check_bool("reykjavik notification json no trailing comma", !has_trailing_comma(captured));
+}
+
 // -- main ---------------------------------------------------------------------
 
 int main(void) {
@@ -1346,6 +1440,7 @@ int main(void) {
   test_daemon_errors();
   test_offset();
   test_location_set_timezone_validation();
+  test_json_no_trailing_comma();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);
   teardown();
