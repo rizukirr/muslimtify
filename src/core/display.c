@@ -310,7 +310,9 @@ static void print_prayer_entries(const struct PrayerTimes *times, const Config *
         printf(", ");
     }
     printf("]\n");
-    printf("%s}%s\n", pad, i < 6 ? "," : "");
+    /* Separator derives from the loop bound, not a literal, because a literal is what broke
+       here when the prayer count changed from seven to five. */
+    printf("%s}%s\n", pad, i + 1 < PRAYER_COUNT ? "," : "");
   }
 }
 
@@ -720,7 +722,9 @@ void display_notification_settings_json(const Config *cfg) {
       if (j < pc[i]->reminder_count - 1)
         printf(", ");
     }
-    printf("], \"adhan\": %s }%s\n", pc[i]->adhan_enabled ? "true" : "false", i < 6 ? "," : "");
+    /* Separator derives from the loop bound, not a literal, for the same reason as above. */
+    printf("], \"adhan\": %s }%s\n", pc[i]->adhan_enabled ? "true" : "false",
+           i + 1 < PRAYER_COUNT ? "," : "");
   }
   printf("  }\n");
   printf("}\n");
