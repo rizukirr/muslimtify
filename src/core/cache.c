@@ -29,6 +29,24 @@ static void cache_log_trunc(const char *field) {
   }
 }
 
+// Separate from cache_trunc_logged: a field truncation and a dropped trigger are
+// different failure modes, and letting one flag silence both would hide whichever
+// happened second.
+static bool cache_capacity_logged = false;
+
+static void cache_log_capacity_drop(const char *prayer, int minutes_before) {
+  if (!cache_capacity_logged) {
+    if (minutes_before == 0) {
+      fprintf(stderr, "cache: capacity reached, dropped %s adhan trigger\n",
+              prayer ? prayer : "(unknown)");
+    } else {
+      fprintf(stderr, "cache: capacity reached, dropped %s reminder (%d min before)\n",
+              prayer ? prayer : "(unknown)", minutes_before);
+    }
+    cache_capacity_logged = true;
+  }
+}
+
 const char *cache_get_path(void) {
   if (cache_path_buf[0] != '\0') {
     return cache_path_buf;
@@ -320,68 +338,91 @@ int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct Pra
   // day offset of at most one day either way. A prayer whose instant spills
   // out of day D's minute range belongs to a neighbouring day instead, and is
   // moved there rather than copied, so it is scheduled exactly once.
-  for (int day_delta = -1; day_delta <= 1; day_delta++) {
-    struct PrayerTimes source_times;
-    const struct PrayerTimes *source;
-    if (day_delta == 0) {
-      source = times;
-    } else {
-      int sy, sm, sd;
-      mt_civil_from_days(day_num + day_delta, &sy, &sm, &sd);
-      source_times = prayer_times_for_config(cfg, sy, sm, sd);
-      source = &source_times;
-    }
-
-    for (int i = 0; i < PRAYER_COUNT; i++) {
-      PrayerType type = prayer_types[i];
-      if (!prayer_is_enabled(cfg, type))
-        continue;
-
-      double pt = prayer_get_time(source, type);
-      // A prayer that does not occur has no time to schedule. Above roughly 66
-      // degrees the C library reports a non-finite value for an event the Sun
-      // never reaches, and converting that to int is undefined behaviour: on
-      // x86-64 (int)ceil(NAN * 60.0) is -2147483648, which happens to fail the
-      // bounds check below rather than firing a notification at a wild minute.
-      // Relying on that is not a guard, so this is.
-      if (!isfinite(pt))
-        continue;
-      int instant_min = (int)ceil((pt + 24.0 * day_delta) * 60.0);
-      const char *name = prayer_get_name(type);
-      const PrayerConfig *pcfg = prayer_get_config(cfg, type);
-
-      // Add exact prayer time, only when its instant actually falls on day D.
-      if (instant_min >= 0 && instant_min < 1440 && instant_min >= current_minute &&
-          cache->trigger_count < MAX_TRIGGERS) {
-        CacheTrigger *t = &cache->triggers[cache->trigger_count];
-        if (!copy_string(t->prayer, sizeof(t->prayer), name)) {
-          cache_log_trunc("prayer");
-        }
-        t->minute = instant_min;
-        t->minutes_before = 0;
-        t->prayer_time = pt;
-        t->adhan_enabled = pcfg->adhan_enabled;
-        if (!copy_string(t->adhan, sizeof(t->adhan), pcfg->adhan)) {
-          cache_log_trunc("adhan");
-        }
-        cache->trigger_count++;
+  //
+  // The three source days are walked twice, once for exact prayer times and
+  // once for reminders, so every adhan is inserted before any reminder can
+  // fill the array. On a discontinuity day a single calendar day can hold two
+  // complete occurrences of the same prayer: at Reykjavik on 2026-04-12 the
+  // isha of 04-11 spills in at 00:58 and the isha of 04-12 does not spill out,
+  // and with MAX_REMINDERS configured that day needs 66 entries against a
+  // MAX_TRIGGERS of 64. An adhan is what a person acts on, so the capacity
+  // guard must never be free to drop one just because reminders happened to
+  // be assembled first. Walking the days twice costs nothing that matters,
+  // since a rebuild happens once a day.
+  for (int pass = 0; pass < 2; pass++) {
+    for (int day_delta = -1; day_delta <= 1; day_delta++) {
+      struct PrayerTimes source_times;
+      const struct PrayerTimes *source;
+      if (day_delta == 0) {
+        source = times;
+      } else {
+        int sy, sm, sd;
+        mt_civil_from_days(day_num + day_delta, &sy, &sm, &sd);
+        source_times = prayer_times_for_config(cfg, sy, sm, sd);
+        source = &source_times;
       }
 
-      // Add reminders, same day-D membership rule as the exact trigger above.
-      for (int j = 0; j < pcfg->reminder_count; j++) {
-        int reminder_min = instant_min - pcfg->reminders[j];
-        if (reminder_min < 0 || reminder_min >= 1440)
+      for (int i = 0; i < PRAYER_COUNT; i++) {
+        PrayerType type = prayer_types[i];
+        if (!prayer_is_enabled(cfg, type))
           continue;
 
-        if (reminder_min >= current_minute && cache->trigger_count < MAX_TRIGGERS) {
-          CacheTrigger *t = &cache->triggers[cache->trigger_count];
-          if (!copy_string(t->prayer, sizeof(t->prayer), name)) {
-            cache_log_trunc("prayer");
+        double pt = prayer_get_time(source, type);
+        // A prayer that does not occur has no time to schedule. Above roughly 66
+        // degrees the C library reports a non-finite value for an event the Sun
+        // never reaches, and converting that to int is undefined behaviour: on
+        // x86-64 (int)ceil(NAN * 60.0) is -2147483648, which happens to fail the
+        // bounds check below rather than firing a notification at a wild minute.
+        // Relying on that is not a guard, so this is.
+        if (!isfinite(pt))
+          continue;
+        int instant_min = (int)ceil((pt + 24.0 * day_delta) * 60.0);
+        const char *name = prayer_get_name(type);
+        const PrayerConfig *pcfg = prayer_get_config(cfg, type);
+
+        if (pass == 0) {
+          // Add exact prayer time, only when its instant actually falls on day D.
+          if (instant_min >= 0 && instant_min < 1440 && instant_min >= current_minute) {
+            if (cache->trigger_count < MAX_TRIGGERS) {
+              CacheTrigger *t = &cache->triggers[cache->trigger_count];
+              if (!copy_string(t->prayer, sizeof(t->prayer), name)) {
+                cache_log_trunc("prayer");
+              }
+              t->minute = instant_min;
+              t->minutes_before = 0;
+              t->prayer_time = pt;
+              t->adhan_enabled = pcfg->adhan_enabled;
+              if (!copy_string(t->adhan, sizeof(t->adhan), pcfg->adhan)) {
+                cache_log_trunc("adhan");
+              }
+              cache->trigger_count++;
+            } else {
+              cache_log_capacity_drop(name, 0);
+            }
           }
-          t->minute = reminder_min;
-          t->minutes_before = pcfg->reminders[j];
-          t->prayer_time = pt;
-          cache->trigger_count++;
+          continue;
+        }
+
+        // Add reminders, same day-D membership rule as the exact trigger above.
+        for (int j = 0; j < pcfg->reminder_count; j++) {
+          int reminder_min = instant_min - pcfg->reminders[j];
+          if (reminder_min < 0 || reminder_min >= 1440)
+            continue;
+          if (reminder_min < current_minute)
+            continue;
+
+          if (cache->trigger_count < MAX_TRIGGERS) {
+            CacheTrigger *t = &cache->triggers[cache->trigger_count];
+            if (!copy_string(t->prayer, sizeof(t->prayer), name)) {
+              cache_log_trunc("prayer");
+            }
+            t->minute = reminder_min;
+            t->minutes_before = pcfg->reminders[j];
+            t->prayer_time = pt;
+            cache->trigger_count++;
+          } else {
+            cache_log_capacity_drop(name, pcfg->reminders[j]);
+          }
         }
       }
     }
