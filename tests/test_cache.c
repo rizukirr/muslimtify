@@ -41,6 +41,11 @@ static Config test_config(void) {
   cfg.longitude = 106.8456;
   cfg.timezone_offset = 7.0;
   cfg.auto_detect = false;
+  // Use the stored fixed offset directly rather than a named zone lookup.
+  // config_default leaves "UTC" here, which cache_build_triggers now resolves
+  // for real when it fetches D-1/D+1, so an untouched name would silently
+  // outrank timezone_offset and shift every neighbouring day by -7 hours.
+  cfg.timezone[0] = '\0';
   return cfg;
 }
 
