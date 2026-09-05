@@ -92,6 +92,68 @@ static int instant_minute(double prayer_time, int day_delta) {
   return (int)ceil((prayer_time + 24.0 * day_delta) * 60.0);
 }
 
+// Mutation record for the five tests below (Task 4 of the trigger-day-assembly
+// plan). Each mutant was applied to src/core/cache.c, built, run against
+// `ctest --test-dir build -R cache --output-on-failure`, and then reverted
+// with `git checkout -- src/core/cache.c` before the next one, verified clean
+// with `git status --porcelain`. cache.c itself carries none of these changes.
+//
+// Mutant one: in cache_build_triggers, start day_delta at 0 instead of -1, so
+// nothing from D-1 spills forward into the day being built. This failed the
+// suite, exit status 8. Verbatim output (121 per-day diagnostic lines from
+// test_adhan_survives_capacity_all_year omitted here for length, each of the
+// form "missing adhan for Isha at 2026-04-08 minute 6"):
+//   cache: file too large (1048656 bytes), refusing to load
+//   no matching ']'
+//   FAIL [spilled isha adhan present on the next day at the rounded minute]
+//   FAIL [every in-day prayer occurrence keeps its adhan across the year]
+//   Results: 176 passed, 2 failed
+// Caught by test_isha_adhan_fires_on_day_it_occurs and
+// test_adhan_survives_capacity_all_year. The "cache: file too large" and "no
+// matching ']'" lines are pre-existing stderr noise from a stale cache file
+// on this machine, unrelated to the mutant.
+//
+// Mutant two: in the pass == 0 branch, drop the
+// `instant_min >= 0 && instant_min < 1440` guard and instead wrap instant_min
+// into [0, 1440) before using it, so a prayer whose instant falls outside the
+// day is scheduled on the day anyway. This recreates the original 24-hour-early
+// adhan defect. This failed the suite, exit status 8. Verbatim output:
+//   cache: file too large (1048656 bytes), refusing to load
+//   no matching ']'
+//   FAIL [no isha adhan on the day whose own isha has not happened yet]
+//   FAIL [no prayer instant scheduled twice across three consecutive days]
+//   cache: capacity reached, dropped Isha reminder (50 min before)
+//   Results: 226 passed, 2 failed
+// Caught by test_isha_no_early_adhan_on_spill_day and
+// test_no_double_scheduling_across_spill_days.
+//
+// Mutant three: restore the old reminder wrap, replacing
+// `if (reminder_min < 0 || reminder_min >= 1440) continue;` with
+// `if (reminder_min < 0) reminder_min += 24 * 60; if (reminder_min >= 1440)
+// continue;`, the double-notification hazard. This failed the suite, exit
+// status 8. Verbatim output:
+//   FAIL [fajr has 3 reminders]
+//   cache: file too large (1048656 bytes), refusing to load
+//   no matching ']'
+//   FAIL [no prayer instant scheduled twice across three consecutive days]
+//   cache: capacity reached, dropped Fajr reminder (50 min before)
+//   Results: 242 passed, 2 failed
+// Caught by test_no_double_scheduling_across_spill_days and by the
+// pre-existing test_build_triggers_includes_reminders case labelled
+// "fajr has 3 reminders".
+// Gap found: test_reminders_land_on_day_they_occur did not catch this mutant,
+// even though its own comment names this exact defect. That test only
+// exercises an own-day isha whose instant is at or past 1440, the forward
+// spill case, so its reminder_min values only ever land in the reminder_min
+// >= 1440 branch, which mutant three does not touch. It never drives
+// reminder_min negative, so the reminder_min < 0 wrap this mutant restores is
+// never exercised by that test. The suite as a whole still failed, so the
+// regression would be caught, just not by the test written for it.
+//
+// After each restore, `git status --porcelain` was empty and
+// `ctest --test-dir build -R cache --output-on-failure` passed again before
+// the next mutant was applied.
+
 // Goal 2: the 24-hour-early adhan is gone. On the day whose own isha spills
 // past midnight, that day must not carry an isha adhan trigger, since the
 // prayer has not actually happened yet on that day.
