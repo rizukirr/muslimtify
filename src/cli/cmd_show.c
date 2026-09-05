@@ -22,6 +22,7 @@ static void print_show_help(void) {
   printf("\n");
   printf("Commands:\n");
   printf("  %-25s %s\n", "--next <Option>", "Show next prayer time");
+  printf("  %-25s %s\n", "--day-offset <offset>", "Show prayer time (+/-)<offset> days from now");
   printf("  %-25s %s\n", "--date [date] <date> <options>",
          "Show prayer time at or until desire date (yyyy-mm-dd)");
   printf("  %-25s %s\n", "-h, --help", "Show this help");
@@ -39,6 +40,27 @@ static void print_show_help(void) {
          "# Show prayer times for 2022-01-01 as JSON");
   printf("  %-25s %s\n", "muslimtify show --date 2022-01-01 2023-01-01",
          "# Show prayer times from 2022-01-01 to 2023-01-01");
+}
+
+static void print_show_day_offset_help(void) {
+  printf("\n");
+  printf("Show prayer times for a day offset from now\n");
+  printf("\n");
+  printf("Usage: muslimtify show --day-offset <offset> [options]\n");
+  printf("\n");
+  printf("Commands:\n");
+  printf("  %-25s %s\n", "-h, --help", "Show this help");
+  printf("\n");
+  printf("Options:\n");
+  printf("  %-25s %s\n", "--json", "Prayer times as JSON (range: array of days)");
+  printf("  %-25s %s\n", "--headless", "Prayer times as key=value (range: date= blocks)");
+  printf("\n");
+  printf("Examples:\n");
+  printf("  %-40s %s\n", "muslimtify show --day-offset 1", "# One day");
+  printf("  %-40s %s\n", "muslimtify show --day-offset 1 --json", "# One day as JSON");
+  printf("  %-40s %s\n", "muslimtify show --day-offset -1", "# One day ago");
+  printf("  %-40s %s\n", "muslimtify show --day-offset -1 --json", "# One day ago as JSON");
+  printf("  %-40s %s\n", "muslimtify show --day-offset -365", "# One year ago");
 }
 
 static void print_show_next_help(void) {
@@ -144,6 +166,8 @@ static int parse_date(const char *s, int *y, int *m, int *d) {
 int handle_show(int argc, char **argv) {
   bool want_next = false;
   bool want_date = false;
+  bool want_day_offset = false;
+  int day_offset_idx = -1;
   int date_idx = -1;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--next") == 0)
@@ -153,6 +177,11 @@ int handle_show(int argc, char **argv) {
       want_date = true;
       date_idx = i;
     }
+
+    if (strcmp(argv[i], "--day-offset") == 0) {
+      want_day_offset = true;
+      day_offset_idx = i;
+    }
   }
 
   if (cli_wants_help(argc, argv)) {
@@ -160,6 +189,8 @@ int handle_show(int argc, char **argv) {
       print_show_next_help();
     else if (want_date)
       print_show_date_help();
+    else if (want_day_offset)
+      print_show_day_offset_help();
     else
       print_show_help();
     return 0;
@@ -248,6 +279,8 @@ int handle_show(int argc, char **argv) {
         display_prayer_times_table(&start, &cfg, &date_start);
         break;
       }
+    } else if (want_day_offset) {
+      // TODO: Not yet implemented
     } else {
       // Date range
       int ey, em, ed;
