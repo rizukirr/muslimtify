@@ -268,7 +268,17 @@ static void test_reminders_land_on_day_they_occur(void) {
   PrayerCache cache = {0};
   cache_build_triggers(&cache, &cfg, &times, 0, date_str);
 
+  long day_num = mt_days_from_civil(year, month, day);
+  int ny, nm, nd;
+  mt_civil_from_days(day_num + 1, &ny, &nm, &nd);
+  char next_date[32];
+  snprintf(next_date, sizeof(next_date), "%04d-%02d-%02d", ny, nm, nd);
+  struct PrayerTimes next_times = prayer_times_for_config(&cfg, ny, nm, nd);
+  PrayerCache next_cache = {0};
+  cache_build_triggers(&next_cache, &cfg, &next_times, 0, next_date);
+
   int instant_min = instant_minute(times.isha, 0);
+  int next_day_instant_min = instant_minute(times.isha, -1);
   const PrayerConfig *pcfg = prayer_get_config(&cfg, PRAYER_ISHA);
   bool checked_evening = false;
   bool checked_past_midnight = false;
@@ -289,6 +299,24 @@ static void test_reminders_land_on_day_they_occur(void) {
     } else {
       check_bool("post-midnight isha reminder absent from the spilling day", !found);
       checked_past_midnight = true;
+
+      // Half of goal 3 is checking the reminder is gone from the spilling
+      // day, the other half is that it actually landed on the following
+      // day, at its offset from that day's own midnight. 04-08 legitimately
+      // carries isha entries for two different prayers, so match on the
+      // pair of minutes_before and minute rather than on the prayer name
+      // alone.
+      int next_day_reminder_min = next_day_instant_min - pcfg->reminders[j];
+      bool found_on_next_day = false;
+      for (int i = 0; i < next_cache.trigger_count; i++) {
+        if (strcmp(next_cache.triggers[i].prayer, "Isha") == 0 &&
+            next_cache.triggers[i].minutes_before == pcfg->reminders[j] &&
+            next_cache.triggers[i].minute == next_day_reminder_min) {
+          found_on_next_day = true;
+        }
+      }
+      check_bool("post-midnight isha reminder present on the following day at its own minute",
+                 found_on_next_day);
     }
   }
   check_bool("the spill day has both an evening and a post-midnight isha reminder",

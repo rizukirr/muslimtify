@@ -322,6 +322,8 @@ int cache_build_triggers(PrayerCache *cache, const Config *cfg, const struct Pra
   // An unparseable date means the caller has a bug. Scheduling nothing is the
   // safe response, since we have no day to anchor D-1/D+1 against.
   int year, month, day;
+  // The return value is checked on the same line, this is the conversion check.
+  // NOLINTNEXTLINE(bugprone-unchecked-string-to-number-conversion)
   if (sscanf(date_str, "%d-%d-%d", &year, &month, &day) != 3)
     return 0;
   long day_num = mt_days_from_civil(year, month, day);
