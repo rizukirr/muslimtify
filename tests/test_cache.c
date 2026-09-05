@@ -2,7 +2,9 @@
 #include "cache.h"
 #include "config.h"
 #include "platform.h"
+#include "prayer_checker.h"
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +49,256 @@ static Config test_config(void) {
   // outrank timezone_offset and shift every neighbouring day by -7 hours.
   cfg.timezone[0] = '\0';
   return cfg;
+}
+
+// Reykjavik: high enough latitude that isha regularly crosses midnight (its
+// decimal hour goes to or past 24.0), which is exactly the day-assembly
+// behaviour these tests pin.
+static Config reykjavik_config(void) {
+  Config cfg = config_default();
+  cfg.latitude = 64.1466;
+  cfg.longitude = -21.9426;
+  cfg.timezone_offset = 0.0;
+  cfg.auto_detect = false;
+  cfg.timezone[0] = '\0';
+  strcpy(cfg.calculation_method, "mwl");
+  return cfg;
+}
+
+// Scans 2026 for the first day whose own isha instant is at or past midnight,
+// i.e. prayer_times_for_config reports isha >= 24.0 decimal hours. Returns
+// true and fills *year/*month/*day on success. Scanning rather than pasting a
+// date keeps the test tied to the actual astronomical condition instead of a
+// value that could go stale if the calculation changes.
+static bool find_isha_spill_day(const Config *cfg, int *year, int *month, int *day) {
+  for (long d = mt_days_from_civil(2026, 1, 1); d <= mt_days_from_civil(2026, 12, 31); d++) {
+    int y, m, dd;
+    mt_civil_from_days(d, &y, &m, &dd);
+    struct PrayerTimes times = prayer_times_for_config(cfg, y, m, dd);
+    if (isfinite(times.isha) && times.isha >= 24.0) {
+      *year = y;
+      *month = m;
+      *day = dd;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Same rounding cache_build_triggers uses to turn a decimal-hour prayer time,
+// shifted by the day offset it was sourced from, into an absolute minute of
+// the day being built.
+static int instant_minute(double prayer_time, int day_delta) {
+  return (int)ceil((prayer_time + 24.0 * day_delta) * 60.0);
+}
+
+// Goal 2: the 24-hour-early adhan is gone. On the day whose own isha spills
+// past midnight, that day must not carry an isha adhan trigger, since the
+// prayer has not actually happened yet on that day.
+static void test_isha_no_early_adhan_on_spill_day(void) {
+  printf("  isha spilling past midnight fires no early adhan...\n");
+  Config cfg = reykjavik_config();
+  int year, month, day;
+  check_bool("found a day whose own isha spills", find_isha_spill_day(&cfg, &year, &month, &day));
+
+  char date_str[16];
+  snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d", year, month, day);
+  struct PrayerTimes times = prayer_times_for_config(&cfg, year, month, day);
+  PrayerCache cache = {0};
+  cache_build_triggers(&cache, &cfg, &times, 0, date_str);
+
+  bool found_isha_exact = false;
+  for (int i = 0; i < cache.trigger_count; i++) {
+    if (strcmp(cache.triggers[i].prayer, "Isha") == 0 && cache.triggers[i].minutes_before == 0) {
+      found_isha_exact = true;
+    }
+  }
+  check_bool("no isha adhan on the day whose own isha has not happened yet", !found_isha_exact);
+}
+
+// Goal 1: the adhan fires on the right day. The following day must carry the
+// spilled isha's adhan, at the minute the spilled time rounds to.
+static void test_isha_adhan_fires_on_day_it_occurs(void) {
+  printf("  spilled isha adhan fires on the day it actually occurs...\n");
+  Config cfg = reykjavik_config();
+  int year, month, day;
+  check_bool("found a day whose own isha spills", find_isha_spill_day(&cfg, &year, &month, &day));
+
+  struct PrayerTimes times = prayer_times_for_config(&cfg, year, month, day);
+  long day_num = mt_days_from_civil(year, month, day);
+  int ny, nm, nd;
+  mt_civil_from_days(day_num + 1, &ny, &nm, &nd);
+  char next_date[32];
+  snprintf(next_date, sizeof(next_date), "%04d-%02d-%02d", ny, nm, nd);
+  struct PrayerTimes next_times = prayer_times_for_config(&cfg, ny, nm, nd);
+  PrayerCache cache = {0};
+  cache_build_triggers(&cache, &cfg, &next_times, 0, next_date);
+
+  int expected_minute = instant_minute(times.isha, -1);
+  bool found = false;
+  for (int i = 0; i < cache.trigger_count; i++) {
+    if (strcmp(cache.triggers[i].prayer, "Isha") == 0 && cache.triggers[i].minutes_before == 0 &&
+        cache.triggers[i].minute == expected_minute) {
+      found = true;
+    }
+  }
+  check_bool("spilled isha adhan present on the next day at the rounded minute", found);
+}
+
+// Goal 4: no double scheduling. Assembling three consecutive days around a
+// spill must never place the same prayer instant into two different days'
+// trigger sets. Comparing on prayer name alone would fail on correct code,
+// since the same name legitimately recurs across days, so the identity is
+// the pair of name and absolute instant, reconstructed from each day's own
+// epoch plus the trigger's minute.
+static void test_no_double_scheduling_across_spill_days(void) {
+  printf("  no prayer instant is scheduled on two different days...\n");
+  Config cfg = reykjavik_config();
+  int year, month, day;
+  check_bool("found a day whose own isha spills", find_isha_spill_day(&cfg, &year, &month, &day));
+  long day0 = mt_days_from_civil(year, month, day);
+
+  typedef struct {
+    char prayer[16];
+    long instant;
+  } SeenTrigger;
+  SeenTrigger seen[3 * MAX_TRIGGERS];
+  int seen_count = 0;
+  bool dup_found = false;
+
+  for (int offset = 0; offset < 3; offset++) {
+    int cy, cm, cd;
+    mt_civil_from_days(day0 + offset, &cy, &cm, &cd);
+    char date_str[32];
+    snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d", cy, cm, cd);
+    struct PrayerTimes times = prayer_times_for_config(&cfg, cy, cm, cd);
+    PrayerCache cache = {0};
+    cache_build_triggers(&cache, &cfg, &times, 0, date_str);
+
+    for (int i = 0; i < cache.trigger_count; i++) {
+      long instant = (day0 + offset) * 1440L + cache.triggers[i].minute;
+      for (int k = 0; k < seen_count; k++) {
+        if (seen[k].instant == instant && strcmp(seen[k].prayer, cache.triggers[i].prayer) == 0) {
+          dup_found = true;
+        }
+      }
+      strcpy(seen[seen_count].prayer, cache.triggers[i].prayer);
+      seen[seen_count].instant = instant;
+      seen_count++;
+    }
+  }
+  check_bool("no prayer instant scheduled twice across three consecutive days", !dup_found);
+}
+
+// Goal 3: reminders land on the day they occur. On the day whose own isha
+// spills, a reminder still in the evening (before midnight) belongs to that
+// day's own set, while a reminder that itself falls past midnight does not,
+// since it was moved to the following day instead.
+static void test_reminders_land_on_day_they_occur(void) {
+  printf("  reminders land on the day they actually occur...\n");
+  Config cfg = reykjavik_config();
+  int year, month, day;
+  check_bool("found a day whose own isha spills", find_isha_spill_day(&cfg, &year, &month, &day));
+
+  char date_str[16];
+  snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d", year, month, day);
+  struct PrayerTimes times = prayer_times_for_config(&cfg, year, month, day);
+  PrayerCache cache = {0};
+  cache_build_triggers(&cache, &cfg, &times, 0, date_str);
+
+  int instant_min = instant_minute(times.isha, 0);
+  const PrayerConfig *pcfg = prayer_get_config(&cfg, PRAYER_ISHA);
+  bool checked_evening = false;
+  bool checked_past_midnight = false;
+
+  for (int j = 0; j < pcfg->reminder_count; j++) {
+    int reminder_min = instant_min - pcfg->reminders[j];
+    bool found = false;
+    for (int i = 0; i < cache.trigger_count; i++) {
+      if (strcmp(cache.triggers[i].prayer, "Isha") == 0 &&
+          cache.triggers[i].minutes_before == pcfg->reminders[j] &&
+          cache.triggers[i].minute == reminder_min) {
+        found = true;
+      }
+    }
+    if (reminder_min < 1440) {
+      check_bool("evening isha reminder present on its own day", found);
+      checked_evening = true;
+    } else {
+      check_bool("post-midnight isha reminder absent from the spilling day", !found);
+      checked_past_midnight = true;
+    }
+  }
+  check_bool("the spill day has both an evening and a post-midnight isha reminder",
+             checked_evening && checked_past_midnight);
+}
+
+// Goal 6, as amended: the capacity guard may drop a reminder, but it must
+// never cost a prayer its adhan. With every prayer configured for
+// MAX_REMINDERS reminders, walk a full Reykjavik year and, for every day,
+// independently reconstruct which prayer occurrences actually fall inside
+// it (from the same D-1/D/D+1 sources cache_build_triggers uses), then
+// require each of those occurrences to have its minutes_before == 0 trigger
+// present. The count itself is allowed to hit MAX_TRIGGERS, so it is
+// deliberately not asserted here.
+static void test_adhan_survives_capacity_all_year(void) {
+  printf("  every adhan survives the capacity guard across a full year...\n");
+  Config cfg = reykjavik_config();
+  int reminders[MAX_REMINDERS];
+  for (int i = 0; i < MAX_REMINDERS; i++) {
+    reminders[i] = 5 + i * 5;
+  }
+  PrayerConfig *prayer_cfgs[] = {&cfg.fajr, &cfg.dhuhr, &cfg.asr, &cfg.maghrib, &cfg.isha};
+  for (int i = 0; i < 5; i++) {
+    memcpy(prayer_cfgs[i]->reminders, reminders, sizeof(reminders));
+    prayer_cfgs[i]->reminder_count = MAX_REMINDERS;
+  }
+
+  PrayerType prayer_types[] = {PRAYER_FAJR, PRAYER_DHUHR, PRAYER_ASR, PRAYER_MAGHRIB, PRAYER_ISHA};
+  bool all_present = true;
+
+  for (long d = mt_days_from_civil(2026, 1, 1); d <= mt_days_from_civil(2026, 12, 31); d++) {
+    int cy, cm, cd;
+    mt_civil_from_days(d, &cy, &cm, &cd);
+    char date_str[16];
+    snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d", cy, cm, cd);
+    struct PrayerTimes times = prayer_times_for_config(&cfg, cy, cm, cd);
+    PrayerCache cache = {0};
+    cache_build_triggers(&cache, &cfg, &times, 0, date_str);
+
+    for (int delta = -1; delta <= 1; delta++) {
+      int sy, sm, sd;
+      mt_civil_from_days(d + delta, &sy, &sm, &sd);
+      struct PrayerTimes source = prayer_times_for_config(&cfg, sy, sm, sd);
+
+      for (int i = 0; i < PRAYER_COUNT; i++) {
+        PrayerType type = prayer_types[i];
+        if (!prayer_is_enabled(&cfg, type))
+          continue;
+        double pt = prayer_get_time(&source, type);
+        if (!isfinite(pt))
+          continue;
+        int occurrence_min = instant_minute(pt, delta);
+        if (occurrence_min < 0 || occurrence_min >= 1440)
+          continue;
+
+        const char *name = prayer_get_name(type);
+        bool found = false;
+        for (int k = 0; k < cache.trigger_count; k++) {
+          if (cache.triggers[k].minutes_before == 0 && cache.triggers[k].minute == occurrence_min &&
+              strcmp(cache.triggers[k].prayer, name) == 0) {
+            found = true;
+          }
+        }
+        if (!found) {
+          all_present = false;
+          fprintf(stderr, "missing adhan for %s at %s minute %d\n", name, date_str, occurrence_min);
+        }
+      }
+    }
+  }
+
+  check_bool("every in-day prayer occurrence keeps its adhan across the year", all_present);
 }
 
 static void test_build_triggers_includes_future(void) {
@@ -575,6 +827,11 @@ int main(void) {
   test_cache_load_strict();
   test_cache_reminder_roundtrip();
   test_cache_rejects_legacy_and_malformed();
+  test_isha_no_early_adhan_on_spill_day();
+  test_isha_adhan_fires_on_day_it_occurs();
+  test_no_double_scheduling_across_spill_days();
+  test_reminders_land_on_day_they_occur();
+  test_adhan_survives_capacity_all_year();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);
   return failed > 0 ? 1 : 0;
