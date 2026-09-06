@@ -12,11 +12,6 @@
 #include <string.h>
 #include <time.h>
 
-// Fire a missed trigger only if it came due within this many minutes of now.
-// Covers any realistic adhan length and short cycle overruns, while dropping
-// prayers missed by a long suspend/resume rather than replaying them.
-#define CATCHUP_MAX_MIN 15
-
 TriggerAction trigger_catchup_action(int trigger_minute, int current_minute) {
   if (trigger_minute > current_minute)
     return TRIGGER_KEEP;
@@ -57,8 +52,13 @@ int run_check_cycle(void) {
            tm_now->tm_mday);
 
   PrayerCache cache;
-  bool cache_valid =
-      (cache_load(&cache) == 0 && strcmp(cache.date, today) == 0 && cache.trigger_count > 0);
+  // A cache that loads and carries today's date is valid even when empty.
+  // An empty trigger list means today's prayers are all done, not that the
+  // cache is missing. Requiring trigger_count > 0 here would force a rebuild
+  // every cycle after the last trigger fires, and with the widened catch-up
+  // gate in cache_build_triggers that rebuild would readmit the trigger that
+  // just fired and fire it again, once a minute, forever.
+  bool cache_valid = (cache_load(&cache) == 0 && strcmp(cache.date, today) == 0);
 
   if (!cache_valid) {
     struct PrayerTimes times =

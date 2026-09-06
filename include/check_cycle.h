@@ -5,6 +5,11 @@
 extern "C" {
 #endif
 
+// Fire a missed trigger only if it came due within this many minutes of now.
+// Covers any realistic adhan length and short cycle overruns, while dropping
+// prayers missed by a long suspend/resume rather than replaying them.
+#define CATCHUP_MAX_MIN 15
+
 /**
  * Decision for a single cache trigger given the current minute-of-day.
  * KEEP: trigger is still in the future — leave it in the cache.
