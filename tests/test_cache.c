@@ -981,10 +981,22 @@ static void test_cache_is_valid_for_today(void) {
 // repeating the notification once a minute, which is the exact failure this
 // task exists to prevent.
 //
-// Mutation record: reverting run_check_cycle's cache_valid in check_cycle.c
-// to require `cache.trigger_count > 0` alongside cache_is_valid_for_today
-// makes this fail, since the rebuild it then permits reintroduces the
-// consumed trigger.
+// Mutation record, task 5: reverting cache_is_valid_for_today in
+// check_cycle.c to `strcmp(cache_date, today) == 0 && trigger_count > 0`
+// was applied, rebuilt, and run under ctest --test-dir build --output-on-failure.
+// The cache binary failed with:
+//   FAIL [today, no triggers left is valid]
+// 203 passed, 1 failed. The final `cache.trigger_count == 0` check below
+// stayed green under the mutant, because the rebuild and the removal it
+// triggers both happen inside the same loop iteration, so the count is back
+// at 0 by the time the assertion runs even though the trigger fired a second
+// time in between. Only the direct check in test_cache_is_valid_for_today
+// caught the mutant, so this test was decorative for the goal 3 case it
+// names. Rewritten below to count firings instead of trusting the final
+// count. With the counter in place the same mutant produces a second
+// failure:
+//   FAIL [trigger fired exactly once, not once per later cycle]
+// 203 passed, 2 failed.
 static void test_consumed_trigger_not_resurrected_by_later_cycle(void) {
   printf("  consumed trigger stays consumed on a later cycle...\n");
   Config cfg = single_trigger_config();
@@ -998,7 +1010,10 @@ static void test_consumed_trigger_not_resurrected_by_later_cycle(void) {
 
   // Walk daemon cycles minute by minute from the trigger's own minute through
   // a few minutes past it, firing (removing) it the cycle it becomes due and
-  // rebuilding only when the cache is no longer valid for today.
+  // rebuilding only when the cache is no longer valid for today. Count every
+  // removal as a fire: a resurrection shows up as more than one, even though
+  // the trigger count itself is back at 0 by the end of every iteration.
+  int fire_count = 0;
   for (int minute = trigger_minute; minute <= trigger_minute + 5; minute++) {
     if (!cache_is_valid_for_today(cache.date, cache.trigger_count, date)) {
       cache_build_triggers(&cache, &cfg, &times, minute, date);
@@ -1008,6 +1023,7 @@ static void test_consumed_trigger_not_resurrected_by_later_cycle(void) {
     while (i < cache.trigger_count) {
       if (cache.triggers[i].minute <= minute) {
         cache_remove_trigger(&cache, i);
+        fire_count++;
       } else {
         i++;
       }
@@ -1015,6 +1031,7 @@ static void test_consumed_trigger_not_resurrected_by_later_cycle(void) {
   }
 
   check_bool("trigger not resurrected across later cycles", cache.trigger_count == 0);
+  check_bool("trigger fired exactly once, not once per later cycle", fire_count == 1);
 }
 
 int main(void) {
