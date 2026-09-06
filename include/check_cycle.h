@@ -27,9 +27,18 @@ typedef enum {
 
 /**
  * Classify a trigger by its scheduled minute-of-day vs. the current minute.
+ * minutes_before is 0 for an adhan and positive for a reminder scheduled
+ * that many minutes ahead of its prayer. A reminder's whole value is
+ * arriving before its prayer, so once minutes_before > 0 it only fires
+ * while trigger_minute + minutes_before, the prayer's own minute, is still
+ * ahead of current_minute. Past that point it would arrive beside the adhan
+ * it was meant to precede, so it is dropped instead of fired late. Nothing
+ * is lost by dropping it: a reminder's lateness exceeds its prayer's by
+ * exactly minutes_before, so a rescuable late reminder always coexists with
+ * a rescuable late adhan, which fires on its own.
  * Pure function (no I/O) so it can be unit-tested. See TriggerAction.
  */
-TriggerAction trigger_catchup_action(int trigger_minute, int current_minute);
+TriggerAction trigger_catchup_action(int trigger_minute, int minutes_before, int current_minute);
 
 /**
  * True when a cache dated cache_date is valid as-is for today. Deliberately
