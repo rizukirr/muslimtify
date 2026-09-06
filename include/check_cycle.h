@@ -55,6 +55,16 @@ TriggerAction trigger_catchup_action(int trigger_minute, int minutes_before, int
 bool cache_is_valid_for_today(const char *cache_date, int trigger_count, const char *today);
 
 /**
+ * True when this trigger should play the full adhan recitation rather than a
+ * plain notification. A prayer announced at its own minute is recited. One
+ * announced late is stated, because a recitation beginning after the prayer
+ * time has passed describes a moment that is already gone.
+ * Pure function (no I/O) so it can be unit-tested.
+ */
+bool trigger_plays_adhan(int trigger_minute, int minutes_before, bool adhan_enabled,
+                         int current_minute);
+
+/**
  * Run one prayer-notification check for the current minute.
  * Loads (or rebuilds) the prayer cache, fires any due adhan/reminder
  * notifications, and prunes elapsed triggers.

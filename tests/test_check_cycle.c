@@ -15,6 +15,16 @@ static void check_action(TriggerAction got, TriggerAction want, const char *labe
   }
 }
 
+static void check_bool(bool got, bool want, const char *label) {
+  total++;
+  if (got == want) {
+    printf("  PASS: %s\n", label);
+  } else {
+    printf("  FAIL: %s — got %d, want %d\n", label, (int)got, (int)want);
+    failures++;
+  }
+}
+
 int main(void) {
   printf("=== check_cycle tests ===\n\n");
 
@@ -36,6 +46,15 @@ int main(void) {
                "reminder 10 min late dropped once its prayer passed 5 min ago");
   check_action(trigger_catchup_action(590, 10, 600), TRIGGER_DROP,
                "reminder dropped exactly as its prayer arrives (nothing left to precede)");
+
+  check_bool(trigger_plays_adhan(600, 0, true, 600), true,
+             "adhan trigger at its own minute recites");
+  check_bool(trigger_plays_adhan(600, 0, true, 601), false,
+             "the same trigger one minute late does not recite");
+  check_bool(trigger_plays_adhan(600, 10, true, 605), false,
+             "a reminder never recites regardless of lateness");
+  check_bool(trigger_plays_adhan(600, 0, false, 600), false,
+             "a trigger with adhan disabled never recites");
 
   printf("\n%d/%d tests passed\n", total - failures, total);
   return failures > 0 ? 1 : 0;

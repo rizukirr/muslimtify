@@ -37,6 +37,11 @@ bool cache_is_valid_for_today(const char *cache_date, int trigger_count, const c
   return strcmp(cache_date, today) == 0;
 }
 
+bool trigger_plays_adhan(int trigger_minute, int minutes_before, bool adhan_enabled,
+                         int current_minute) {
+  return minutes_before == 0 && adhan_enabled && current_minute <= trigger_minute;
+}
+
 int run_check_cycle(void) {
   Config cfg;
   if (config_load(&cfg) != 0) {
@@ -104,7 +109,8 @@ int run_check_cycle(void) {
       char time_str[16];
       format_time_hm(cache.triggers[i].prayer_time, time_str, sizeof(time_str));
 
-      if (cache.triggers[i].minutes_before == 0 && cache.triggers[i].adhan_enabled) {
+      if (trigger_plays_adhan(cache.triggers[i].minute, cache.triggers[i].minutes_before,
+                              cache.triggers[i].adhan_enabled, current_min)) {
         notify_adhan(cache.triggers[i].prayer, time_str, cache.triggers[i].adhan);
       } else {
         const char *sound_preset = NULL;
