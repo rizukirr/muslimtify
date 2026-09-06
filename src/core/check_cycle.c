@@ -90,7 +90,7 @@ int run_check_cycle(void) {
   int i = 0;
   while (i < cache.trigger_count) {
     TriggerAction action = trigger_catchup_action(cache.triggers[i].minute,
-                                                   cache.triggers[i].minutes_before, current_min);
+                                                  cache.triggers[i].minutes_before, current_min);
 
     if (action == TRIGGER_KEEP) {
       i++;

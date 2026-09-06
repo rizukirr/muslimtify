@@ -41,6 +41,7 @@ int main(void) {
   // A reminder's lateness always exceeds its prayer's by exactly
   // minutes_before, since it fires that many minutes before the prayer.
   //
+  // clang-format off
   // Mutation record, task 5: deleting the
   // `minutes_before > 0 && trigger_minute + minutes_before <= current_minute`
   // clause from trigger_catchup_action, so a late reminder fires regardless
@@ -51,6 +52,7 @@ int main(void) {
   // 10/12 tests passed. The two checks below are what caught it. Reverted
   // with git checkout, rebuilt, and ctest returned to 15/15 before the next
   // mutant was applied.
+  // clang-format on
   check_action(trigger_catchup_action(590, 20, 600), TRIGGER_FIRE,
                "reminder 10 min late fires while its prayer is still 20 min ahead");
   check_action(trigger_catchup_action(590, 5, 600), TRIGGER_DROP,
@@ -58,6 +60,7 @@ int main(void) {
   check_action(trigger_catchup_action(590, 10, 600), TRIGGER_DROP,
                "reminder dropped exactly as its prayer arrives (nothing left to precede)");
 
+  // clang-format off
   // Mutation record, task 5: dropping the `current_minute <= trigger_minute`
   // clause from trigger_plays_adhan, so a late prayer recites again, was
   // applied, rebuilt, and run under ctest --test-dir build --output-on-failure.
@@ -66,6 +69,7 @@ int main(void) {
   // 11/12 tests passed. The check right below is what caught it. Reverted
   // with git checkout, rebuilt, and ctest returned to 15/15 before the next
   // mutant was applied.
+  // clang-format on
   check_bool(trigger_plays_adhan(600, 0, true, 600), true,
              "adhan trigger at its own minute recites");
   check_bool(trigger_plays_adhan(600, 0, true, 601), false,
