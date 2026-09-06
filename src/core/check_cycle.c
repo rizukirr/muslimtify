@@ -20,6 +20,11 @@ TriggerAction trigger_catchup_action(int trigger_minute, int current_minute) {
   return TRIGGER_DROP;
 }
 
+bool cache_is_valid_for_today(const char *cache_date, int trigger_count, const char *today) {
+  (void)trigger_count;
+  return strcmp(cache_date, today) == 0;
+}
+
 int run_check_cycle(void) {
   Config cfg;
   if (config_load(&cfg) != 0) {
@@ -52,13 +57,8 @@ int run_check_cycle(void) {
            tm_now->tm_mday);
 
   PrayerCache cache;
-  // A cache that loads and carries today's date is valid even when empty.
-  // An empty trigger list means today's prayers are all done, not that the
-  // cache is missing. Requiring trigger_count > 0 here would force a rebuild
-  // every cycle after the last trigger fires, and with the widened catch-up
-  // gate in cache_build_triggers that rebuild would readmit the trigger that
-  // just fired and fire it again, once a minute, forever.
-  bool cache_valid = (cache_load(&cache) == 0 && strcmp(cache.date, today) == 0);
+  bool cache_valid =
+      (cache_load(&cache) == 0 && cache_is_valid_for_today(cache.date, cache.trigger_count, today));
 
   if (!cache_valid) {
     struct PrayerTimes times =

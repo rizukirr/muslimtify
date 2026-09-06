@@ -957,20 +957,34 @@ static void test_build_triggers_reaches_within_catchup_window(void) {
   }
 }
 
-// Goal 3: once the last trigger of a day is consumed, it must not come back.
-// check_cycle.c's cache_valid treats a same-day cache as valid even when
-// empty, precisely so a rebuild never runs again that day; that decision is
-// inline in run_check_cycle rather than a callable function, so it is
-// mirrored here as `today_cache_valid`. Were the dropped `trigger_count > 0`
-// clause restored there, an empty cache would look invalid, the commented-out
-// rebuild below would run every following cycle, and it would readmit the
-// trigger this test just consumed, because it is still within
-// CATCHUP_MAX_MIN of the minute it fired — repeating the notification once a
-// minute, which is the exact failure this task exists to prevent.
+// cache_is_valid_for_today ignores trigger_count on purpose: a same-day
+// cache is valid even when empty, because an empty list means today's
+// prayers are all done, not that the cache is missing.
 //
-// Mutation record: replacing `today_cache_valid` below with
-// `(strcmp(cache.date, date) == 0 && cache.trigger_count > 0)` makes this
-// fail, since the rebuild it then permits reintroduces the consumed trigger.
+// Mutation record: adding `&& trigger_count > 0` inside cache_is_valid_for_today
+// makes the first check below fail, since a same-day, zero-trigger cache
+// would then be reported invalid.
+static void test_cache_is_valid_for_today(void) {
+  printf("  cache_is_valid_for_today ignores trigger_count...\n");
+  const char *today = "2026-06-15";
+
+  check_bool("today, no triggers left is valid", cache_is_valid_for_today(today, 0, today));
+  check_bool("today, triggers left is valid", cache_is_valid_for_today(today, 3, today));
+  check_bool("yesterday is not valid", !cache_is_valid_for_today("2026-06-14", 3, today));
+}
+
+// Goal 3: once the last trigger of a day is consumed, it must not come back.
+// Were cache_is_valid_for_today to also require trigger_count > 0, an empty
+// cache would look invalid, the commented-out rebuild below would run every
+// following cycle, and it would readmit the trigger this test just consumed,
+// because it is still within CATCHUP_MAX_MIN of the minute it fired —
+// repeating the notification once a minute, which is the exact failure this
+// task exists to prevent.
+//
+// Mutation record: reverting run_check_cycle's cache_valid in check_cycle.c
+// to require `cache.trigger_count > 0` alongside cache_is_valid_for_today
+// makes this fail, since the rebuild it then permits reintroduces the
+// consumed trigger.
 static void test_consumed_trigger_not_resurrected_by_later_cycle(void) {
   printf("  consumed trigger stays consumed on a later cycle...\n");
   Config cfg = single_trigger_config();
@@ -986,8 +1000,7 @@ static void test_consumed_trigger_not_resurrected_by_later_cycle(void) {
   // a few minutes past it, firing (removing) it the cycle it becomes due and
   // rebuilding only when the cache is no longer valid for today.
   for (int minute = trigger_minute; minute <= trigger_minute + 5; minute++) {
-    bool today_cache_valid = (strcmp(cache.date, date) == 0);
-    if (!today_cache_valid) {
+    if (!cache_is_valid_for_today(cache.date, cache.trigger_count, date)) {
       cache_build_triggers(&cache, &cfg, &times, minute, date);
     }
 
@@ -1025,6 +1038,7 @@ int main(void) {
   test_reminders_land_on_day_they_occur();
   test_adhan_survives_capacity_all_year();
   test_build_triggers_reaches_within_catchup_window();
+  test_cache_is_valid_for_today();
   test_consumed_trigger_not_resurrected_by_later_cycle();
 
   printf("\nResults: %d passed, %d failed\n", passed, failed);

@@ -1,6 +1,8 @@
 #ifndef CHECK_CYCLE_H
 #define CHECK_CYCLE_H
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,6 +30,20 @@ typedef enum {
  * Pure function (no I/O) so it can be unit-tested. See TriggerAction.
  */
 TriggerAction trigger_catchup_action(int trigger_minute, int current_minute);
+
+/**
+ * True when a cache dated cache_date is valid as-is for today. Deliberately
+ * ignores trigger_count: a cache carrying today's date is valid even with no
+ * triggers left, because an empty list means today's prayers are all done,
+ * not that the cache is missing. Requiring a nonzero trigger count here would
+ * force a rebuild every cycle after the last trigger fires, and with the
+ * widened catch-up gate in cache_build_triggers that rebuild would readmit
+ * the trigger that just fired and fire it again, once a minute, forever.
+ * trigger_count is taken as a parameter, rather than dropped, so a test can
+ * prove it has no effect on the result.
+ * Pure function (no I/O) so it can be unit-tested.
+ */
+bool cache_is_valid_for_today(const char *cache_date, int trigger_count, const char *today);
 
 /**
  * Run one prayer-notification check for the current minute.
